@@ -29,6 +29,14 @@ uv run ruff format .      # formatação
 
 O CI roda lint, formatação e testes em todo push na `main` e em todo PR.
 
+Para atualizar a camada raw com os meses que faltam (decisão
+[0003](docs/decisoes/0003-extracao-incremental.md)):
+
+```bash
+uv run python -m macroaf.extract.atualizar --verificar   # só confere o que falta
+uv run python -m macroaf.extract.atualizar               # baixa
+```
+
 ## Documentação
 
 - [Planejamento](docs/PLANEJAMENTO.md): escopo, fontes, transformação, indicadores e decisões.

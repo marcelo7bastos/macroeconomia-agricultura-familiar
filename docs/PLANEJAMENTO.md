@@ -52,25 +52,42 @@ A tabela 3065 é a **referência oficial** para validar o índice geral e os acu
 
 Quantidade de categorias da classificação 315 por tabela (pela API de metadados):
 
-| Tabela | Categorias |
-|---|---|
-| 7062 | 1 geral, 9 grupos, 19 subgrupos, 51 itens, 367 subitens |
-| 1705 | 1 geral, 9 grupos, 19 subgrupos, 52 itens, 365 subitens |
-| 1387 | 383 categorias no nível mais detalhado (numeração de nível diferente, ver 3.3) |
-| 1646 | 512 categorias no nível mais detalhado (numeração de nível diferente, ver 3.3) |
+Contagem pelo código IBGE no nome da categoria (conferida em 19/10/2026; todas têm 1 geral, sem
+código):
+
+| Tabela | Grupos | Subgrupos | Itens | Subitens | Total |
+|---|---|---|---|---|---|
+| 7062 | 9 | 19 | 51 | 367 | 447 |
+| 1705 | 9 | 19 | 52 | 365 | 446 |
+| 1387 | 9 | 19 | 52 | 384 | 465 |
+| 1646 | 9 | 19 | 52 | 512 | 593 |
+
+A contagem antiga de 383 subitens na 1387 vinha do campo `nivel`: o subitem `4103031.Conjunto
+infantil` aparece com `nivel = 0` (ver A-001 e 3.3).
+
+A variável 1120 (acumulado em 12 meses) existe nos metadados da 1705 e da 7062, mas vem `...` em
+parte do período (1705 até fev/2017; 7062 até dez/2020). O acumulado por categoria nesses meses é
+calculado e conferido com a 3065 no índice geral (A-009).
 
 Metadados: `https://servicodados.ibge.gov.br/api/v3/agregados/{tabela}/metadados`
 (árvore de classificação e último período disponível).
 
 ### 3.2 Como extrair
 
-- **Detecção de novidade:** consulta os metadados e compara `periodicidade.fim` com o último
-  período salvo. Sem mês novo → encerra sem baixar nada.
-- **Paginação:** consultas divididas por variável e por faixa de períodos, respeitando o limite de
-  valores por requisição da API SIDRA.
-- **Resiliência:** retentativas com espera exponencial; timeout explícito.
-- **Camada `raw`:** JSON exatamente como veio, com data da coleta e hash SHA-256. **É versionada
-  no repositório** (decisão 9.1).
+Detalhes e alternativas na [decisão 0003](decisoes/0003-extracao-incremental.md).
+
+- **Comando:** `uv run python -m macroaf.extract.atualizar` (`--verificar` só confere).
+- **Conferência do catálogo:** `periodicidade` dos metadados de cada tabela é comparada com o
+  catálogo (início sempre; fim das tabelas fechadas). Divergência interrompe antes de baixar.
+- **Extração incremental:** baixa só os meses ausentes no raw, uma requisição por tabela × mês
+  (cerca de 1.800 valores, bem abaixo do limite da API). Sem mês novo → não baixa valores.
+- **Revisões:** nas tabelas abertas, os 3 últimos meses são baixados de novo; conteúdo diferente
+  vira `<AAAAMM>.r2.json.gz`, sem apagar o anterior.
+- **Resiliência:** retentativas com espera exponencial em erro de rede, 429 e 5xx; timeout
+  explícito; erro 400 do SIDRA é definitivo.
+- **Camada `raw`:** `data/raw/<fonte>/<tabela>/<AAAAMM>.json.gz`, corpo exato da resposta
+  compactado, com `manifesto.csv` (URL, data da coleta, SHA-256 do original, registros). **É
+  versionada no repositório** (decisão 9.1).
 - **Catálogo `config/series.yaml`:** cada série descrita por fonte, tabela, variáveis, período,
   unidade e versão da POF. Incluir série nova = editar o YAML. O esquema é validado por
   `macroaf.catalogo.carregar_catalogo` (tabelas de dados em sucessão mês a mês, sem lacuna nem
@@ -96,9 +113,9 @@ O projeto anterior (fora deste repositório) foi auditado; o que muda aqui:
 ### 4.1 Camadas
 
 ```
-data/raw/       JSON original da API (auditoria, versionado)
-data/staging/   tabelas tidy, tipadas, uma linha por observação
-data/marts/     indicadores prontos para consumo (site e Power BI)
+data/raw/       JSON original da API, compactado e imutável (auditoria, versionado)
+data/staging/   tabelas tidy, tipadas, uma linha por observação (recriado do raw, não versionado)
+data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 ```
 
 ### 4.2 Tabelas de staging
@@ -216,3 +233,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.5 | Licenças | **MIT** (código) e **CC BY 4.0** (dados derivados) |
 | 9.6 | Memória dos agentes | **No próprio repositório** ([0001](decisoes/0001-memoria-dos-agentes-no-repositorio.md)) |
 | 9.7 | Organização dos agentes | **Por função, não por índice** ([0002](decisoes/0002-agentes-por-funcao.md)) |
+| 9.8 | Atualização dos dados | **Extração incremental, raw compactado e imutável, compilação completa** ([0003](decisoes/0003-extracao-incremental.md)) |

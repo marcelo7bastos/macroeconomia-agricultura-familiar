@@ -22,3 +22,7 @@ Thumbs.db
 # Quarto (site)
 /_site/
 /.quarto/
+
+# Staging é recriado a partir do raw (decisão 0003)
+/data/staging/*
+!/data/staging/.gitkeep

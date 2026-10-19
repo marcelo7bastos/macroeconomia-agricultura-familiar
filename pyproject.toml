@@ -6,7 +6,9 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "httpx>=0.28.1",
     "pyyaml>=6.0.3",
+    "tenacity>=9.2.1",
 ]
 
 [dependency-groups]
@@ -32,6 +34,9 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "PL", "RUF"]
+# Códigos HTTP e formatos fixos são mais legíveis literais; funções de orquestração recebem
+# vários parâmetros nomeados.
+ignore = ["PLR2004", "PLR0913", "PLR0917"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004"]

@@ -1,0 +1,43 @@
+name: API do IBGE
+
+# Confere se o runner do GitHub alcança as APIs do IBGE e se o catálogo bate com os metadados.
+# Fica separado do CI para que uma instabilidade do IBGE não bloqueie PRs de código.
+
+on:
+  pull_request:
+    paths:
+      - "src/macroaf/extract/**"
+      - "config/series.yaml"
+      - ".github/workflows/api-ibge.yml"
+  schedule:
+    - cron: "17 9 * * 1" # segundas, 06:17 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependências
+        run: uv sync --locked
+      - name: Conferir catálogo e meses pendentes
+        run: uv run python -m macroaf.extract.atualizar --verificar
+      - name: Baixar um mês de amostra (sem gravar no repositório)
+        run: |
+          uv run python - <<'PY'
+          from macroaf.catalogo import carregar_catalogo
+          from macroaf.extract.cliente import Cliente
+          from macroaf.extract.sidra import baixar_mes, registros
+
+          catalogo = carregar_catalogo()
+          indice = catalogo.indices["ipca15"]
+          tabela = next(t for t in indice.tabelas if t.tabela == 7062)
+          with Cliente() as cliente:
+              url, conteudo = baixar_mes(cliente, catalogo.fontes[indice.fonte], tabela, "2026-01")
+          print(url, len(registros(conteudo)), "registros")
+          PY

@@ -23,10 +23,36 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-010 · 2026-10-19 · Subitem com `nivel = 0` na tabela 1387
+- **Contexto:** reconferência das fichas na API (#3), pelo `explorador-sidra`.
+- **O que aconteceu:** `4103031.Conjunto infantil` (id 12409) da 1387 vem com `nivel = 0`, o mesmo
+  do índice geral e dos grupos nessa tabela; quem contava pelo `nivel` achava 383 subitens, e são 384.
+- **Lição:** confirma a A-001 com um caso concreto; a contagem pelo código IBGE é a única confiável.
+- **Promovida para:** `PLANEJAMENTO.md` 3.1 (contagens corrigidas); caso de teste pedido na #4.
+
+### A-009 · 2026-10-19 · Variável declarada nos metadados pode vir vazia
+- **Contexto:** reconferência das fichas na API (#3).
+- **O que aconteceu:** a 1120 (acumulado em 12 meses) consta nos metadados da 1705 e da 7062, mas
+  vem `...` em todas as categorias de 2012-02 a 2017-02 (1705) e de 2020-02 a 2020-12 (7062).
+- **Lição:** variável listada nos metadados não garante dado. A transformação trata `...` como
+  ausente (nunca zero) e o acumulado em 12 meses é calculado e conferido com a 3065.
+- **Promovida para:** comentários em `config/series.yaml`; `PLANEJAMENTO.md` 3.1; ficha; validação
+  pedida na #5.
+
+### A-008 · 2026-10-19 · Limite de 50 mil valores por requisição no SIDRA
+- **Contexto:** reconferência das fichas na API (#3).
+- **O que aconteceu:** a API de valores conta variáveis × períodos × categorias (mesmo sem dado) e,
+  acima de 50.000, devolve HTTP 400 em texto puro ("Quantidade de valores solicitados: ... excedeu o
+  limite: 50000").
+- **Lição:** o extrator pede um mês por requisição (cerca de 1.800 valores na 7062); o erro 400 é
+  definitivo e não deve ser retentado.
+- **Promovida para:** teste `test_erro_400_do_sidra_vira_erro_definitivo_sem_retentativa`; ficha
+  `docs/fontes/ibge-sidra.md`.
+
 ### A-007 · 2026-10-19 · Troca de POF chega ao IPCA-15 um mês depois do IPCA
 - **Contexto:** catálogo de séries (#2), conferindo as versões de POF por tabela.
 - **O que aconteceu:** as estruturas novas entram no IPCA em jul/2006, jan/2012 e jan/2020, e no
-  IPCA-15 em ago/2006, fev/2012 e fev/2020 (fontes na ficha; fev/2012 ainda sem fonte primária).
+  IPCA-15 em ago/2006, fev/2012 e fev/2020 (fontes na ficha; fev/2012 confirmado depois pelos metadados da 1705, em #3).
 - **Lição:** ao montar o catálogo de outro índice de preços (IPCA cheio, INPC), não copie as datas
   do IPCA-15; confira o início de cada tabela pelos metadados.
 - **Promovida para:** teste `test_ipca15_tabelas_e_pofs`; ficha `docs/indices/ipca15.md`;
