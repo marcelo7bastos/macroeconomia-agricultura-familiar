@@ -23,6 +23,15 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-007 · 2026-10-19 · Troca de POF chega ao IPCA-15 um mês depois do IPCA
+- **Contexto:** catálogo de séries (#2), conferindo as versões de POF por tabela.
+- **O que aconteceu:** as estruturas novas entram no IPCA em jul/2006, jan/2012 e jan/2020, e no
+  IPCA-15 em ago/2006, fev/2012 e fev/2020 (fontes na ficha; fev/2012 ainda sem fonte primária).
+- **Lição:** ao montar o catálogo de outro índice de preços (IPCA cheio, INPC), não copie as datas
+  do IPCA-15; confira o início de cada tabela pelos metadados.
+- **Promovida para:** teste `test_ipca15_tabelas_e_pofs`; ficha `docs/indices/ipca15.md`;
+  conferência automática do catálogo contra os metadados prevista na #3.
+
 ### A-006 · 2026-10-19 · Instruções em `AGENTS.md`; `CLAUDE.md` só importa
 - **Contexto:** troca de `CLAUDE.md` por `AGENTS.md` (#22).
 - **O que aconteceu:** `AGENTS.md` é lido por vários agentes de código, mas o Claude Code carrega

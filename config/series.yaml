@@ -1,0 +1,74 @@
+# Catálogo de séries do projeto.
+#
+# Cada índice descreve as tabelas de onde vem e as variáveis que usa. Incluir um índice novo é
+# acrescentar uma entrada aqui e a ficha em docs/indices/ (ver a skill /nova-serie).
+#
+# Convenções:
+# - Períodos no formato AAAA-MM; `fim: null` significa "até o último período publicado".
+# - `papel: dados` é tabela que alimenta o fato; `papel: referencia` é tabela oficial usada só para
+#   validar o que for calculado.
+# - As tabelas de dados de um índice se sucedem mês a mês, sem lacuna nem sobreposição.
+# - `nome` das variáveis é o nome da coluna no staging.
+
+versao_esquema: 1
+
+fontes:
+  ibge_sidra:
+    nome: IBGE - Sistema IBGE de Recuperação Automática (SIDRA)
+    api_valores: https://apisidra.ibge.gov.br/values
+    api_metadados: https://servicodados.ibge.gov.br/api/v3/agregados
+    ficha: docs/fontes/ibge-sidra.md
+
+indices:
+  ipca15:
+    nome: IPCA-15
+    descricao: Índice Nacional de Preços ao Consumidor Amplo 15
+    fonte: ibge_sidra
+    frequencia: mensal
+    ficha: docs/indices/ipca15.md
+    classificacao: 315
+
+    variaveis:
+      355: {nome: variacao_mensal, descricao: Variação mensal, unidade: "%"}
+      356: {nome: variacao_acum_ano, descricao: Variação acumulada no ano, unidade: "%"}
+      357: {nome: peso, descricao: Peso mensal, unidade: "%"}
+      1117: {nome: numero_indice, descricao: Número-índice, unidade: número-índice}
+      1118: {nome: variacao_acum_3m, descricao: Variação acumulada em 3 meses, unidade: "%"}
+      1119: {nome: variacao_acum_6m, descricao: Variação acumulada em 6 meses, unidade: "%"}
+      1120: {nome: variacao_acum_12m, descricao: Variação acumulada em 12 meses, unidade: "%"}
+
+    tabelas:
+      - tabela: 1646
+        papel: dados
+        inicio: 2000-05
+        fim: 2006-07
+        versao_pof: 1995-96
+        variaveis: [355, 356, 357]
+
+      - tabela: 1387
+        papel: dados
+        inicio: 2006-08
+        fim: 2012-01
+        versao_pof: 2002-03
+        variaveis: [355, 356, 357]
+
+      - tabela: 1705
+        papel: dados
+        inicio: 2012-02
+        fim: 2020-01
+        versao_pof: 2008-09
+        variaveis: [355, 356, 1120, 357]
+
+      - tabela: 7062
+        papel: dados
+        inicio: 2020-02
+        fim: null
+        versao_pof: 2017-18
+        variaveis: [355, 356, 1120, 357]
+
+      - tabela: 3065
+        papel: referencia
+        inicio: 2000-05
+        fim: null
+        classificacao: null # só o índice geral
+        variaveis: [1117, 355, 1118, 1119, 356, 1120]
