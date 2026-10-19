@@ -201,7 +201,49 @@ cobre**. Regras (A-018):
 - As exceções de 2003-03 e 2004-08 na 1646 existem só porque a validação de um passo usa o mês
   anterior (errado na fonte) como âncora.
 
-## 7. Registro de descobertas
+## 7. Harmonização entre POFs e série longa
+
+Gerada por `uv run python -m macroaf.transform.harmonizacao`, que atualiza
+[`reference/map_harmonizacao_ipca15.csv`](../reference/map_harmonizacao_ipca15.csv) (preservando o
+que foi revisado) e grava `serie_longa_ipca15` no staging. Decisão
+[0005](decisoes/0005-na-duvida-quebra.md).
+
+### 7.1 Na dúvida, quebra
+
+Cada categoria de uma tabela é ligada à da tabela seguinte com um tipo: `identico`, `renomeado`,
+`fundido`, `dividido`, `descontinuado` ou `novo`. Só `identico` e `renomeado` emendam a série, e
+só quando a ligação é **automática** (com prova) ou **revisada** por uma pessoa. Uma proposta não
+revisada conta como quebra. Encerrar uma série nunca esconde nada; emendar errado esconde.
+
+| Situação | Quando | Exemplo |
+|---|---|---|
+| `identico`, automático | mesmo código IBGE e mesmo id SIDRA (o id identifica a definição, A-012) | `1101002` Arroz em todas as tabelas |
+| `renomeado`, automático | mesmo código, id novo, nome igual depois de tirar acentos e pontuação | `1101073` "Feijão - carioca (rajado))" → "(rajado)" |
+| `renomeado`, proposto | mesmo código, id novo, nome diferente | `1111004` Leite pasteurizado → Leite longa vida |
+| `fundido` ou `dividido`, proposto | código some e outro aparece com nome aparentado no mesmo item, ou com nome igual em qualquer lugar | peixes regionais → `1108006` Peixe; `8102005` Livro → didático e não didático |
+| `descontinuado` ou `novo`, automático | código some ou aparece sem candidato | `1101079` Milho em grão (só na 1646) |
+
+O parentesco de nomes conta as palavras do nome menor que aparecem no maior, sem as palavras
+vazias ("de", "e", "para"), e exige mais da metade das palavras do maior ou todas as do menor. Uma
+palavra genérica em comum ("Peixe - cavalinha" e "Peixe - linguado") não basta (A-019).
+
+### 7.2 Série longa
+
+`serie_longa_ipca15` tem as linhas do fato com: `serie_id` (código IBGE e POF da primeira
+categoria da série, estável quando entra POF nova), `inicio_serie`, `fim_serie`, `entrada` e
+`saida` (início ou fim dos dados, `novo`, `descontinuado`, o tipo que interrompeu a série, ou
+"proposta não revisada"). Invariantes conferidos a cada execução: cada linha do fato aparece uma
+vez, uma série tem um valor por mês e sem lacuna, e não muda de nível hierárquico.
+
+### 7.3 Nem os subgrupos são totalmente estáveis (A-020)
+
+Grupos são idênticos em todas as trocas. Mas o subgrupo `72` muda duas vezes ("Recreação, fumo e
+filmes" → "Recreação, fumo e fotografia" → "Recreação e fumo"), o item `7203` Fotografia e
+filmagem some na 7062 e o item `1117` Alimentos prontos some na 1387. Por isso subgrupos e itens
+passam pela mesma regra dos subitens, e a afirmação "até subgrupo a série sai direto" (seção 4.3 do
+planejamento) vale só depois da revisão desses casos.
+
+## 8. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é

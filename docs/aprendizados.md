@@ -25,6 +25,26 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-020 · 2026-10-19 · Nem os subgrupos são totalmente estáveis entre POFs
+- **Contexto:** mapa de harmonização (#6).
+- **O que aconteceu:** grupos são idênticos em todas as trocas, mas o subgrupo `72` muda de id e
+  de nome duas vezes ("Recreação, fumo e filmes" → "... e fotografia" → "Recreação e fumo"), o
+  item `1117` Alimentos prontos some na 1387 e o item `7203` Fotografia e filmagem some na 7062.
+- **Lição:** o planejamento dizia que até subgrupo a série sai direto; na prática subgrupos e itens
+  passam pela mesma regra dos subitens.
+- **Promovida para:** `macroaf.transform.harmonizacao` (todos os níveis no mapa);
+  `METODOLOGIA.md` 7.3; `PLANEJAMENTO.md` 4.3.
+
+### A-019 · 2026-10-19 · Similaridade de texto pareia nomes sem relação
+- **Contexto:** primeira proposta do mapa de harmonização (#6).
+- **O que aconteceu:** `difflib` com limite de 0,6 propôs "Melão" → "Telha", "Curso supletivo" →
+  "Chuveiro elétrico" e 25 pares entre espécies de peixe diferentes (253 propostas ao todo).
+- **Lição:** comparar palavras, não letras: contar as palavras do nome menor presentes no maior,
+  sem palavras vazias, exigir mais da metade das do maior (ou todas as do menor) e o mesmo item;
+  entre itens diferentes, só nome igual. Resultado: 115 propostas, todas plausíveis.
+- **Promovida para:** `parentesco` em `macroaf.transform.harmonizacao`; teste
+  `test_parentesco_de_nomes`; `METODOLOGIA.md` 7.1.
+
 ### A-018 · 2026-10-19 · Exceção estreita, contada e com limite empírico separado
 - **Contexto:** revisão das validações (#5) pelo `revisor-metodologico`, com erros injetados.
 - **O que aconteceu:** (1) exceções da 3065 cobriam o mês inteiro de todos os acumulados, e um

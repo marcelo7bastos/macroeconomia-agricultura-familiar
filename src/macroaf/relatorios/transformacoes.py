@@ -37,9 +37,9 @@ DUVIDAS = [
         "METODOLOGIA.md 6.2 · A-013",
     ),
     (
-        "Quais das 87 categorias com id novo continuam a mesma série (renomeada) e quais são "
-        "quebra de série.",
-        "issue #6 · A-012",
+        "Quais propostas de harmonização (mesmo código com id novo, fusões e divisões) emendam a "
+        "série e quais são quebra: aguardam revisão do mantenedor.",
+        "issue #6 · A-012 · seção Harmonização",
     ),
     (
         "Se o projeto reporta ao IBGE os erros publicados que encontrou, em especial os da 3065.",
@@ -167,6 +167,38 @@ def _etapas(f: dict) -> list[dict]:
                 ("Sentinelas alteradas", _n(f["sentinelas"])),
             ],
         },
+        *(
+            [
+                {
+                    "id": "serie",
+                    "titulo": "Série longa",
+                    "executiva": "Emenda as tabelas de POFs diferentes numa série só, mas apenas onde há prova de que a categoria é a mesma. Na dúvida, a série quebra.",
+                    "entrada": "fato, dim_classificacao e o mapa de harmonização (reference/map_harmonizacao_"
+                    + f["indice"]["codigo"]
+                    + ".csv).",
+                    "regra": "Mesmo código e mesmo id: continua. Id novo só com grafia diferente: continua. Qualquer outra mudança vira proposta e só continua depois de revisada por uma pessoa; até lá, é quebra marcada.",
+                    "saida": "serie_longa: as linhas do fato com serie_id, início e fim da série e como ela entrou e saiu (início dos dados, novo, fundido, dividido, proposta não revisada...).",
+                    "comando": "uv run python -m macroaf.transform.harmonizacao",
+                    "codigo": "src/macroaf/transform/harmonizacao.py",
+                    "numeros": [
+                        ("Séries", _n(f["harmonizacao"]["series"]["total"])),
+                        ("Linhas no mapa", _n(f["harmonizacao"]["linhas"])),
+                        (
+                            "Propostas a revisar",
+                            _n(
+                                sum(
+                                    1
+                                    for p in f["harmonizacao"]["propostas"]
+                                    if p["situacao"] == "proposto"
+                                )
+                            ),
+                        ),
+                    ],
+                }
+            ]
+            if f.get("harmonizacao")
+            else []
+        ),
         {
             "id": "marts",
             "titulo": "Marts (a fazer)",
@@ -221,6 +253,18 @@ def _svg_fluxo(f: dict) -> str:
             "validacoes", 670, 121, 140, "validações", f"{sum(v['ok'] for v in f['validacoes'])} ok"
         ),
         no("marts", 870, 121, 120, "marts", "a fazer", pendente=True),
+        no(
+            "serie",
+            670,
+            21,
+            140,
+            "série longa",
+            f"{_n(f['harmonizacao']['series']['total'])} séries",
+        )
+        if f.get("harmonizacao")
+        else "",
+        seta(590, 140, 666, 60, "mapa") if f.get("harmonizacao") else "",
+        seta(810, 55, 866, 135, "", pendente=True) if f.get("harmonizacao") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
         seta(330, 150, 416, 150, "valores"),
@@ -337,6 +381,14 @@ def _secao_resumo(f: dict) -> str:
         f"Conferimos tudo com {len(f['validacoes'])} validações ({ok} ok) e documentamos {len(f['excecoes'])} exceções explicadas.",
         "Ainda não calculamos nenhuma inflação: todos os números do fato são oficiais. Os cálculos feitos até agora servem só para conferir.",
     ]
+    if f.get("harmonizacao"):
+        h = f["harmonizacao"]
+        a_revisar = sum(1 for p in h["propostas"] if p["situacao"] == "proposto")
+        feito.insert(
+            3,
+            f"Ligamos as categorias entre POFs ({_n(h['linhas'])} ligações) e montamos {_n(h['series']['total'])} séries longas; "
+            f"{_n(a_revisar)} ligações aguardam revisão e, até lá, contam como quebra.",
+        )
     quem = [
         ("macroaf.extract", "baixa e guarda o raw"),
         ("macroaf.transform", "monta dim, fato e referência"),
@@ -383,6 +435,100 @@ def _secao_juncao(f: dict) -> str:
 </section>"""
 
 
+def _secao_harmonizacao(f: dict) -> str:
+    h = f.get("harmonizacao")
+    if not h:
+        return ""
+    transicoes = sorted({c["transicao"] for c in h["contagem"]})
+    tipos = ["identico", "renomeado", "fundido", "dividido", "descontinuado", "novo"]
+    linhas_contagem = []
+    for tr in transicoes:
+        celulas = []
+        for tipo in tipos:
+            auto = sum(
+                c["n"]
+                for c in h["contagem"]
+                if c["transicao"] == tr
+                and c["tipo_correspondencia"] == tipo
+                and c["situacao"] != "proposto"
+            )
+            prop = sum(
+                c["n"]
+                for c in h["contagem"]
+                if c["transicao"] == tr
+                and c["tipo_correspondencia"] == tipo
+                and c["situacao"] == "proposto"
+            )
+            texto = _n(auto) if auto else "·"
+            if prop:
+                texto += f' <span class="selo parcial">+{_n(prop)} a revisar</span>'
+            celulas.append(texto)
+        linhas_contagem.append([f"POF {tr}", *celulas])
+    s = h["series"]
+    niveis = ["geral", "grupo", "subgrupo", "item", "subitem"]
+    linhas_series = [[n, _n(s["por_nivel"][n]), _n(s["completas_por_nivel"][n])] for n in niveis]
+
+    def linha(p: dict) -> list[str]:
+        peso = lambda v: "·" if v is None else str(v).replace(".", ",")  # noqa: E731
+        situacao = (
+            f'<span class="selo sim">revisado ({escape(p["revisor"] or "")})</span>'
+            if p["situacao"] == "revisado"
+            else '<span class="selo parcial">a revisar</span>'
+            if p["situacao"] == "proposto"
+            else '<span class="selo nao">automático</span>'
+        )
+        return [
+            f"<code>{escape(p['id'])}</code>",
+            escape(p["transicao"]),
+            escape(p["origem"] or "·"),
+            escape(p["destino"] or "·"),
+            f"<b>{escape(p['tipo'])}</b>",
+            situacao,
+            f"{peso(p['peso_origem_fim'])} → {peso(p['peso_destino_inicio'])}",
+            escape(p["criterio"]),
+        ]
+
+    filtros = "".join(
+        f'<button type="button" class="aba" data-transicao="{escape(tr)}" id="transicao-{i}">{escape(tr)}</button>'
+        for i, tr in enumerate(transicoes)
+    )
+    cab = [
+        "Id",
+        "POF",
+        "Origem",
+        "Destino",
+        "Tipo sugerido",
+        "Situação",
+        "Peso fim → início",
+        "Critério",
+    ]
+    return f"""
+<section id="harmonizacao" class="secao">
+  <h2>Harmonização entre POFs</h2>
+  <p>A cada troca de POF o IBGE muda parte das categorias. Para montar a série longa, cada categoria de uma tabela é ligada à da tabela seguinte com um tipo: <b>idêntico</b> ou <b>renomeado</b> (a série continua), <b>fundido</b> ou <b>dividido</b> (a série continua só no nível de cima e quebra no detalhe) e <b>descontinuado</b> ou <b>novo</b> (a série termina ou começa).</p>
+  <p><b>Na dúvida, quebra.</b> Uma ligação só emenda a série se houver prova: o mesmo id SIDRA, ou só a grafia mudou. Todo o resto é proposta e só emenda depois de revisada por uma pessoa. Encerrar uma série nunca esconde nada; emendar errado esconde.</p>
+  {_tabela_html(["Troca", *tipos], linhas_contagem)}
+  <h3>Séries longas hoje</h3>
+  <p>{_n(s["linhas"])} linhas em {_n(s["total"])} séries. "Completas" vão do primeiro ao último mês dos dados sem quebra.</p>
+  {_tabela_html(["Nível", "Séries", "Completas"], linhas_series)}
+  <h3>Propostas para revisão</h3>
+  <p>Cada linha é uma ligação sugerida pelas regras, com a evidência: nomes, ids, critério e o peso da categoria no último mês da tabela antiga e no primeiro da nova. Para revisar, responda com os ids: os que aprova e os que são quebra.</p>
+  <div class="controles">
+    <label for="busca-propostas">Buscar:</label>
+    <input type="search" id="busca-propostas" placeholder="nome ou código">
+    <div class="abas" role="group" aria-label="Filtrar por troca de POF">
+      <button type="button" class="aba ativa" data-transicao="todas" id="transicao-todas">Todas</button>{filtros}
+    </div>
+  </div>
+  {_tabela_html(cab, [linha(p) for p in h["propostas"]], "propostas")}
+  <details>
+    <summary>O que some e o que aparece sem candidato ({_n(len(h["entram_saem"]))} categorias)</summary>
+    <p>Use esta lista para achar fusões que as regras não viram (por exemplo, "Massa para pizza" e "Massa semipreparada").</p>
+    {_tabela_html(cab, [linha(p) for p in h["entram_saem"]], "propostas")}
+  </details>
+</section>"""
+
+
 def _secao_existe(f: dict) -> str:
     planejados = [
         [
@@ -401,7 +547,7 @@ def _secao_existe(f: dict) -> str:
   <ul class="notas">
     <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Calcular onde falta é tarefa da #7.</li>
     <li>Agregação: o projeto não agrega nada que guarde. As validações recalculam médias ponderadas, acumulados e o número-índice só para conferir com o IBGE.</li>
-    <li>Série longa: as quatro tabelas estão lado a lado, cada uma com a sua POF. Emendar abaixo do subgrupo depende da harmonização (#6).</li>
+    <li>Série longa: emenda as tabelas só onde há prova de que a categoria é a mesma; o resto fica como quebra marcada até a revisão humana (seção Harmonização).</li>
   </ul>
   <h3>Indicadores planejados</h3>
   {_tabela_html(["Indicador", "Definição", "Teste previsto", "Situação"], planejados)}
@@ -477,6 +623,7 @@ def _secao_manter(f: dict) -> str:
   <pre><code>uv run python -m macroaf.extract.atualizar
 uv run python -m macroaf.transform.{codigo}
 uv run python -m macroaf.validate.{codigo}
+uv run python -m macroaf.transform.harmonizacao --indice {codigo}
 uv run python -m macroaf.relatorios.transformacoes --indice {codigo}</code></pre>
   <p>Um teste regera a página e falha se o arquivo do repositório estiver diferente. Toda etapa que muda uma transformação regera a página no mesmo PR. Um índice novo ganha a sua página com <code>--indice</code>.</p>
   <p class="tecnico">Degraus de explicação usados aqui: texto claro (resumo), diagramas (fluxo e linha do tempo) e página interativa. O degrau de vídeo ainda não foi feito.</p>
@@ -568,6 +715,10 @@ table.excecoes td:nth-child(7) { min-width: 260px; }
 .selo.estrutural { background: var(--destaque-fundo); color: var(--destaque); } .selo.fonte { background: var(--parcial-fundo); color: var(--parcial); }
 .rastreio { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 .rastreio .bloco pre { margin: 0; overflow-x: auto; font-size: 0.78rem; line-height: 1.45; }
+input[type="search"] { font: inherit; padding: 6px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--superficie); color: var(--tinta); min-width: 0; width: 16rem; max-width: 100%; }
+details { background: var(--superficie); border: 1px solid var(--linha); border-radius: 6px; padding: 12px 16px; display: grid; gap: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+table.propostas td:nth-child(8) { min-width: 220px; color: var(--suave); }
 .notas { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--suave); max-width: 80ch; }
 ol.descobertas { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 ol.descobertas .cod { display: inline-block; min-width: 4.2em; color: var(--destaque); font-weight: 600; }
@@ -616,6 +767,23 @@ document.querySelectorAll('[data-filtro]').forEach((b) => b.addEventListener('cl
   });
 }));
 
+let transicaoAtiva = 'todas';
+const busca = document.getElementById('busca-propostas');
+function filtrarPropostas() {
+  const termo = (busca ? busca.value : '').toLowerCase();
+  document.querySelectorAll('table.propostas tbody tr').forEach((tr) => {
+    const texto = tr.textContent.toLowerCase();
+    const naTransicao = transicaoAtiva === 'todas' || tr.children[1].textContent === transicaoAtiva;
+    tr.hidden = !(naTransicao && (!termo || texto.includes(termo)));
+  });
+}
+document.querySelectorAll('[data-transicao]').forEach((b) => b.addEventListener('click', () => {
+  transicaoAtiva = b.dataset.transicao;
+  document.querySelectorAll('[data-transicao]').forEach((o) => o.classList.toggle('ativa', o === b));
+  filtrarPropostas();
+}));
+if (busca) busca.addEventListener('input', filtrarPropostas);
+
 const botoesVisao = document.querySelectorAll('[data-visao]');
 function definirVisao(v) {
   document.body.classList.toggle('executiva', v === 'executiva');
@@ -662,7 +830,7 @@ def renderizar(f: dict) -> str:
     </div>
     <nav class="indice" aria-label="Seções">
       <a href="#resumo">Em resumo</a><a href="#fluxo">Caminho dos dados</a><a href="#tempo">Linha do tempo</a>
-      <a href="#juncao">Como as tabelas se juntam</a><a href="#existe">O que existe</a>
+      <a href="#juncao">Como as tabelas se juntam</a><a href="#harmonizacao">Harmonização</a><a href="#existe">O que existe</a>
       <a href="#validacoes">Validações</a><a href="#descobertas">Descobertas</a><a href="#manter">Manter atualizado</a>
     </nav>
   </header>
@@ -686,6 +854,7 @@ def renderizar(f: dict) -> str:
     {_tabela_html(["Tabela", "Papel", "Período", "Variáveis", "Categorias (grupo / subgrupo / item / subitem)", "Meses no raw"], [[str(t["tabela"]), "dados" if t["papel"] == "dados" else "referência", f"{_mes(t['inicio'])} a {_mes(t['fim'])}" + (" (aberta)" if t["aberta"] else ""), ", ".join(f"{v['codigo']} {v['nome']}" for v in t["variaveis"]), " / ".join(str(t["categorias"][n]) for n in ["grupo", "subgrupo", "item", "subitem"]) if t["papel"] == "dados" else "só o geral", _n(t["meses_raw"])] for t in f["tabelas"]])}
   </section>
   {_secao_juncao(f)}
+  {_secao_harmonizacao(f)}
   {_secao_existe(f)}
   {_secao_validacoes(f)}
   {_secao_descobertas(f)}

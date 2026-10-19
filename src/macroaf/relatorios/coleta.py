@@ -11,12 +11,14 @@ import gzip
 import json
 import re
 from dataclasses import asdict
+from itertools import pairwise
 
 import pandas as pd
 
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
+from macroaf.transform.harmonizacao import caminho_mapa, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
 from macroaf.validate.ipca15 import carregar_configuracao, validar
 
@@ -81,6 +83,94 @@ def coletar_agentes() -> list[dict]:
 def _amostra_raw(armazem: ArmazemRaw, tabela: int, periodo: str, codigo_sidra: int) -> list[dict]:
     dados = json.loads(armazem.ler(armazem.vigente(tabela, periodo)))
     return [r for r in dados[1:] if r.get("D4C") == str(codigo_sidra)]
+
+
+def _texto(valor) -> str | None:
+    return None if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
+
+
+def _coletar_harmonizacao(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame) -> dict:
+    mapa = ler_mapa(indice)
+    longa = montar_serie_longa(fato, dim, mapa)
+    pofs = {t.tabela: t.versao_pof for t in indice.tabelas_dados}
+    mapa = mapa.assign(
+        transicao=[
+            f"{pofs.get(o, '?')} → {pofs.get(d, '?')}"
+            for o, d in zip(
+                mapa.tabela_origem.fillna(-1).astype(int),
+                mapa.tabela_destino.fillna(-1).astype(int),
+                strict=True,
+            )
+        ]
+    )
+    # Transição da linha "novo" (sem origem): a tabela anterior à de destino.
+    tabelas = [t.tabela for t in indice.tabelas_dados]
+    anterior = {d: o for o, d in pairwise(tabelas)}
+    mapa.loc[mapa.tabela_origem.isna(), "transicao"] = [
+        f"{pofs[anterior[int(d)]]} → {pofs[int(d)]}"
+        for d in mapa.loc[mapa.tabela_origem.isna(), "tabela_destino"]
+    ]
+    contagem = (
+        mapa.groupby(["transicao", "situacao", "tipo_correspondencia"])
+        .size()
+        .reset_index(name="n")
+        .to_dict("records")
+    )
+
+    def registro(r) -> dict:
+        return {
+            "id": f"P-{_texto(r.tabela_origem) or '-'}-{_texto(r.codigo_sidra_origem) or '-'}-"
+            f"{_texto(r.codigo_sidra_destino) or '-'}",
+            "transicao": r.transicao,
+            "nivel": r.nivel_hierarquico,
+            "tipo": r.tipo_correspondencia,
+            "situacao": r.situacao,
+            "origem": None
+            if pd.isna(r.codigo_sidra_origem)
+            else f"{r.codigo_ibge_origem} {r.nome_origem} (id {int(r.codigo_sidra_origem)})",
+            "destino": None
+            if pd.isna(r.codigo_sidra_destino)
+            else f"{r.codigo_ibge_destino} {r.nome_destino} (id {int(r.codigo_sidra_destino)})",
+            "criterio": r.criterio,
+            "peso_origem_fim": None
+            if pd.isna(r.peso_origem_fim)
+            else round(float(r.peso_origem_fim), 4),
+            "peso_destino_inicio": None
+            if pd.isna(r.peso_destino_inicio)
+            else round(float(r.peso_destino_inicio), 4),
+            "revisor": _texto(r.revisor),
+        }
+
+    revisar = mapa[mapa.situacao.isin(["proposto", "revisado"])].sort_values(
+        ["transicao", "codigo_ibge_origem"]
+    )
+    entram_saem = mapa[mapa.tipo_correspondencia.isin(["descontinuado", "novo"])].sort_values(
+        ["transicao", "codigo_ibge_origem", "codigo_ibge_destino"]
+    )
+    series = longa.drop_duplicates("serie_id")
+    completas = series[
+        (series.inicio_serie == fato.mes.min()) & (series.fim_serie == fato.mes.max())
+    ]
+    return {
+        "linhas": len(mapa),
+        "contagem": contagem,
+        "propostas": [registro(r) for r in revisar.itertuples()],
+        "entram_saem": [registro(r) for r in entram_saem.itertuples()],
+        "series": {
+            "total": int(series.serie_id.nunique()),
+            "por_nivel": series.nivel_hierarquico.value_counts()
+            .reindex(NIVEIS)
+            .fillna(0)
+            .astype(int)
+            .to_dict(),
+            "completas_por_nivel": completas.nivel_hierarquico.value_counts()
+            .reindex(NIVEIS)
+            .fillna(0)
+            .astype(int)
+            .to_dict(),
+            "linhas": len(longa),
+        },
+    }
 
 
 def coletar(indice: Indice) -> dict:
@@ -169,6 +259,9 @@ def coletar(indice: Indice) -> dict:
             }
         )
 
+    harmonizacao = (
+        _coletar_harmonizacao(indice, dim, fato) if caminho_mapa(indice).exists() else None
+    )
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")
     limites = configuracao.limites.to_dict("records")
@@ -220,5 +313,6 @@ def coletar(indice: Indice) -> dict:
         "decisoes": coletar_decisoes(),
         "indicadores_planejados": coletar_indicadores_planejados(),
         "agentes": coletar_agentes(),
+        "harmonizacao": harmonizacao,
         "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
     }

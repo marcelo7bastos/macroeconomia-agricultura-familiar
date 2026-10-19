@@ -11,6 +11,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- `map_harmonizacao` do IPCA-15 (`reference/map_harmonizacao_ipca15.csv`) e série longa
+  (`python -m macroaf.transform.harmonizacao`): ligações automáticas só com prova, propostas com
+  evidência para revisão humana, quebras marcadas; seção de revisão na página de transformações
+  (decisão 0005, #6).
 - Página de transformações `docs/transformacoes/ipca15.html`, gerada dos dados
   (`python -m macroaf.relatorios.transformacoes`), com texto claro, diagramas e etapas
   interativas; teste exige que esteja em dia (decisão 0004, #5).

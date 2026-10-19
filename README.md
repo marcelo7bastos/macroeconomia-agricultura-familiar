@@ -37,6 +37,7 @@ uv run python -m macroaf.extract.atualizar --verificar   # só confere o que fal
 uv run python -m macroaf.extract.atualizar               # baixa
 uv run python -m macroaf.transform.ipca15                # staging (dim, fato e referência)
 uv run python -m macroaf.validate.ipca15                 # validações (falha = não publicar)
+uv run python -m macroaf.transform.harmonizacao          # mapa entre POFs e série longa
 uv run python -m macroaf.relatorios.transformacoes       # página docs/transformacoes/ipca15.html
 ```
 
