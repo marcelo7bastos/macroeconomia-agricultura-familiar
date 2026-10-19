@@ -11,6 +11,11 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- `fato_ipca15` e `ref_ipca15_geral` (`python -m macroaf.transform.ipca15`) e as validações da
+  seção 4.4 (`python -m macroaf.validate.ipca15`), com limites de arredondamento analíticos e
+  exceções documentadas em `reference/excecoes_validacao_ipca15.csv` (#5).
+- `docs/METODOLOGIA.md`: identificação das categorias (código IBGE × id SIDRA), hierarquia,
+  valores e validações, com as descobertas A-012 a A-017 (#5).
 - `dim_classificacao` do IPCA-15 (`python -m macroaf.transform.classificacao`): 1.951 categorias
   das quatro tabelas, hierarquia derivada do código IBGE, contrato `pandera` e testes de
   contagem e de cadeia completa até o grupo. Dependências `pandas`, `pyarrow` e `pandera` (#4).

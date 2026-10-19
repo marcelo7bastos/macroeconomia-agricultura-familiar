@@ -131,8 +131,11 @@ data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 - Gerada por `uv run python -m macroaf.transform.classificacao` a partir dos metadados no raw;
   contrato `pandera` em `macroaf.transform.classificacao.ESQUEMA`.
 
-**`fato_ipca15`**: formato longo.
-`mes | versao_pof | codigo_sidra | codigo_ibge | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
+**`fato_ipca15`**: uma linha por mês e categoria, variáveis em colunas.
+`mes | versao_pof | tabela_sidra | codigo_sidra | codigo_ibge | nivel_hierarquico | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
+
+Ligado à `dim_classificacao` por `(tabela_sidra, codigo_sidra)` (METODOLOGIA.md, 2.2).
+`ref_ipca15_geral` guarda a tabela 3065 (número-índice e acumulados do geral) para as validações.
 
 **`map_harmonizacao`**: correspondência entre categorias de POFs consecutivas.
 `codigo_ibge_origem | versao_pof_origem | codigo_ibge_destino | versao_pof_destino | tipo_correspondencia`
@@ -152,6 +155,8 @@ item, subitem). O modelo Power BI anterior já usava o subitem como folha da hie
   resultado revisado fica em `reference/` e é versionado.
 
 ### 4.4 Validações (bloqueiam a publicação se falharem)
+
+Limites, exceções e as descobertas que os justificam: [METODOLOGIA.md, seção 6](METODOLOGIA.md#6-validações).
 
 1. **Esquema:** colunas, tipos, nulos e faixas plausíveis (variação mensal entre -50% e +50%).
 2. **Pesos:** em cada mês, grupos somam ≈ 100 e filhos somam o peso do pai (tolerância a definir

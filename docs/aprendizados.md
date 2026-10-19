@@ -25,6 +25,54 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-017 · 2026-10-19 · Categorias novas na troca de POF trazem acumulado herdado
+- **Contexto:** calibração do acumulado no ano (#5), pelo `validador-dados`.
+- **O que aconteceu:** na 1387 (ago/2006), categorias novas já vêm com acumulado no ano desde
+  janeiro (ex.: 8104007 com variação -2,14 e acumulado 0,68), sem dados anteriores publicados; na
+  1705 e na 7062 as novas começam com acumulado = variação do mês.
+- **Lição:** não validar o acumulado no ano no primeiro mês de uma categoria nova; a série longa
+  dessas categorias começa na troca de POF.
+- **Promovida para:** regra de um passo da validação `acumulado_ano` (só valida com o mês
+  anterior na mesma tabela); `METODOLOGIA.md` 6.1; pedido na #6.
+
+### A-016 · 2026-10-19 · A 356 das tabelas antigas é mais ruidosa que o arredondamento
+- **Contexto:** calibração do acumulado no ano (#5).
+- **O que aconteceu:** na 1705 e na 7062 a 356 fecha com a 355 dentro do arredondamento; na 1646
+  e na 1387 passa dele (até 0,02 no geral, que também difere da 356 da 3065 em 29 meses).
+- **Lição:** nessas tabelas o limite é o máximo observado por nível, documentado como ruído da
+  fonte; para o índice geral, a referência é a 3065.
+- **Promovida para:** validação `acumulado_ano` (limite por nível); `METODOLOGIA.md` 6.3.
+
+### A-015 · 2026-10-19 · O SIDRA publica erros pontuais
+- **Contexto:** falhas de validação investigadas pelo `validador-dados` (#5), conferidas na API.
+- **O que aconteceu:** 356 trocada ou repetida na 1646 (2003-02, 2004-07); pesos da 1387
+  escalados por 1,000999 (2010-07/08); item 1115 da 1387 incoerente (2011-10/11); subitem 9101022
+  da 1705 com 0,00 contrariando o peso (2014-07/09); acumulados 1118/1119 da 3065 que contradizem
+  o próprio número-índice (2006-04, 2011-11, 2012-11).
+- **Lição:** manter o dado publicado, explicar e listar como exceção do tipo `fonte`; cada exceção
+  é sentinela: se o IBGE corrigir, o teste avisa.
+- **Promovida para:** `reference/excecoes_validacao_ipca15.csv`; teste
+  `test_toda_excecao_ainda_cobre_uma_falha`; `METODOLOGIA.md` 6.4 e 6.5.
+
+### A-014 · 2026-10-19 · Tolerância é o limite analítico de arredondamento
+- **Contexto:** calibração das validações (#5).
+- **O que aconteceu:** tolerâncias fixas (0,01 p.p.) davam falsos positivos (1705, itens com
+  variação grande e subitens de peso pequeno) e não diziam se a diferença era arredondamento.
+- **Lição:** com variações em 2 casas e pesos em 4, o erro máximo de cada conta é calculável; a
+  diferença é comparada com ele. Maior razão observada fora das exceções: 0,97.
+- **Promovida para:** `macroaf.validate.ipca15`; `METODOLOGIA.md` 6.1.
+
+### A-013 · 2026-10-19 · Cesta variável nos in natura da POF 1995-96 (tabela 1646)
+- **Contexto:** falha sistemática da reconciliação na 1646 (#5), investigada pelo `validador-dados`.
+- **O que aconteceu:** os itens 1103, 1105 e 1106 não reproduzem a média ponderada dos subitens
+  (até 6,6 p.p.); os pesos dos subitens seguem o calendário de safra, há 93 pesos zero e o
+  acumulado no ano dos subitens não fecha. O subgrupo 11 reconcilia pelos itens; na 1387 em diante
+  o fenômeno some.
+- **Lição:** na 1646, validar esses itens pelo nível acima e calcular contribuições a partir do
+  item; exceção estrutural, não tolerância.
+- **Promovida para:** exceções `estrutural` em `reference/excecoes_validacao_ipca15.csv`; teste
+  `test_sem_excecoes_os_erros_da_fonte_aparecem`; `METODOLOGIA.md` 6.2; ficha; pedido na #7.
+
 ### A-012 · 2026-10-19 · Mesmo código IBGE, id SIDRA diferente entre POFs
 - **Contexto:** revisão da `dim_classificacao` (#4).
 - **O que aconteceu:** 87 códigos IBGE têm `codigo_sidra` diferente entre tabelas, sempre com o
@@ -107,6 +155,9 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
   *Allowed domains* do ambiente. Sem isso, pare e avise; nunca simule dados. O runner do GitHub
   Actions tem rede própria e é testado na #3.
 - **Promovida para:** ficha `docs/fontes/ibge-sidra.md` e `docs/AGENTES.md`.
+- **Complemento (#5):** mesmo com as APIs liberadas, `ftp.ibge.gov.br`, `www.ibge.gov.br`,
+  `biblioteca.ibge.gov.br` e `agenciadenoticias.ibge.gov.br` seguem bloqueados; para consultar a
+  documentação metodológica do IBGE numa sessão, eles também precisam ser liberados.
 
 ### A-003 · 2026-10-19 · Planilhas por link quebram o pipeline
 - **Contexto:** auditoria do modelo Power BI anterior (`PLANEJAMENTO.md`, 3.3).

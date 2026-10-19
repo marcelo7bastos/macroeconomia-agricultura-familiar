@@ -127,6 +127,12 @@ Campo `nivel` por tabela (só para registro; não use):
 - 2026-10-19: nas amostras (1646 v/all 200005-200208; 1387, 1705 e 7062 v/355 todos os períodos)
   toda categoria do metadado tem valor em todo período, inclusive subitens; a 357 (peso) vem com 4
   casas decimais e as variações com 2.
+- 1646 (POF 1995-96): **cesta variável** nos itens in natura 1103, 1105 e 1106; pesos de subitem
+  sazonais, com 93 zeros, que não reproduzem o item (A-013, `METODOLOGIA.md` 6.2).
+- 1646 e 1387: a 356 tem ruído acima do arredondamento (A-016). Erros pontuais publicados em
+  1646, 1387, 1705 e 3065 estão listados em `METODOLOGIA.md` 6.4 (A-015).
+- Categorias novas na 1387 já vêm com acumulado no ano herdado; na 1705 e na 7062 começam com
+  acumulado = variação do mês (A-017).
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de

@@ -35,11 +35,15 @@ Para atualizar a camada raw com os meses que faltam (decisão
 ```bash
 uv run python -m macroaf.extract.atualizar --verificar   # só confere o que falta
 uv run python -m macroaf.extract.atualizar               # baixa
+uv run python -m macroaf.transform.ipca15                # staging (dim, fato e referência)
+uv run python -m macroaf.validate.ipca15                 # validações (falha = não publicar)
 ```
 
 ## Documentação
 
 - [Planejamento](docs/PLANEJAMENTO.md): escopo, fontes, transformação, indicadores e decisões.
+- [Metodologia](docs/METODOLOGIA.md): como as categorias são identificadas, os valores tratados
+  e os dados validados, com as descobertas que justificam cada regra.
 - [Decisões](docs/decisoes/) e [aprendizados](docs/aprendizados.md): o porquê das escolhas e as
   lições registradas ao longo do projeto.
 - [Fichas de índices](docs/indices/) e [de fontes](docs/fontes/).
