@@ -1,0 +1,2 @@
+# Raw compactado: binário, sem diff textual nem normalização de fim de linha.
+*.json.gz binary

@@ -11,6 +11,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Extração incremental do SIDRA (`python -m macroaf.extract.atualizar`): confere o catálogo com
+  os metadados, baixa só os meses ausentes, guarda revisões sem apagar e mantém a camada raw
+  compactada com manifesto (decisão 0003). Carga inicial do IPCA-15 (mai/2000 a set/2026) em
+  `data/raw/ibge_sidra/`. Workflow `API do IBGE` testa o acesso a partir do runner (#3).
 - Catálogo de séries `config/series.yaml` com o IPCA-15 (tabelas 1646, 1387, 1705, 7062 e a
   referência 3065) e leitor com validação de esquema `macroaf.catalogo` (#2).
 - Base do repositório: pacote `macroaf` em `src/`, `pyproject.toml` com `uv` (Python 3.12),

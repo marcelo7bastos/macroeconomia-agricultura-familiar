@@ -11,6 +11,7 @@ recebe `Situação: substituída por NNNN`.
 |---|---|---|
 | [0001](0001-memoria-dos-agentes-no-repositorio.md) | Memória dos agentes no próprio repositório | aceita |
 | [0002](0002-agentes-por-funcao.md) | Agentes por função, não por índice | aceita |
+| [0003](0003-extracao-incremental.md) | Extração incremental, compilação completa | aceita |
 
 ## Modelo
 

@@ -2,7 +2,8 @@
 
 - **Fonte:** IBGE, SIDRA ([ficha da fonte](../fontes/ibge-sidra.md))
 - **Situação no projeto:** piloto (marco *Piloto IPCA-15*)
-- **Última conferência dos metadados:** 2026-10-19 (registrada no `PLANEJAMENTO.md`, seção 3.1)
+- **Última conferência dos metadados:** 2026-10-19, na API de agregados (metadados e períodos das
+  cinco tabelas) e com amostras da API de valores; resumo no `PLANEJAMENTO.md`, seção 3.1
 
 ## O que mede
 
@@ -16,9 +17,35 @@ referência. É divulgado antes do IPCA do mesmo mês.
 |---|---|---|---|
 | 1646 | mai/2000 → jul/2006 | POF 1995-96 | 355 var. mensal, 356 acum. ano, 357 peso |
 | 1387 | ago/2006 → jan/2012 | POF 2002-03 | 355, 356, 357 |
-| 1705 | fev/2012 → jan/2020 | POF 2008-09 | 355, 356, 1120 acum. 12 meses, 357 |
-| 7062 | fev/2020 → atual | POF 2017-18 | 355, 356, 1120, 357 |
+| 1705 | fev/2012 → jan/2020 | POF 2008-09 | 355, 356, 1120 acum. 12 meses (só a partir de mar/2017), 357 |
+| 7062 | fev/2020 → atual | POF 2017-18 | 355, 356, 1120 (a partir de jan/2021), 357 |
 | 3065 | mai/2000 → atual | — (só índice geral) | 1117 número-índice, 355, 1118 acum. 3m, 1119 acum. 6m, 356, 1120 |
+
+Conferência em 2026-10-19 (`/metadados` e `/periodos`):
+
+| Tabela | `periodicidade.inicio` → `fim` | Períodos | Lacunas | Classificações | Níveis territoriais |
+|---|---|---|---|---|---|
+| 1646 | 200005 → 200607 | 75 | nenhuma | 315 | N1, N6, N7 |
+| 1387 | 200608 → 201201 | 66 | nenhuma | 315 | N1, N6, N7 |
+| 1705 | 201202 → 202001 | 96 | nenhuma | 315 | N1, N6, N7 |
+| 7062 | 202002 → 202609 | 80 | nenhuma | 315 | N1, N6, N7 |
+| 3065 | 200005 → 202609 | 317 | nenhuma | nenhuma | N1 |
+
+Os inícios e fins batem com `config/series.yaml` e as quatro tabelas de dados se sucedem sem lacuna
+nem sobreposição. O nome de cada tabela traz o período por extenso (ex.: 1705 "... (de
+fevereiro/2012 até janeiro/2020)").
+
+Variáveis (nome e unidade exatamente como nos metadados; batem com o catálogo):
+
+| Id | Nome | Unidade | Tabelas |
+|---|---|---|---|
+| 355 | IPCA15 - Variação mensal | % | todas |
+| 356 | IPCA15 - Variação acumulada no ano | % | todas |
+| 357 | IPCA15 - Peso mensal | % | 1646, 1387, 1705, 7062 |
+| 1120 | IPCA15 - Variação acumulada em 12 meses | % | 1705, 7062, 3065 |
+| 1117 | IPCA15 - Número-índice (base: dezembro de 1993 = 100) | Número-índice | 3065 |
+| 1118 | IPCA15 - Variação acumulada em 3 meses | % | 3065 |
+| 1119 | IPCA15 - Variação acumulada em 6 meses | % | 3065 |
 
 Datas de troca da estrutura de pesos, conferidas em divulgações do IBGE e do BCB em 2026-10-19:
 
@@ -27,38 +54,71 @@ Datas de troca da estrutura de pesos, conferidas em divulgações do IBGE e do B
   [IBGE, IPCA-15 de agosto de 2006](https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/13163-asi-ipca-15-de-agosto-variou-019)).
 - **POF 2008-09 a partir de fev/2012.** No IPCA a estrutura vigorou de jan/2012 a dez/2019
   ([BCB, Relatório de Inflação dez/2019](https://www.bcb.gov.br/content/ri/relatorioinflacao/201912/ri201912b7p.pdf));
-  o início em fev/2012 no IPCA-15 segue o mesmo padrão e o início da tabela 1705, mas **ainda não
-  tem fonte primária**: a confirmar pelos metadados da 1705 na extração (#3).
+  no IPCA-15 o início em fev/2012 está confirmado pelos metadados oficiais da tabela 1705
+  (`periodicidade.inicio = 201202`, primeiro período publicado em 17/02/2012, e nome da tabela
+  "de fevereiro/2012 até janeiro/2020"), consultados em 2026-10-19; a 1387 termina em 201201.
 - **POF 2017-18 a partir de fev/2020.** As novas estruturas geram "o IPCA e INPC de janeiro, além
   do IPCA-15 de fevereiro" de 2020 ([IBGE, nota técnica 01/2020](https://ftp.ibge.gov.br/Precos_Indices_de_Precos_ao_Consumidor/Sistema_de_Indices_de_Precos_ao_Consumidor/Notas_Tecnicas/snipc_nota_tecnica_2020_01.pdf)).
 
 ## Classificação
 
-Classificação 315 (geral, grupo, subgrupo, item, subitem). Nível derivado pelo código IBGE no nome
-da categoria: 1 dígito = grupo, 2 = subgrupo, 4 = item, 7 = subitem.
+Classificação 315 "Geral, grupo, subgrupo, item e subitem". Nível derivado pelo código IBGE no
+nome da categoria: 1 dígito = grupo, 2 = subgrupo, 4 = item, 7 = subitem.
 
-| Tabela | Categorias |
-|---|---|
-| 7062 | 1 geral, 9 grupos, 19 subgrupos, 51 itens, 367 subitens |
-| 1705 | 1 geral, 9 grupos, 19 subgrupos, 52 itens, 365 subitens |
-| 1387 | 383 no nível mais detalhado |
-| 1646 | 512 no nível mais detalhado |
+**Formato do nome**, igual nas quatro tabelas: `<código>.<nome>`, sem espaço depois do ponto
+(`1.Alimentação e bebidas`, `11.Alimentação no domicílio`, `1101.Cereais, leguminosas e
+oleaginosas`, `1101002.Arroz`). A única categoria sem código é `Índice geral` (id 7169). Os ids das
+categorias (7169, 7170, ...) são da API e não coincidem com o código IBGE. Padrão sugerido:
+`^(\d+)\.(.+)$`; o que não casar é o geral.
 
-A contagem de 1387 e 1646 ainda precisa ser refeita pelo código IBGE (#4).
+Contagem pelo código IBGE (metadados de 2026-10-19):
+
+| Tabela | Total | Geral | Grupos (1) | Subgrupos (2) | Itens (4) | Subitens (7) |
+|---|---|---|---|---|---|---|
+| 1646 | 593 | 1 | 9 | 19 | 52 | 512 |
+| 1387 | 465 | 1 | 9 | 19 | 52 | 384 |
+| 1705 | 446 | 1 | 9 | 19 | 52 | 365 |
+| 7062 | 447 | 1 | 9 | 19 | 51 | 367 |
+
+Em todas: nenhum código repetido e nenhum órfão (todo código tem o pai de 1, 2 ou 4 dígitos na
+mesma tabela).
+
+O valor antigo de 1387 ("383 no nível mais detalhado") contava pelo campo `nivel`: um subitem da
+1387 vem com `nivel = 0` (ver Peculiaridades) e ficava de fora. Pelo código são 384.
+
+Campo `nivel` por tabela (só para registro; não use):
+
+| Tabela | Geral | Grupo | Subgrupo | Item | Subitem |
+|---|---|---|---|---|---|
+| 1646 | 0 | 0 | 1 | 2 | 3 |
+| 1387 | 0 | 0 | 1 | 2 | 3 (um subitem com 0) |
+| 1705, 7062 | 0 | 1 | 2 | 3 | 4 |
 
 ## Referência oficial para validação
 
-- **Tabela 3065:** número-índice (1117) e acumulados em 3, 6 e 12 meses (1118, 1119, 1120) do índice
+- **Tabela 3065** (sem classificação; só N1 Brasil): número-índice (1117) e acumulados em 3, 6 e 12 meses (1118, 1119, 1120) do índice
   geral, de mai/2000 em diante. Confere o encadeamento das quatro tabelas e os acumulados calculados.
-- **Variáveis 356 e 1120** de cada tabela: conferem os acumulados calculados por categoria.
+- **Variáveis 356 e 1120** de cada tabela: conferem os acumulados calculados por categoria, onde
+  publicadas (1120 só em 1705 a partir de mar/2017 e em 7062 a partir de jan/2021).
 
 ## Peculiaridades
 
-- O campo `nivel` dos metadados muda de escala entre tabelas: 7062/1705 começam em 0 = geral,
-  1646/1387 usam outra numeração (A-001).
+- O campo `nivel` dos metadados muda de escala entre tabelas: em 7062/1705 é 0 = geral, 1 = grupo
+  ... 4 = subitem; em 1646/1387 geral **e** grupos têm `nivel = 0` e o subitem é 3 (A-001).
+- 2026-10-19: na 1387 o subitem `4103031.Conjunto infantil` (id 12409) vem com `nivel = 0`, como se
+  fosse o geral ou um grupo. Tem valores normais (ex.: -0.64 em 200608). Prova concreta de que o
+  `nivel` não serve para hierarquia (A-001).
 - A classificação é própria do IPCA-15; não reaproveite a do IPCA cheio (A-002).
 - 1646 e 1387 não têm acumulado em 12 meses (1120); ele precisa ser calculado e conferido com a 3065
   no índice geral.
+- 2026-10-19: a 1705 **declara** a 1120, mas ela vem `...` em todas as 446 categorias de 201202 a
+  201702; o primeiro valor numérico é de 201703. Na 7062 a 1120 vem `...` de 202002 a 202012 (os 11
+  primeiros meses) e é numérica a partir de 202101. Ou seja, o acumulado em 12 meses por categoria
+  precisa ser calculado de abr/2001 (primeiro mês com 12 meses de dados, mai/2000 a abr/2001) até
+  fev/2017, atravessando as trocas de POF; no índice geral a 3065 tem a série completa.
+- 2026-10-19: nas amostras (1646 v/all 200005-200208; 1387, 1705 e 7062 v/355 todos os períodos)
+  toda categoria do metadado tem valor em todo período, inclusive subitens; a 357 (peso) vem com 4
+  casas decimais e as variações com 2.
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de

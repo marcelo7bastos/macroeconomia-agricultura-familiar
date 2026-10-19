@@ -57,6 +57,7 @@ indices:
         inicio: 2012-02
         fim: 2020-01
         versao_pof: 2008-09
+        # 1120 vem `...` de 2012-02 a 2017-02 (A-009).
         variaveis: [355, 356, 1120, 357]
 
       - tabela: 7062
@@ -64,6 +65,7 @@ indices:
         inicio: 2020-02
         fim: null
         versao_pof: 2017-18
+        # 1120 vem `...` de 2020-02 a 2020-12 (A-009).
         variaveis: [355, 356, 1120, 357]
 
       - tabela: 3065
