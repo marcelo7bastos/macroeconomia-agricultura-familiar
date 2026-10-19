@@ -28,7 +28,12 @@ import httpx
 
 from macroaf.catalogo import Catalogo, Indice, Tabela, carregar_catalogo, periodo_em_meses
 from macroaf.extract.cliente import Cliente, ErroFonte
-from macroaf.extract.ibge_metadados import Periodicidade, obter_metadados, periodicidade
+from macroaf.extract.ibge_metadados import (
+    Periodicidade,
+    baixar_metadados,
+    numero_categorias,
+    periodicidade,
+)
 from macroaf.extract.raw import ArmazemRaw
 from macroaf.extract.sidra import baixar_mes
 
@@ -45,7 +50,9 @@ def meses_entre(inicio: str, fim: str) -> list[str]:
     return [f"{m // 12:04d}-{m % 12 + 1:02d}" for m in range(primeiro, ultimo + 1)]
 
 
-def divergencias(tabela: Tabela, publicada: Periodicidade) -> list[str]:
+def divergencias(
+    tabela: Tabela, publicada: Periodicidade, ultimo_salvo: str | None = None
+) -> list[str]:
     problemas = []
     if publicada.inicio != tabela.inicio:
         problemas.append(
@@ -56,7 +63,29 @@ def divergencias(tabela: Tabela, publicada: Periodicidade) -> list[str]:
         problemas.append(
             f"tabela {tabela.tabela}: fim no catálogo {tabela.fim}, nos metadados {publicada.fim}"
         )
+    if ultimo_salvo is not None and periodo_em_meses(publicada.fim) < periodo_em_meses(
+        ultimo_salvo
+    ):
+        problemas.append(
+            f"tabela {tabela.tabela}: metadados vão até {publicada.fim}, "
+            f"mas o raw já tem {ultimo_salvo}"
+        )
     return problemas
+
+
+def tabelas_paradas(publicadas: dict[int, Periodicidade], indice: Indice) -> list[str]:
+    """Tabela de dados aberta que ficou para trás da referência: sinal de troca de tabela (#27)."""
+    abertas = [t for t in indice.tabelas if t.fim is None and t.tabela in publicadas]
+    referencias = [t for t in abertas if t.papel == "referencia"]
+    if not referencias:
+        return []
+    fim_referencia = max(publicadas[t.tabela].fim for t in referencias)
+    return [
+        f"tabela {t.tabela}: publicada até {publicadas[t.tabela].fim}, mas a referência "
+        f"já vai até {fim_referencia} (troca de tabela? ver #27)"
+        for t in abertas
+        if t.papel == "dados" and publicadas[t.tabela].fim != fim_referencia
+    ]
 
 
 @dataclass
@@ -121,12 +150,16 @@ def atualizar_indice(
 
     planos = []
     problemas = []
+    publicadas = {}
+    metadados = {}
     for tabela in selecionadas:
-        publicada = periodicidade(obter_metadados(cliente, fonte, tabela.tabela))
-        problemas += divergencias(tabela, publicada)
-        planos.append(
-            planejar(tabela, publicada, armazem.periodos(tabela.tabela), janela_revisao, ate)
-        )
+        url, conteudo, lidos = baixar_metadados(cliente, fonte, tabela.tabela)
+        metadados[tabela.tabela] = (url, conteudo, lidos)
+        publicada = publicadas[tabela.tabela] = periodicidade(lidos)
+        salvos = armazem.periodos(tabela.tabela)
+        problemas += divergencias(tabela, publicada, salvos[-1] if salvos else None)
+        planos.append(planejar(tabela, publicada, salvos, janela_revisao, ate))
+    problemas += tabelas_paradas(publicadas, indice)
     if problemas:
         raise CatalogoDivergente("; ".join(problemas))
 
@@ -141,12 +174,18 @@ def atualizar_indice(
         if verificar:
             relatorio.novos[numero] = plano.novos
             continue
+        url, conteudo, lidos = metadados[numero]
+        if armazem.salvar_metadados(numero, url, conteudo) is not None:
+            log(f"{indice.codigo} {numero}: metadados novos ou alterados gravados")
+        esperados = len(plano.tabela.variaveis) * numero_categorias(
+            lidos, plano.tabela.classificacao
+        )
         for periodo in plano.novos:
-            url, conteudo = baixar_mes(cliente, fonte, plano.tabela, periodo)
+            url, conteudo = baixar_mes(cliente, fonte, plano.tabela, periodo, esperados)
             armazem.salvar(numero, periodo, url, conteudo)
             relatorio.novos.setdefault(numero, []).append(periodo)
         for periodo in plano.revisao:
-            url, conteudo = baixar_mes(cliente, fonte, plano.tabela, periodo)
+            url, conteudo = baixar_mes(cliente, fonte, plano.tabela, periodo, esperados)
             if armazem.salvar(numero, periodo, url, conteudo) is not None:
                 log(f"{indice.codigo} {numero}: {periodo} revisado pela fonte")
                 relatorio.revisados.setdefault(numero, []).append(periodo)
@@ -164,7 +203,7 @@ def _escrever_saida_github(relatorio: Relatorio) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--indice", default="ipca15")
+    parser.add_argument("--indice", default="ipca15", help="código do índice no catálogo")
     parser.add_argument("--tabela", type=int, action="append", help="limita a estas tabelas")
     parser.add_argument("--ate", help="último mês a baixar (AAAA-MM)")
     parser.add_argument("--verificar", action="store_true", help="só confere, sem baixar valores")
@@ -172,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     catalogo = carregar_catalogo()
+    if args.indice not in catalogo.indices:
+        parser.error(f"índice desconhecido: {args.indice} (catálogo: {sorted(catalogo.indices)})")
     indice = catalogo.indices[args.indice]
     armazem = ArmazemRaw(indice.fonte)
     try:
@@ -191,6 +232,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except (ErroFonte, httpx.HTTPError) as erro:
         print(f"erro da fonte: {erro}", file=sys.stderr)
+        return 1
+    except (OSError, EOFError) as erro:
+        print(f"erro ao ler ou gravar o raw: {erro}", file=sys.stderr)
         return 1
 
     acao = "a baixar" if args.verificar else "baixados"

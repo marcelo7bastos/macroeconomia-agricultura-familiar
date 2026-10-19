@@ -29,17 +29,38 @@ def periodo_iso_para_sidra(periodo: str) -> str:
     return periodo.replace("-", "")
 
 
-def obter_metadados(cliente: Cliente, fonte: Fonte, tabela: int) -> dict:
+def baixar_metadados(cliente: Cliente, fonte: Fonte, tabela: int) -> tuple[str, bytes, dict]:
+    """Baixa os metadados de uma tabela; devolve URL, corpo original e conteúdo lido."""
     if not fonte.api_metadados:
         raise ErroFonte(f"fonte {fonte.codigo} sem api_metadados")
     url = f"{fonte.api_metadados}/{tabela}/metadados"
-    return json.loads(cliente.obter(url))
+    conteudo = cliente.obter(url)
+    try:
+        metadados = json.loads(conteudo)
+    except json.JSONDecodeError as erro:
+        raise ErroFonte(f"{url}: resposta não é JSON: {conteudo[:200]!r}") from erro
+    if not isinstance(metadados, dict) or "periodicidade" not in metadados:
+        raise ErroFonte(f"{url}: metadados sem periodicidade")
+    return url, conteudo, metadados
 
 
 def periodicidade(metadados: dict) -> Periodicidade:
-    bruta = metadados["periodicidade"]
-    return Periodicidade(
-        frequencia=bruta["frequencia"],
-        inicio=periodo_sidra_para_iso(bruta["inicio"]),
-        fim=periodo_sidra_para_iso(bruta["fim"]),
-    )
+    try:
+        bruta = metadados["periodicidade"]
+        return Periodicidade(
+            frequencia=bruta["frequencia"],
+            inicio=periodo_sidra_para_iso(bruta["inicio"]),
+            fim=periodo_sidra_para_iso(bruta["fim"]),
+        )
+    except (KeyError, TypeError) as erro:
+        raise ErroFonte(f"periodicidade incompleta nos metadados: {erro}") from erro
+
+
+def numero_categorias(metadados: dict, classificacao: int | None) -> int:
+    """Categorias da classificação na tabela (1 se a tabela não tem classificação)."""
+    if classificacao is None:
+        return 1
+    for item in metadados.get("classificacoes", []):
+        if item.get("id") == classificacao:
+            return len(item.get("categorias", []))
+    raise ErroFonte(f"classificação {classificacao} ausente nos metadados")

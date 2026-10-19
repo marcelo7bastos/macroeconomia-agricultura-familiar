@@ -27,11 +27,10 @@ Medido em 2026-10-19 (#3):
 - Conferido na borda: 1646 v/all, 28 períodos, c315/all = 49.812 valores → 200 (15,3 MB, ~4 s);
   29 períodos = 51.591 → 400 com a mesma mensagem.
 - Cada valor ocupa ~300 bytes de JSON; 50 mil valores ≈ 15 MB.
-- Paginação sugerida: por variável e faixa de períodos com
-  `n_periodos = floor(50000 / (n_variaveis × n_categorias))`. Com c315/all e uma variável cabem
-  todos os períodos de 1646 (593 × 75 = 44.475), 1387 (465 × 66), 1705 (446 × 96 = 42.816) e
-  hoje 7062 (447 × 80 = 35.760); a 7062 passa do limite com uma variável quando tiver 112 períodos
-  (mai/2029), por isso a faixa de períodos tem de ser calculada, não fixa.
+- **Como o extrator respeita o limite:** uma requisição por tabela × mês, com todas as variáveis
+  e categorias (decisão 0003). O maior pedido é o da 1646: 3 × 593 = 1.779 valores; o da 7062,
+  4 × 447 = 1.788. O extrator confere que a resposta tem exatamente variáveis × categorias
+  registros.
 
 ## Formato e valores especiais
 
@@ -71,4 +70,4 @@ Medido em 2026-10-19 (#3):
   domínios (403 no proxy). É preciso incluir `servicodados.ibge.gov.br` e `apisidra.ibge.gov.br` em
   *Allowed domains* nas configurações do ambiente (A-004). Depois de liberados, no mesmo dia, as
   duas APIs responderam normalmente pelo proxy (apisidra atrás do Cloudflare).
-- **GitHub Actions:** a testar na #3.
+- **GitHub Actions:** testado pelo workflow `API do IBGE` (`.github/workflows/api-ibge.yml`) no PR da #3; resultado registrado no PR.

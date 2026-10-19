@@ -23,6 +23,15 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-011 · 2026-10-19 · Tudo o que o staging consome precisa estar no raw
+- **Contexto:** revisão da extração (#3).
+- **O que aconteceu:** a primeira versão consultava os metadados e os descartava; a #4 dependeria da
+  rede para montar a classificação, e o mesmo raw não garantiria os mesmos marts.
+- **Lição:** guardar no raw toda resposta que a transformação usa (valores e metadados), gravar de
+  forma atômica e conferir o raw inteiro contra o manifesto.
+- **Promovida para:** decisão 0003 (item 2); testes `tests/test_raw_repositorio.py` e
+  `test_metadados_vao_para_o_raw_sem_revisao_quando_so_a_periodicidade_avanca`.
+
 ### A-010 · 2026-10-19 · Subitem com `nivel = 0` na tabela 1387
 - **Contexto:** reconferência das fichas na API (#3), pelo `explorador-sidra`.
 - **O que aconteceu:** `4103031.Conjunto infantil` (id 12409) da 1387 vem com `nivel = 0`, o mesmo

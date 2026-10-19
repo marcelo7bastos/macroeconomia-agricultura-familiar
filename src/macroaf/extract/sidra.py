@@ -32,14 +32,36 @@ def registros(conteudo: bytes) -> list[dict]:
     return dados[1:]
 
 
-def baixar_mes(cliente: Cliente, fonte: Fonte, tabela: Tabela, periodo: str) -> tuple[str, bytes]:
-    """Baixa um mês de uma tabela e confere que a resposta traz só esse mês e não está vazia."""
+def _coluna(cabecalho: dict, rotulo: str, url: str) -> str:
+    for chave, valor in cabecalho.items():
+        if valor == rotulo:
+            return chave
+    raise ErroFonte(f"{url}: cabeçalho sem a coluna {rotulo!r}")
+
+
+def baixar_mes(
+    cliente: Cliente,
+    fonte: Fonte,
+    tabela: Tabela,
+    periodo: str,
+    registros_esperados: int | None = None,
+) -> tuple[str, bytes]:
+    """Baixa um mês de uma tabela e confere período, variáveis e, se informado, o tamanho."""
     url = url_valores(fonte, tabela, periodo)
     conteudo = cliente.obter(url)
     linhas = registros(conteudo)
     if not linhas:
         raise ErroFonte(f"{url}: resposta sem registros")
-    periodos = {linha.get("D3C") for linha in linhas}
+    cabecalho = json.loads(conteudo)[0]
+    coluna_mes = _coluna(cabecalho, "Mês (Código)", url)
+    coluna_variavel = _coluna(cabecalho, "Variável (Código)", url)
+
+    periodos = {linha.get(coluna_mes) for linha in linhas}
     if periodos != {periodo_iso_para_sidra(periodo)}:
         raise ErroFonte(f"{url}: períodos inesperados na resposta: {sorted(periodos)}")
+    variaveis = {linha.get(coluna_variavel) for linha in linhas}
+    if variaveis != {str(v) for v in tabela.variaveis}:
+        raise ErroFonte(f"{url}: variáveis inesperadas na resposta: {sorted(variaveis)}")
+    if registros_esperados is not None and len(linhas) != registros_esperados:
+        raise ErroFonte(f"{url}: {len(linhas)} registros, esperados {registros_esperados}")
     return url, conteudo

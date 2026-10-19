@@ -16,9 +16,12 @@ IPCA-15 tem cerca de 320 tabela × mês de dados mais 317 meses da referência 3
 1. **Extração incremental.** A cada execução, os metadados de cada tabela são conferidos com o
    catálogo e só os meses ausentes no raw são baixados, um arquivo por tabela × mês. Tabelas
    fechadas (1646, 1387, 1705) são baixadas uma vez; só as abertas (7062, 3065) recebem meses novos.
-2. **Raw compactado e imutável.** `data/raw/<fonte>/<tabela>/<AAAAMM>.json.gz`, com o corpo exato
-   da resposta da API (gzip com `mtime=0`, determinístico) e uma linha por arquivo em
-   `manifesto.csv` (URL, data da coleta, SHA-256 do original, número de registros).
+2. **Raw compactado, imutável e completo.** `data/raw/<fonte>/<tabela>/<AAAAMM>.json.gz`, com o
+   corpo exato da resposta da API (gzip com `mtime=0`, determinístico, gravado de forma atômica) e
+   uma linha por arquivo em `manifesto.csv` (URL, data da coleta, SHA-256 do original, número de
+   registros). Os metadados de cada tabela também ficam no raw (`metadados.json.gz`, com revisão
+   quando mudam fora a periodicidade): **tudo o que o staging consome está no raw**, e a
+   compilação não depende da rede. Um teste confere todo arquivo contra o manifesto.
 3. **Revisões guardadas ao lado.** Nas tabelas abertas, os 3 últimos meses são baixados de novo a
    cada execução. Se o conteúdo mudou, grava-se `<AAAAMM>.r2.json.gz` (r3, ...) sem apagar o
    anterior; a compilação usa a revisão mais recente.
@@ -27,6 +30,10 @@ IPCA-15 tem cerca de 320 tabela × mês de dados mais 317 meses da referência 3
 5. **Verificação diária na janela de divulgação** (≈ dias 18 a 31), custando só a consulta aos
    metadados quando não há mês novo. A API de calendário do IBGE fica como alternativa a avaliar.
 6. **Catálogo divergente interrompe a extração** antes de baixar valores (código de saída 2).
+   Também conta como divergência: metadados que recuam em relação ao raw e tabela de dados aberta
+   que fica para trás da referência 3065 (sinal de troca de tabela, #27). No dia da divulgação,
+   se as duas tabelas forem atualizadas em horários diferentes, a execução para e a do dia
+   seguinte completa.
 
 ## Alternativas consideradas
 

@@ -194,7 +194,7 @@ Estrutura prevista:
 ```
 config/series.yaml
 src/macroaf/
-  extract/      sidra.py, ibge_metadados.py
+  extract/      atualizar.py (comando), sidra.py, ibge_metadados.py, raw.py, cliente.py
   transform/    classificacao.py, ipca15.py, harmonizacao.py
   indicators/   contribuicao.py, acumulados.py, difusao.py, sazonalidade.py
   validate/
