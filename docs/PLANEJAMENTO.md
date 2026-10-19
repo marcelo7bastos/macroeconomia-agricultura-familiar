@@ -72,7 +72,9 @@ Metadados: `https://servicodados.ibge.gov.br/api/v3/agregados/{tabela}/metadados
 - **Camada `raw`:** JSON exatamente como veio, com data da coleta e hash SHA-256. **É versionada
   no repositório** (decisão 9.1).
 - **Catálogo `config/series.yaml`:** cada série descrita por fonte, tabela, variáveis, período,
-  unidade e versão da POF. Incluir série nova = editar o YAML.
+  unidade e versão da POF. Incluir série nova = editar o YAML. O esquema é validado por
+  `macroaf.catalogo.carregar_catalogo` (tabelas de dados em sucessão mês a mês, sem lacuna nem
+  sobreposição; variáveis descritas; POF sem repetição) e testado em `tests/test_catalogo.py`.
 
 ### 3.3 Lições do modelo Power BI anterior
 

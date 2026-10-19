@@ -5,7 +5,9 @@ description = "Indicadores macroeconômicos da agricultura e da agricultura fami
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [dependency-groups]
 dev = [

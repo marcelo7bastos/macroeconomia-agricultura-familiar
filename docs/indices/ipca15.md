@@ -20,6 +20,17 @@ referência. É divulgado antes do IPCA do mesmo mês.
 | 7062 | fev/2020 → atual | POF 2017-18 | 355, 356, 1120, 357 |
 | 3065 | mai/2000 → atual | — (só índice geral) | 1117 número-índice, 355, 1118 acum. 3m, 1119 acum. 6m, 356, 1120 |
 
+Datas de troca da estrutura de pesos, conferidas em divulgações do IBGE e do BCB em 2026-10-19:
+
+- **POF 2002-03 a partir de ago/2006.** O IPCA-15 de jul/2006 foi o último com os pesos da POF 1995-96;
+  no IPCA a troca foi em jul/2006 ([IBGE, IPCA-15 de julho de 2006](https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/13150-asi-ipca-15-de-julho-variou-002);
+  [IBGE, IPCA-15 de agosto de 2006](https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/13163-asi-ipca-15-de-agosto-variou-019)).
+- **POF 2008-09 a partir de fev/2012.** No IPCA a estrutura vigorou de jan/2012 a dez/2019
+  ([BCB, Relatório de Inflação dez/2019](https://www.bcb.gov.br/content/ri/relatorioinflacao/201912/ri201912b7p.pdf));
+  o início em fev/2012 no IPCA-15 segue o mesmo padrão e o início da tabela 1705.
+- **POF 2017-18 a partir de fev/2020.** As novas estruturas geram "o IPCA e INPC de janeiro, além
+  do IPCA-15 de fevereiro" de 2020 ([IBGE, nota técnica 01/2020](https://ftp.ibge.gov.br/Precos_Indices_de_Precos_ao_Consumidor/Sistema_de_Indices_de_Precos_ao_Consumidor/Notas_Tecnicas/snipc_nota_tecnica_2020_01.pdf)).
+
 ## Classificação
 
 Classificação 315 (geral, grupo, subgrupo, item, subitem). Nível derivado pelo código IBGE no nome
@@ -47,6 +58,8 @@ A contagem de 1387 e 1646 ainda precisa ser refeita pelo código IBGE (#4).
 - A classificação é própria do IPCA-15; não reaproveite a do IPCA cheio (A-002).
 - 1646 e 1387 não têm acumulado em 12 meses (1120); ele precisa ser calculado e conferido com a 3065
   no índice geral.
+- A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
+  jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de
   `map_harmonizacao` (#6).
 

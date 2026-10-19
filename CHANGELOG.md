@@ -11,6 +11,8 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Catálogo de séries `config/series.yaml` com o IPCA-15 (tabelas 1646, 1387, 1705, 7062 e a
+  referência 3065) e leitor com validação de esquema `macroaf.catalogo` (#2).
 - Base do repositório: pacote `macroaf` em `src/`, `pyproject.toml` com `uv` (Python 3.12),
   `pytest`, `ruff` e CI no GitHub Actions (#1).
 - Estrutura de agentes de IA: subagentes `revisor-metodologico`, `validador-dados` e
