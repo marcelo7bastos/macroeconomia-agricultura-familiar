@@ -1,8 +1,14 @@
-"""Validações do IPCA-15 (seção 4.4 do planejamento; tolerâncias em METODOLOGIA.md, seção 6).
+"""Validações do IPCA-15 (seção 4.4 do planejamento; regras e limites em METODOLOGIA.md, seção 6).
 
-Cada validação devolve um `Resultado`. Uma falha bloqueia a publicação. Diferenças conhecidas e
-explicadas ficam em `reference/excecoes_validacao_ipca15.csv`, cada uma com justificativa e o
-A-NNN de origem; nada é ignorado em silêncio.
+Cada validação devolve um `Resultado`; uma falha bloqueia a publicação. O que varia por índice
+fica fora do código:
+
+- `reference/excecoes_validacao_<indice>.csv`: diferenças conhecidas e explicadas, cada uma com
+  escopo (validação, tabela, padrão de código, meses), tipo, justificativa, A-NNN e o número
+  exato de falhas que cobre (sentinela);
+- `reference/limites_validacao_<indice>.csv`: limites empíricos por tabela e nível, onde a fonte
+  tem ruído acima do arredondamento;
+- `config/series.yaml`: tabelas de dados, tabela de referência e períodos esperados.
 
 Uso:
 
@@ -16,49 +22,37 @@ import json
 import math
 import sys
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pandera.pandas as pa
 
-from macroaf.catalogo import RAIZ, carregar_catalogo
+from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
+from macroaf.extract.atualizar import meses_entre
 from macroaf.extract.raw import ArmazemRaw
 from macroaf.transform.classificacao import NIVEIS
 from macroaf.transform.ipca15 import diretorio_staging
 
-CAMINHO_EXCECOES = RAIZ / "reference" / "excecoes_validacao_ipca15.csv"
-
-# Arredondamento da fonte: variações com 2 casas (±0,005) e pesos com 4 casas (±0,00005).
-# Os limites abaixo são o erro máximo que esse arredondamento pode produzir (A-014); passar
-# deles é anomalia, não arredondamento. Ver METODOLOGIA.md, seção 6.
+# Arredondamento da fonte: variações e número-índice com 2 casas (±0,005) e pesos com 4 casas
+# (±0,00005). Os limites analíticos são o erro máximo que esse arredondamento pode produzir
+# (A-014); passar deles é anomalia, não arredondamento.
 MEIA_CASA_VARIACAO = 0.005
 MEIA_CASA_PESO = 0.00005
-
-# A 356 das tabelas da POF 1995-96 e 2002-03 tem ruído acima do arredondamento (procedimento da
-# fonte, A-016): limite por nível, no máximo observado na calibração da #5.
-LIMITE_ACUMULADO_ANO_TABELAS_ANTIGAS = {
-    "geral": 0.02,
-    "grupo": 0.02,
-    "subgrupo": 0.03,
-    "item": 0.07,
-    "subitem": 0.17,
-}
-TABELAS_ANTIGAS = {1646, 1387}
-LIMITE_COSTURA_ACUMULADOS = {3: 0.01, 6: 0.01, "ano": 0.01, 12: 0.02}
 LIMITE_INDICE_ENCADEADO_RELATIVO = 1e-4
 VARIACAO_PLAUSIVEL = {"subitem": (-100.0, 300.0), "outros": (-50.0, 50.0)}
+PADRAO_POR_NIVEL = {
+    "geral": r"0",
+    "grupo": r"\d",
+    "subgrupo": r"\d{2}",
+    "item": r"\d{4}",
+    "subitem": r"\d{7}",
+}
 
 
 def _variacao_plausivel(df: pd.DataFrame) -> pd.Series:
-    minimo = np.where(
-        df.nivel_hierarquico == "subitem",
-        *[VARIACAO_PLAUSIVEL[k][0] for k in ("subitem", "outros")],
-    )
-    maximo = np.where(
-        df.nivel_hierarquico == "subitem",
-        *[VARIACAO_PLAUSIVEL[k][1] for k in ("subitem", "outros")],
-    )
+    subitem = df.nivel_hierarquico == "subitem"
+    minimo = np.where(subitem, VARIACAO_PLAUSIVEL["subitem"][0], VARIACAO_PLAUSIVEL["outros"][0])
+    maximo = np.where(subitem, VARIACAO_PLAUSIVEL["subitem"][1], VARIACAO_PLAUSIVEL["outros"][1])
     return df.variacao_mensal.between(minimo, maximo)
 
 
@@ -88,6 +82,7 @@ class Resultado:
     falhas: int
     limite: str
     excecoes_aplicadas: int = 0
+    ausentes: int = 0
     maior_diferenca: float | None = None
     exemplos: list[dict] = field(default_factory=list)
 
@@ -96,56 +91,119 @@ class Resultado:
         return self.falhas == 0
 
 
-def carregar_excecoes(caminho: Path = CAMINHO_EXCECOES) -> pd.DataFrame:
-    excecoes = pd.read_csv(caminho, dtype=str)
-    excecoes["tabela_sidra"] = excecoes["tabela_sidra"].astype(int)
-    vazias = excecoes[excecoes[["justificativa", "aprendizado", "tipo"]].isna().any(axis=1)]
-    if not vazias.empty:
+@dataclass
+class Configuracao:
+    """O que as validações precisam saber do índice, vindo do catálogo, do raw e de `reference/`."""
+
+    excecoes: pd.DataFrame
+    limites: pd.DataFrame
+    tabela_referencia: int
+    meses_esperados: dict[int, list[str]]
+    categorias_esperadas: dict[int, set[int]]
+
+
+def _ler_csv_documentado(caminho, obrigatorias: list[str]) -> pd.DataFrame:
+    tabela = pd.read_csv(caminho, dtype=str)
+    tabela["tabela_sidra"] = tabela["tabela_sidra"].astype(int)
+    incompletas = tabela[tabela[obrigatorias].isna().any(axis=1)]
+    if not incompletas.empty:
         raise ValueError(
-            f"exceção sem justificativa, tipo ou aprendizado: {vazias.values.tolist()}"
+            f"{caminho.name}: linhas sem {obrigatorias}: {incompletas.values.tolist()}"
         )
-    return excecoes.reset_index(drop=True)
+    if not tabela.aprendizado.str.fullmatch(r"A-\d{3}").all():
+        raise ValueError(f"{caminho.name}: aprendizado fora do formato A-NNN")
+    return tabela.reset_index(drop=True)
+
+
+def carregar_excecoes(indice: Indice) -> pd.DataFrame:
+    caminho = RAIZ / "reference" / f"excecoes_validacao_{indice.codigo}.csv"
+    excecoes = _ler_csv_documentado(
+        caminho, ["validacao", "tipo", "justificativa", "aprendizado", "falhas_cobertas"]
+    )
+    excecoes["falhas_cobertas"] = excecoes.falhas_cobertas.astype(int)
+    if not set(excecoes.tipo) <= {"estrutural", "fonte"}:
+        raise ValueError(f"{caminho.name}: tipo deve ser estrutural ou fonte")
+    return excecoes
+
+
+def carregar_limites(indice: Indice) -> pd.DataFrame:
+    caminho = RAIZ / "reference" / f"limites_validacao_{indice.codigo}.csv"
+    limites = _ler_csv_documentado(caminho, ["validacao", "nivel_hierarquico", "limite"])
+    limites["limite"] = limites.limite.astype(float)
+    return limites
+
+
+def carregar_configuracao(indice: Indice, armazem: ArmazemRaw, dim: pd.DataFrame) -> Configuracao:
+    """Meses esperados vêm do catálogo; o fim de tabela aberta é o último mês no raw do índice."""
+    ultimo = max(max(armazem.periodos(t.tabela), default=t.inicio) for t in indice.tabelas)
+    meses = {t.tabela: meses_entre(t.inicio, t.fim or ultimo) for t in indice.tabelas_dados}
+    categorias = {tabela: set(grupo.codigo_sidra) for tabela, grupo in dim.groupby("tabela_sidra")}
+    return Configuracao(
+        excecoes=carregar_excecoes(indice),
+        limites=carregar_limites(indice),
+        tabela_referencia=indice.tabelas_referencia[0].tabela,
+        meses_esperados=meses,
+        categorias_esperadas=categorias,
+    )
 
 
 class Validador:
-    """Aplica as validações e as exceções documentadas, registrando quais exceções foram usadas."""
+    """Aplica limites e exceções, contando quantas falhas cada exceção cobriu."""
 
     def __init__(self, excecoes: pd.DataFrame) -> None:
         self.excecoes = excecoes
-        self.usadas: set[int] = set()
+        self.cobertas = pd.Series(0, index=excecoes.index, dtype=int)
 
-    def resultado(self, nome: str, diferencas: pd.DataFrame, limite: str) -> Resultado:
-        """`diferencas`: mes, tabela_sidra, codigo_ibge, diferenca e limite (por linha)."""
-        diferencas = diferencas.dropna(subset=["diferenca"])
-        fora = diferencas[diferencas.diferenca.abs() > diferencas.limite + 1e-9]
+    def resultado(
+        self, nome: str, diferencas: pd.DataFrame, limite: str, permitir_ausente: bool = False
+    ) -> Resultado:
+        """`diferencas`: mes, tabela_sidra, codigo_ibge, diferenca e limite (por linha).
+
+        Diferença ausente é falha, salvo quando a regra não se aplica àquela linha
+        (`permitir_ausente`, ex.: acumulado em 12 meses não publicado).
+        """
+        ausentes = diferencas[diferencas.diferenca.isna()]
+        presentes = diferencas.dropna(subset=["diferenca"])
+        fora = presentes[presentes.diferenca.abs() > presentes.limite + 1e-9]
         coberto = pd.Series(False, index=fora.index)
+        # Cada falha é atribuída à primeira exceção que a cobre, na ordem do CSV.
         for posicao, excecao in self.excecoes[self.excecoes.validacao == nome].iterrows():
             casa = (
-                (fora.tabela_sidra == excecao.tabela_sidra)
+                ~coberto
+                & (fora.tabela_sidra == excecao.tabela_sidra)
                 & fora.codigo_ibge.str.fullmatch(excecao.codigo_ibge)
                 & (fora.mes >= excecao.mes_inicio)
                 & (fora.mes <= excecao.mes_fim)
             )
-            if casa.any():
-                self.usadas.add(posicao)
+            self.cobertas[posicao] += int(casa.sum())
             coberto |= casa
         falhas = fora[~coberto]
-        maior = diferencas.diferenca.abs().max() if not diferencas.empty else math.nan
+        n_ausentes = 0 if permitir_ausente else len(ausentes)
+        maior = presentes.diferenca.abs().max() if not presentes.empty else math.nan
         ordem = falhas.diferenca.abs().sort_values(ascending=False).index
+        exemplos = falhas.loc[ordem].head(5).round(6).to_dict("records")
+        if n_ausentes:
+            exemplos += ausentes.head(5 - len(exemplos)).round(6).to_dict("records")
         return Resultado(
             validacao=nome,
-            verificados=len(diferencas),
-            falhas=len(falhas),
+            verificados=len(presentes),
+            falhas=len(falhas) + n_ausentes,
             limite=limite,
             excecoes_aplicadas=int(coberto.sum()),
+            ausentes=len(ausentes),
             maior_diferenca=None if math.isnan(maior) else round(float(maior), 6),
-            exemplos=falhas.loc[ordem].head(5).round(6).to_dict("records"),
+            exemplos=exemplos,
         )
 
     @property
-    def excecoes_sem_uso(self) -> pd.DataFrame:
-        """Exceções que não cobriram nenhuma falha: a fonte pode ter corrigido o dado."""
-        return self.excecoes.drop(index=list(self.usadas))
+    def sentinelas(self) -> pd.DataFrame:
+        """Exceções que cobriram um número de falhas diferente do registrado no CSV.
+
+        Menos que o registrado: a fonte pode ter corrigido o dado. Mais: há erro novo dentro do
+        escopo da exceção. Nos dois casos a exceção precisa ser revista.
+        """
+        divergentes = self.excecoes.assign(obtidas=self.cobertas)
+        return divergentes[divergentes.obtidas != divergentes.falhas_cobertas]
 
 
 def _codigo_pai(codigo: str) -> str | None:
@@ -157,6 +215,12 @@ def _codigo_pai(codigo: str) -> str | None:
 
 def _com_pai(fato: pd.DataFrame) -> pd.DataFrame:
     return fato.assign(codigo_pai=fato.codigo_ibge.map(_codigo_pai))
+
+
+def _fator(variacao: pd.Series) -> pd.Series:
+    """1 + v/100, com fator não positivo (variação de -100% ou menos) tratado como ausente."""
+    fator = 1 + variacao / 100
+    return fator.where(fator > 0)
 
 
 def validar_esquema(fato: pd.DataFrame) -> Resultado:
@@ -188,6 +252,7 @@ def validar_pesos(fato: pd.DataFrame, validador: Validador) -> list[Resultado]:
         .agg(soma_filhos=("peso", "sum"), n=("peso", "size"))
         .rename(columns={"codigo_pai": "codigo_ibge"})
     )
+    # Pai ausente vira diferença ausente, contada como falha.
     filhos = soma.merge(fato[["mes", "tabela_sidra", "codigo_ibge", "peso"]], how="left")
     filhos["diferenca"] = filhos.soma_filhos - filhos.peso
     filhos["limite"] = MEIA_CASA_PESO * (filhos.n + 1)
@@ -216,7 +281,9 @@ def validar_reconciliacao(fato: pd.DataFrame, validador: Validador) -> Resultado
     filhos["erro_peso"] = MEIA_CASA_PESO * (filhos.variacao_mensal - filhos.calculada).abs()
     erro_peso = filhos.groupby(chaves, as_index=False).erro_peso.sum()
     agregado = agregado.merge(erro_peso, on=chaves).rename(columns={"codigo_pai": "codigo_ibge"})
-    agregado = agregado.merge(fato[["mes", "tabela_sidra", "codigo_ibge", "variacao_mensal"]])
+    agregado = agregado.merge(
+        fato[["mes", "tabela_sidra", "codigo_ibge", "variacao_mensal"]], how="left"
+    )
     agregado["diferenca"] = agregado.calculada - agregado.variacao_mensal
     agregado["limite"] = 2 * MEIA_CASA_VARIACAO + agregado.erro_peso / agregado.soma_pesos
     return validador.resultado(
@@ -226,27 +293,30 @@ def validar_reconciliacao(fato: pd.DataFrame, validador: Validador) -> Resultado
     )
 
 
-def validar_continuidade(fato: pd.DataFrame, meses_por_tabela: dict[int, list[str]]) -> Resultado:
-    """Toda categoria de cada tabela tem valor em todos os meses da tabela."""
-    falhas = []
-    verificados = 0
-    for tabela, meses in meses_por_tabela.items():
-        da_tabela = fato[fato.tabela_sidra == tabela]
-        presentes = da_tabela.groupby("codigo_ibge").mes.nunique()
-        verificados += len(presentes)
-        for codigo, n in presentes[presentes != len(meses)].items():
-            falhas.append({"tabela_sidra": tabela, "codigo_ibge": codigo, "meses": int(n)})
-        faltando = sorted(set(meses) - set(da_tabela.mes))
-        if faltando:
-            falhas.append({"tabela_sidra": tabela, "meses_ausentes": faltando[:5]})
+def validar_continuidade(fato: pd.DataFrame, configuracao: Configuracao) -> Resultado:
+    """Toda categoria esperada (dim) tem valor em todo mês esperado (catálogo), e só neles."""
+    falhas, exemplos, verificados = 0, [], 0
+    for tabela, meses in configuracao.meses_esperados.items():
+        esperado = pd.MultiIndex.from_product(
+            [meses, sorted(configuracao.categorias_esperadas.get(tabela, set()))],
+            names=["mes", "codigo_sidra"],
+        )
+        obtido = pd.MultiIndex.from_frame(
+            fato.loc[fato.tabela_sidra == tabela, ["mes", "codigo_sidra"]]
+        )
+        verificados += len(esperado)
+        for caso, diferenca in [
+            ("ausente", esperado.difference(obtido)),
+            ("fora do período ou da classificação", obtido.difference(esperado)),
+        ]:
+            falhas += len(diferenca)
+            exemplos += [
+                {"tabela_sidra": tabela, "mes": mes, "codigo_sidra": codigo, "caso": caso}
+                for mes, codigo in diferenca[:5]
+            ]
     return Resultado(
-        "continuidade", verificados, len(falhas), "todos os meses", exemplos=falhas[:5]
+        "continuidade", verificados, falhas, "catálogo x dim_classificacao", exemplos=exemplos[:5]
     )
-
-
-def _acumulado_composto(serie: pd.Series, janela: int) -> pd.Series:
-    fator = 1 + serie / 100
-    return (fator.rolling(janela, min_periods=janela).apply(np.prod, raw=True) - 1) * 100
 
 
 def _mes_seguinte(mes: pd.Series) -> pd.Series:
@@ -254,8 +324,37 @@ def _mes_seguinte(mes: pd.Series) -> pd.Series:
     return (ano + numero // 12).astype(str) + "-" + (numero % 12 + 1).map("{:02d}".format)
 
 
-def validar_acumulados(fato: pd.DataFrame, validador: Validador) -> list[Resultado]:
-    """Acumulado no ano (recursão de um passo) e em 12 meses (composição), dentro de cada tabela."""
+def _limite_composicao(acumulado: pd.Series, soma_inversos: pd.Series) -> pd.Series:
+    """Erro máximo de um acumulado composto de variações com 2 casas: ∂A/∂v_j = (1+A)/(1+v_j)."""
+    return MEIA_CASA_VARIACAO * (1 + acumulado.abs() / 100) * soma_inversos + MEIA_CASA_VARIACAO
+
+
+def _composicao_movel(
+    df: pd.DataFrame, chave: list[str], janela: int
+) -> tuple[pd.Series, pd.Series]:
+    """Acumulado composto em janela móvel e soma dos inversos dos fatores (df ordenado)."""
+    fator = _fator(df.variacao_mensal)
+    auxiliar = pd.DataFrame({"log": np.log(fator), "inverso": 1 / fator}, index=df.index)
+    auxiliar[chave] = df[chave]
+    moveis = auxiliar.groupby(chave, sort=False)[["log", "inverso"]].rolling(janela).sum()
+    moveis = moveis.reset_index(level=chave, drop=True).sort_index()
+    return (np.exp(moveis["log"]) - 1) * 100, moveis["inverso"]
+
+
+def _limite_por_nivel(dados: pd.DataFrame, limites: pd.DataFrame, validacao: str) -> pd.Series:
+    """Limite empírico por tabela e nível, onde configurado (NaN onde não há)."""
+    da_validacao = limites[limites.validacao == validacao][
+        ["tabela_sidra", "nivel_hierarquico", "limite"]
+    ]
+    return (
+        dados[["tabela_sidra", "nivel_hierarquico"]].merge(da_validacao, how="left").limite.values
+    )
+
+
+def validar_acumulados(
+    fato: pd.DataFrame, validador: Validador, limites: pd.DataFrame
+) -> list[Resultado]:
+    """Acumulado no ano (um passo) e em 12 meses (composição), dentro de cada tabela."""
     fato = fato.sort_values(["tabela_sidra", "codigo_sidra", "mes"]).reset_index(drop=True)
     anterior = fato[["tabela_sidra", "codigo_sidra", "mes", "variacao_acum_ano"]].assign(
         mes=lambda df: _mes_seguinte(df.mes)
@@ -264,40 +363,34 @@ def validar_acumulados(fato: pd.DataFrame, validador: Validador) -> list[Resulta
     ano = fato.merge(anterior, on=["tabela_sidra", "codigo_sidra", "mes"], how="left")
     janeiro = ano.mes.str[5:] == "01"
     ano["acum_anterior"] = ano.acum_anterior.where(~janeiro, 0.0)
-    # Sem o mês anterior na mesma tabela (início de tabela fora de janeiro): não há como validar.
-    ano = ano[ano.acum_anterior.notna()].copy()
-    ano["calculada"] = ((1 + ano.acum_anterior / 100) * (1 + ano.variacao_mensal / 100) - 1) * 100
+    # Sem o mês anterior na mesma tabela (início de tabela fora de janeiro): a regra não se aplica.
+    ano = ano[ano.acum_anterior.notna()].reset_index(drop=True)
+    janeiro = ano.mes.str[5:] == "01"
+    ano["calculada"] = ((1 + ano.acum_anterior / 100) * _fator(ano.variacao_mensal) - 1) * 100
     ano["diferenca"] = ano.calculada - ano.variacao_acum_ano
     analitico = (
         MEIA_CASA_VARIACAO * (1 + ano.acum_anterior.abs() / 100)
         + MEIA_CASA_VARIACAO * (1 + ano.variacao_mensal.abs() / 100)
         + MEIA_CASA_VARIACAO
     )
-    por_nivel = ano.nivel_hierarquico.map(LIMITE_ACUMULADO_ANO_TABELAS_ANTIGAS)
-    ano["limite"] = np.where(
-        ano.tabela_sidra.isin(TABELAS_ANTIGAS), np.maximum(analitico, por_nivel), analitico
-    )
+    empirico = _limite_por_nivel(ano, limites, "acumulado_ano")
+    limite = np.fmax(analitico, empirico)
+    # Em janeiro o acumulado no ano é a própria variação: igualdade exata no SIDRA.
+    ano["limite"] = np.where(janeiro, 0.0, limite)
 
-    # Composição vetorizada: soma móvel do log dos fatores, por categoria (fato já ordenado).
     doze = fato.copy()
-    chave = ["tabela_sidra", "codigo_sidra"]
-    fator = 1 + doze.variacao_mensal / 100
-    doze["log_fator"], doze["inverso"] = np.log(fator), 1 / fator
-    moveis = doze.groupby(chave, sort=False)[["log_fator", "inverso"]].rolling(12).sum()
-    moveis = moveis.reset_index(level=chave, drop=True).sort_index()
-    doze["calculada"] = (np.exp(moveis.log_fator) - 1) * 100
-    soma_inversos = moveis.inverso
+    doze["calculada"], soma_inversos = _composicao_movel(doze, ["tabela_sidra", "codigo_sidra"], 12)
     doze["diferenca"] = doze.calculada - doze.variacao_acum_12m
-    doze["limite"] = (
-        MEIA_CASA_VARIACAO * (1 + doze.calculada.abs() / 100) * soma_inversos + MEIA_CASA_VARIACAO
-    )
+    doze["limite"] = _limite_composicao(doze.calculada, soma_inversos)
     return [
         validador.resultado(
             "acumulado_ano",
             ano,
-            "arredondamento de um passo; 1646/1387: máximo por nível (ruído da fonte)",
+            "janeiro: igualdade; demais: arredondamento de um passo ou limite por nível",
         ),
-        validador.resultado("acumulado_12m", doze, "arredondamento da composição de 12 meses"),
+        validador.resultado(
+            "acumulado_12m", doze, "arredondamento da composição de 12 meses", permitir_ausente=True
+        ),
     ]
 
 
@@ -310,77 +403,97 @@ def serie_geral(fato: pd.DataFrame) -> pd.DataFrame:
 
 
 def validar_costura(
-    fato: pd.DataFrame, referencia: pd.DataFrame, validador: Validador
+    fato: pd.DataFrame, referencia: pd.DataFrame, validador: Validador, tabela_referencia: int
 ) -> list[Resultado]:
-    """O índice geral das tabelas de dados reproduz a referência 3065."""
-    geral = serie_geral(fato).merge(referencia, on="mes", suffixes=("", "_ref"))
-    base = geral[["mes"]].assign(tabela_sidra=3065, codigo_ibge="0")
+    """O índice geral das tabelas de dados reproduz a tabela de referência."""
+    geral = serie_geral(fato).merge(referencia, on="mes", how="outer", suffixes=("", "_ref"))
+    base = geral[["mes"]].assign(tabela_sidra=tabela_referencia, codigo_ibge="0", chave=0)
+    fator = _fator(geral.variacao_mensal)
+    resultados = [
+        validador.resultado(
+            "costura_mensal",
+            base.assign(diferenca=geral.variacao_mensal - geral.variacao_mensal_ref, limite=0.0),
+            "igualdade exata",
+        )
+    ]
 
-    mensal = base.assign(diferenca=geral.variacao_mensal - geral.variacao_mensal_ref, limite=0.0)
-
-    acumulados = []
+    serie = geral.assign(chave=0)
     for janela, coluna in [
         (3, "variacao_acum_3m"),
         (6, "variacao_acum_6m"),
         (12, "variacao_acum_12m"),
     ]:
-        calculado = _acumulado_composto(geral.variacao_mensal, janela)
-        acumulados.append(
-            base.assign(
-                diferenca=calculado - geral[coluna], limite=LIMITE_COSTURA_ACUMULADOS[janela]
+        calculado, inversos = _composicao_movel(serie, ["chave"], janela)
+        resultados.append(
+            validador.resultado(
+                f"costura_acum_{janela}m",
+                base.assign(
+                    diferenca=calculado - geral[coluna],
+                    limite=_limite_composicao(calculado, inversos),
+                ),
+                f"arredondamento da composição de {janela} meses",
+                permitir_ausente=True,
             )
         )
-    fator = 1 + geral.variacao_mensal / 100
-    no_ano = (fator.groupby(geral.mes.str[:4]).cumprod() - 1) * 100
-    tem_janeiro = geral.groupby(geral.mes.str[:4]).mes.transform("min").str[5:] == "01"
-    acumulados.append(
-        base.assign(
-            diferenca=(no_ano - geral.variacao_acum_ano).where(tem_janeiro),
-            limite=LIMITE_COSTURA_ACUMULADOS["ano"],
+    ano = geral.mes.str[:4]
+    no_ano = (fator.groupby(ano).cumprod() - 1) * 100
+    inversos_ano = (1 / fator).groupby(ano).cumsum()
+    tem_janeiro = geral.groupby(ano).mes.transform("min").str[5:] == "01"
+    resultados.append(
+        validador.resultado(
+            "costura_acum_ano",
+            base.assign(
+                diferenca=(no_ano - geral.variacao_acum_ano).where(tem_janeiro),
+                limite=_limite_composicao(no_ano, inversos_ano),
+            ),
+            "arredondamento da composição desde janeiro",
+            permitir_ausente=True,
         )
     )
-    acumulados = pd.concat(acumulados, ignore_index=True)
 
-    um_passo = base.assign(
-        diferenca=geral.numero_indice - geral.numero_indice.shift() * fator,
-        limite=MEIA_CASA_PESO * geral.numero_indice + 2 * MEIA_CASA_VARIACAO,
+    passo = geral.numero_indice.shift() * fator
+    resultados.append(
+        validador.resultado(
+            "costura_numero_indice",
+            base.assign(
+                diferenca=geral.numero_indice - passo,
+                limite=MEIA_CASA_VARIACAO / 100 * geral.numero_indice + 2 * MEIA_CASA_VARIACAO,
+            ).iloc[1:],
+            "0,00005 x I + 0,01 por passo",
+        )
     )
     encadeado = geral.numero_indice.iloc[0] * fator.cumprod() / fator.iloc[0]
-    relativo = base.assign(
-        diferenca=(encadeado - geral.numero_indice) / geral.numero_indice,
-        limite=LIMITE_INDICE_ENCADEADO_RELATIVO,
-    )
-    return [
-        validador.resultado("costura_mensal", mensal, "igualdade exata"),
-        validador.resultado("costura_acumulados", acumulados, "0,01 (3, 6 meses e ano); 0,02 (12)"),
-        validador.resultado("costura_numero_indice", um_passo, "0,00005·I + 0,01 por passo"),
+    resultados.append(
         validador.resultado(
-            "costura_numero_indice_encadeado", relativo, "desvio relativo de 0,01%"
-        ),
-    ]
+            "costura_numero_indice_encadeado",
+            base.assign(
+                diferenca=(encadeado - geral.numero_indice) / geral.numero_indice,
+                limite=LIMITE_INDICE_ENCADEADO_RELATIVO,
+            ),
+            "desvio relativo de 0,01%",
+        )
+    )
+    return resultados
 
 
 def validar(
-    fato: pd.DataFrame,
-    referencia: pd.DataFrame,
-    meses_por_tabela: dict[int, list[str]],
-    excecoes: pd.DataFrame | None = None,
+    fato: pd.DataFrame, referencia: pd.DataFrame, configuracao: Configuracao
 ) -> tuple[list[Resultado], pd.DataFrame]:
-    """Resultados de todas as validações e as exceções que não cobriram nenhuma falha."""
-    validador = Validador(carregar_excecoes() if excecoes is None else excecoes)
+    """Resultados de todas as validações e as exceções cuja contagem não bate (sentinelas)."""
+    validador = Validador(configuracao.excecoes)
     resultados = [
         validar_esquema(fato),
         *validar_pesos(fato, validador),
         validar_reconciliacao(fato, validador),
-        validar_continuidade(fato, meses_por_tabela),
-        *validar_acumulados(fato, validador),
-        *validar_costura(fato, referencia, validador),
+        validar_continuidade(fato, configuracao),
+        *validar_acumulados(fato, validador, configuracao.limites),
+        *validar_costura(fato, referencia, validador, configuracao.tabela_referencia),
     ]
-    return resultados, validador.excecoes_sem_uso
+    return resultados, validador.sentinelas
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Valida o staging do IPCA-15.")
+    parser = argparse.ArgumentParser(description="Valida o staging de um índice.")
     parser.add_argument("--indice", default="ipca15")
     args = parser.parse_args(argv)
 
@@ -388,32 +501,33 @@ def main(argv: list[str] | None = None) -> int:
     pasta = diretorio_staging(indice)
     fato = pd.read_parquet(pasta / f"fato_{indice.codigo}.parquet")
     referencia = pd.read_parquet(pasta / f"ref_{indice.codigo}_geral.parquet")
-    armazem = ArmazemRaw(indice.fonte)
-    meses = {t.tabela: armazem.periodos(t.tabela) for t in indice.tabelas_dados}
+    dim = pd.read_parquet(pasta / "dim_classificacao.parquet")
+    configuracao = carregar_configuracao(indice, ArmazemRaw(indice.fonte), dim)
 
-    resultados, sem_uso = validar(fato, referencia, meses)
+    resultados, sentinelas = validar(fato, referencia, configuracao)
     for r in resultados:
         situacao = "ok   " if r.ok else "FALHA"
         print(
             f"{situacao} {r.validacao:<32} verificados={r.verificados:<7} falhas={r.falhas:<5} "
-            f"exceções={r.excecoes_aplicadas:<4} maior={r.maior_diferenca}"
+            f"exceções={r.excecoes_aplicadas:<5} maior={r.maior_diferenca}"
         )
-    for excecao in sem_uso.itertuples():
+    for s in sentinelas.itertuples():
         print(
-            f"aviso: exceção sem uso (a fonte corrigiu?): {excecao.validacao} "
-            f"{excecao.tabela_sidra} {excecao.codigo_ibge} {excecao.mes_inicio}"
+            f"SENTINELA {s.validacao} {s.tabela_sidra} {s.codigo_ibge} "
+            f"{s.mes_inicio}..{s.mes_fim}: "
+            f"registradas {s.falhas_cobertas}, obtidas {s.obtidas}"
         )
     (pasta / "validacao.json").write_text(
         json.dumps(
             {
                 "resultados": [asdict(r) | {"ok": r.ok} for r in resultados],
-                "excecoes_sem_uso": sem_uso.to_dict("records"),
+                "sentinelas": sentinelas.to_dict("records"),
             },
             ensure_ascii=False,
             indent=2,
         )
     )
-    return 0 if all(r.ok for r in resultados) and sem_uso.empty else 1
+    return 0 if all(r.ok for r in resultados) and sentinelas.empty else 1
 
 
 if __name__ == "__main__":

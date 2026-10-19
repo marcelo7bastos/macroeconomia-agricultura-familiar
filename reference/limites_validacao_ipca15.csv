@@ -1,0 +1,11 @@
+validacao,tabela_sidra,nivel_hierarquico,limite,justificativa,aprendizado
+acumulado_ano,1646,geral,0.010,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração; casos acima são exceções contadas",A-016
+acumulado_ano,1646,grupo,0.015,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1646,subgrupo,0.019,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1646,item,0.035,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1646,subitem,0.065,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1387,geral,0.017,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1387,grupo,0.014,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1387,subgrupo,0.015,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1387,item,0.033,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016
+acumulado_ano,1387,subitem,0.062,"356 com ruído acima do arredondamento (procedimento da fonte); limite no p99,9 da calibração",A-016

@@ -84,8 +84,10 @@ As mudanças com id novo são de naturezas diferentes:
   interrompe a transformação até ganhar um tratamento documentado aqui (A-009).
 - A API devolve só 2 casas nas variações, mesmo pedindo mais (`/d/m`); não há precisão maior.
 - A variável 1120 (acumulado em 12 meses) consta nos metadados, mas vem `...` em 2012-02 a
-  2017-02 (1705) e 2020-02 a 2020-12 (7062), e não existe na 1646 nem na 1387 (A-009). Nesses
-  meses o acumulado em 12 meses é calculado (seção 6) e conferido com a 3065 no índice geral.
+  2017-02 (1705) e 2020-02 a 2020-12 (7062), e não existe na 1646 nem na 1387 (A-009). No
+  `fato_ipca15` esses meses ficam **ausentes**. O acumulado em 12 meses por categoria nesses
+  meses será calculado nos indicadores (#7); hoje só o do índice geral é calculado, na validação,
+  e conferido com a 3065.
 
 ## 5. Tabelas de staging
 
@@ -100,7 +102,13 @@ semântica na seção 4.2 do [planejamento](PLANEJAMENTO.md).
 ## 6. Validações
 
 Rodam com `uv run python -m macroaf.validate.ipca15` (grava `validacao.json` no staging) e em
-todo PR pelo `pytest`. Qualquer falha bloqueia a publicação.
+todo PR pelo `pytest`. Qualquer falha bloqueia a publicação, e também qualquer exceção cuja
+contagem mude (6.5). Uma diferença que não pode ser calculada (ex.: pai ausente) conta como falha,
+salvo onde a regra não se aplica (acumulado em 12 meses não publicado, janela incompleta).
+
+O que varia por índice fica fora do código: tabelas e períodos no catálogo
+(`config/series.yaml`), exceções em `reference/excecoes_validacao_<indice>.csv` e limites
+empíricos em `reference/limites_validacao_<indice>.csv`.
 
 ### 6.1 Limite de arredondamento, não tolerância arbitrária (A-014)
 
@@ -115,13 +123,16 @@ caso. Abaixo do limite é arredondamento; acima é anomalia, que precisa de expl
 | 2 | `pesos_filhos` | os filhos somam o peso do pai | 0,00005 × (filhos + 1) |
 | 2 | `pesos_zero` | nenhum peso igual a zero | — |
 | 3 | `reconciliacao` | média dos filhos ponderada pelo peso do mês = variação do pai | 0,005 + 0,005 + Σ 0,00005·\|v_i − v\| / Σw |
-| 4 | `continuidade` | toda categoria tem valor em todos os meses da sua tabela | — |
-| 5 | `acumulado_ano` | `A_t = (1+A_{t−1})(1+v_t) − 1` (janeiro: `A = v`), um passo por vez | 0,005(1+\|A_{t−1}\|) + 0,005(1+\|v_t\|) + 0,005; na 1646/1387, o maior entre isso e o limite por nível (6.3) |
+| 4 | `continuidade` | toda categoria da `dim_classificacao` tem valor em todos os meses que o catálogo espera para a tabela, e só neles | — |
+| 5 | `acumulado_ano` | janeiro: `A = v`; demais meses: `A_t = (1+A_{t−1})(1+v_t) − 1`, um passo por vez | janeiro: **igualdade exata** (vale em todas as 12.598 linhas); demais: 0,005(1+\|A_{t−1}\|) + 0,005(1+\|v_t\|) + 0,005, ou o limite por nível da 1646/1387 (6.3) |
 | 5 | `acumulado_12m` | composição das 12 variações mensais = 1120, onde publicada | 0,005(1+\|A\|)·Σ 1/(1+v_i) + 0,005 |
 | 6 | `costura_mensal` | variação do geral das 4 tabelas = 355 da 3065 | igualdade exata |
-| 6 | `costura_acumulados` | 3, 6, 12 meses e ano do geral = 1118, 1119, 1120 e 356 da 3065 | 0,01 (3, 6, ano); 0,02 (12) |
+| 6 | `costura_acum_3m`, `_6m`, `_12m`, `_ano` | composição da variação mensal do geral = 1118, 1119, 1120 e 356 da 3065, cada variável validada à parte | 0,005(1+\|A\|)·Σ 1/(1+v_i) + 0,005 |
 | 6 | `costura_numero_indice` | `I_t = I_{t−1}(1+v_t)` contra a 1117 | 0,00005·I + 0,01 por passo |
-| 6 | `costura_numero_indice_encadeado` | índice encadeado desde mai/2000 contra a 1117 | desvio relativo de 0,01% |
+| 6 | `costura_numero_indice_encadeado` | índice encadeado desde mai/2000 contra a 1117 | desvio relativo de 0,01% (empírico; máximo observado 0,003%) |
+
+Maior razão diferença/limite observada fora das exceções: 0,98 (acumulado no ano), 0,97
+(reconciliação), 0,83 (costura), 0,80 (pesos), 0,73 (12 meses).
 
 O acumulado no ano é validado **um passo por vez**: assim um erro da fonte num mês não contamina
 os seguintes. Meses sem o mês anterior na mesma tabela (início de tabela fora de janeiro) não são
@@ -143,6 +154,8 @@ Consequências:
   acumulado no ano dos subitens e os pesos zero são aceitos como **exceção estrutural**.
 - **Contribuição de subitem** (indicador da #7) não soma ao item nesses três itens da 1646; ali a
   contribuição é calculada a partir do item.
+- **Limite desta validação:** os subitens desses três itens na 1646 não têm nenhuma identidade
+  que confira a variação mensal; um erro neles só é pego pela faixa plausível do esquema.
 - A documentação do IBGE sobre a cesta variável não pôde ser consultada nesta sessão (domínios
   bloqueados); a conclusão se apoia nos dados. Referência a confirmar: Série Relatórios
   Metodológicos do SNIPC e notas técnicas da atualização de 2006.
@@ -152,8 +165,12 @@ Consequências:
 Na 1705 e na 7062 a variável 356 fecha com as variações mensais dentro do limite de
 arredondamento. Na 1646 e na 1387 não: o ruído é maior que o arredondamento (até 0,02 no geral,
 que também diverge da 356 da 3065). É procedimento da fonte, não erro nosso. Por isso, nessas
-duas tabelas, o limite é o máximo observado por nível na calibração (geral 0,02; grupo 0,02;
-subgrupo 0,03; item 0,07; subitem 0,17). Para o índice geral, a referência é a 3065.
+duas tabelas, o limite é **empírico**: o percentil 99,9 da diferença por nível na calibração,
+em `reference/limites_validacao_ipca15.csv` (1646: subgrupo 0,019, item 0,035, subitem 0,065;
+1387: item 0,033, subitem 0,062; os demais níveis ficam no limite analítico). Os poucos casos
+acima do p99,9 (1646: 33; 1387: 25) não ampliam o limite: entram como exceções **contadas**, de
+modo que um erro novo, mesmo pequeno, muda a contagem e é detectado. Para o índice geral, a
+referência é a 3065.
 
 ### 6.4 Erros publicados pela fonte (A-015)
 
@@ -171,13 +188,18 @@ Conferidos na API, explicados e mantidos como publicados (o projeto não corrige
 ### 6.5 Exceções
 
 Ficam em [`reference/excecoes_validacao_ipca15.csv`](../reference/excecoes_validacao_ipca15.csv):
-validação, tabela, padrão do código IBGE (expressão regular), faixa de meses, tipo (`estrutural`
-ou `fonte`), justificativa e A-NNN. Regras:
+validação (uma variável por linha), tabela, padrão do código IBGE (expressão regular), faixa de
+meses, tipo (`estrutural` ou `fonte`), justificativa, A-NNN e **número exato de falhas que
+cobre**. Regras (A-018):
 
-- Exceção sem justificativa, tipo ou aprendizado é rejeitada.
-- **Toda exceção precisa continuar cobrindo uma falha.** Se o IBGE corrigir o dado, a exceção
-  deixa de ser usada, o teste avisa e ela é removida.
-- Nada é ignorado em silêncio: o relatório mostra quantas diferenças cada exceção cobriu.
+- O escopo da exceção é o da justificativa: se o erro está na 1119, a exceção é da
+  `costura_acum_6m`, e a 1118, a 1120 e a 356 do mesmo mês continuam validadas.
+- Exceção sem justificativa, tipo, aprendizado ou contagem é rejeitada.
+- **Sentinela por contagem exata.** Cada falha é atribuída à primeira exceção que a cobre (na
+  ordem do arquivo), e a contagem precisa ser igual à registrada. Menos: o IBGE pode ter corrigido
+  o dado; mais: há erro novo no escopo. Nos dois casos a validação falha até a exceção ser revista.
+- As exceções de 2003-03 e 2004-08 na 1646 existem só porque a validação de um passo usa o mês
+  anterior (errado na fonte) como âncora.
 
 ## 7. Registro de descobertas
 

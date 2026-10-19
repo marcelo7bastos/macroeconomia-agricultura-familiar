@@ -1,15 +1,21 @@
-validacao,tabela_sidra,codigo_ibge,mes_inicio,mes_fim,tipo,justificativa,aprendizado
-reconciliacao,1646,110[356],2000-05,2006-07,estrutural,"Cesta variável (sazonal) nos itens in natura (Tubérculos, Hortaliças, Frutas) até a POF 1995-96: pesos dos subitens não reproduzem o item; o subgrupo 11 reconcilia pelos itens",A-013
-acumulado_ano,1646,110[356]\d{3},2000-05,2006-07,estrutural,"Cesta variável nos subitens in natura: não há índice encadeado único por subitem e a 356 não fecha com a 355",A-013
-pesos_zero,1646,110[356]\d{3},2000-05,2006-07,estrutural,"Cesta variável: subitem fora de safra tem peso 0",A-013
-pesos_grupos,1387,0,2010-07,2010-08,fonte,"Pesos dos 9 grupos somam 100,1: toda a árvore foi multiplicada por 1,000999 pela fonte (conferido na API); filhos somam o pai e a reconciliação não muda",A-015
-reconciliacao,1387,1115,2011-10,2011-11,fonte,"Item Enlatados e conservas publicado incoerente com os subitens (palmito com saltos de peso sem variação correspondente); conferido na API",A-015
-reconciliacao,1387,11,2011-11,2011-11,fonte,"Subgrupo agregado pela fonte com um 1115 diferente do publicado (ver 1115 em 2011-10/11)",A-015
-pesos_filhos,1387,1115,2011-10,2011-11,fonte,"Peso do palmito em conserva (1115016) com saltos sem variação correspondente; conferido na API",A-015
-reconciliacao,1705,9101,2014-07,2014-07,fonte,"Subitem TV por assinatura com internet (9101022) publica 0,00 mas o peso implica cerca de -1,3%; o item é coerente com o peso",A-015
-pesos_filhos,1705,9101,2014-09,2014-09,fonte,"Mesmo caso do 9101022: peso sobe sem variação correspondente",A-015
-acumulado_ano,1646,(?!0$)\d+,2003-02,2003-03,fonte,"356 trocada em 2003-02 em todas as categorias exceto o geral (ex.: grupo 1 publica 1,55; pela 355 dá 4,25); 2003-03 falha só por usar o mês anterior como âncora",A-015
-acumulado_ano,1646,(?!0$)\d+,2004-07,2004-08,fonte,"356 de 2004-07 repete a de 2004-08 em todas as categorias exceto o geral; 2004-08 falha só pela âncora",A-015
-costura_acumulados,3065,0,2006-04,2006-04,fonte,"1119 (6 meses) publica 0,54; pelo número-índice da própria 3065 dá 2,76",A-015
-costura_acumulados,3065,0,2011-11,2011-11,fonte,"1119 (6 meses) publica 1,69; pelo número-índice dá 2,03",A-015
-costura_acumulados,3065,0,2012-11,2012-11,fonte,"1118 (3 meses) publica 1,19 e 1119 publica 2,41; pelo número-índice dão 1,68 e 2,60",A-015
+validacao,tabela_sidra,codigo_ibge,mes_inicio,mes_fim,tipo,justificativa,aprendizado,falhas_cobertas
+reconciliacao,1646,110[356],2000-05,2006-07,estrutural,"Cesta variável (sazonal) nos itens in natura (Tubérculos, Hortaliças, Frutas) até a POF 1995-96: pesos dos subitens não reproduzem o item; o subgrupo 11 reconcilia pelos itens",A-013,224
+acumulado_ano,1646,110[356]\d{3},2000-05,2006-07,estrutural,Cesta variável nos subitens in natura: não há índice encadeado único por subitem e a 356 não fecha com a 355,A-013,2879
+pesos_zero,1646,110[356]\d{3},2000-05,2006-07,estrutural,Cesta variável: subitem fora de safra tem peso 0,A-013,93
+pesos_grupos,1387,0,2010-07,2010-08,fonte,"Pesos dos 9 grupos somam 100,1: toda a árvore foi multiplicada por 1,000999 pela fonte (conferido na API); filhos somam o pai e a reconciliação não muda",A-015,2
+reconciliacao,1387,1115,2011-10,2011-11,fonte,Item Enlatados e conservas publicado incoerente com os subitens (palmito com saltos de peso sem variação correspondente); conferido na API,A-015,2
+reconciliacao,1387,11,2011-11,2011-11,fonte,Subgrupo agregado pela fonte com um 1115 diferente do publicado (ver 1115 em 2011-10/11),A-015,1
+pesos_filhos,1387,1115,2011-10,2011-11,fonte,Peso do palmito em conserva (1115016) com saltos sem variação correspondente; conferido na API,A-015,2
+reconciliacao,1705,9101,2014-07,2014-07,fonte,"Subitem TV por assinatura com internet (9101022) publica 0,00 mas o peso implica cerca de -1,3%; o item é coerente com o peso",A-015,1
+pesos_filhos,1705,9101,2014-09,2014-09,fonte,Mesmo caso do 9101022: peso sobe sem variação correspondente,A-015,1
+acumulado_ano,1646,(?!0$)\d+,2003-02,2003-03,fonte,"356 trocada em 2003-02 em todas as categorias exceto o geral (ex.: grupo 1 publica 1,55; pela 355 dá 4,25); 2003-03 falha só por usar o mês anterior como âncora",A-015,1058
+acumulado_ano,1646,(?!0$)\d+,2004-07,2004-08,fonte,356 de 2004-07 repete a de 2004-08 em todas as categorias exceto o geral; 2004-08 falha só pela âncora,A-015,1011
+costura_acum_6m,3065,0,2006-04,2006-04,fonte,"1119 (6 meses) publica 0,54; pelo número-índice da própria 3065 dá 2,76",A-015,1
+costura_acum_6m,3065,0,2011-11,2011-11,fonte,"1119 (6 meses) publica 1,69; pelo número-índice dá 2,03",A-015,1
+costura_acum_3m,3065,0,2012-11,2012-11,fonte,"1118 (3 meses) publica 1,19; pelo número-índice dá 1,68",A-015,1
+costura_acum_6m,3065,0,2012-11,2012-11,fonte,"1119 (6 meses) publica 2,41; pelo número-índice dá 2,60",A-015,1
+acumulado_ano,1646,\d{2},2000-05,2006-07,fonte,"Ruído da 356 acima do limite por nível (p99,9), subgrupos: casos contados, um erro novo muda a contagem",A-016,1
+acumulado_ano,1646,\d{4},2000-05,2006-07,fonte,"Ruído da 356 acima do limite por nível (p99,9), itens: casos contados, um erro novo muda a contagem",A-016,4
+acumulado_ano,1646,\d{7},2000-05,2006-07,fonte,"Ruído da 356 acima do limite por nível (p99,9), subitens: casos contados, um erro novo muda a contagem",A-016,28
+acumulado_ano,1387,\d{4},2006-08,2012-01,fonte,"Ruído da 356 acima do limite por nível (p99,9), itens: casos contados, um erro novo muda a contagem",A-016,3
+acumulado_ano,1387,\d{7},2006-08,2012-01,fonte,"Ruído da 356 acima do limite por nível (p99,9), subitens: casos contados, um erro novo muda a contagem",A-016,22

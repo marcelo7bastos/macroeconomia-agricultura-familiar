@@ -158,12 +158,14 @@ item, subitem). O modelo Power BI anterior já usava o subitem como folha da hie
 
 Limites, exceções e as descobertas que os justificam: [METODOLOGIA.md, seção 6](METODOLOGIA.md#6-validações).
 
-1. **Esquema:** colunas, tipos, nulos e faixas plausíveis (variação mensal entre -50% e +50%).
-2. **Pesos:** em cada mês, grupos somam ≈ 100 e filhos somam o peso do pai (tolerância a definir
-   empiricamente, por arredondamento do IBGE).
+1. **Esquema:** colunas, tipos, nulos e faixas plausíveis.
+2. **Pesos:** em cada mês, grupos somam 100 e filhos somam o peso do pai.
 3. **Reconciliação:** média ponderada dos filhos (peso × variação) reproduz a variação oficial do
-   pai e do índice geral; tolerância inicial 0,01 p.p.
+   pai e do índice geral.
 4. **Continuidade:** nenhum mês faltando por série ativa.
+
+Na #5, a tolerância fixa prevista (0,01 p.p.) foi substituída pelo **limite analítico de
+arredondamento** de cada conta (A-014), com exceções documentadas e contadas.
 5. **Acumulados:** acumulados calculados a partir das variações mensais batem com as variáveis
    oficiais (356, 1120 e, para o geral, 1118/1119 da tabela 3065).
 6. **Costura entre tabelas:** o índice geral encadeado pelas quatro tabelas reproduz o

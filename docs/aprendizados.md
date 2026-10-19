@@ -25,6 +25,22 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-018 · 2026-10-19 · Exceção estreita, contada e com limite empírico separado
+- **Contexto:** revisão das validações (#5) pelo `revisor-metodologico`, com erros injetados.
+- **O que aconteceu:** (1) exceções da 3065 cobriam o mês inteiro de todos os acumulados, e um
+  erro injetado na 1118 e na 1120 de 2006-04 passava; (2) a sentinela "ao menos uma falha" não
+  via correção parcial nem erro novo no escopo; (3) o limite empírico das tabelas antigas igual ao
+  máximo observado deixava passar +0,10 num subitem da 1387; (4) janeiro tinha folga de 0,015 onde
+  a identidade é exata; (5) a continuidade partia dos meses do raw, não do catálogo; (6) diferença
+  não calculável era descartada em silêncio.
+- **Lição:** exceção tem o escopo da justificativa (uma variável) e a contagem exata de falhas;
+  limite empírico fica no p99,9, com o que passa dele listado como exceção contada; identidades
+  exatas são validadas por igualdade; o esperado vem do catálogo e da classificação; diferença
+  ausente é falha.
+- **Promovida para:** `macroaf.validate.ipca15` e testes de erro injetado em
+  `tests/test_validacao_ipca15.py`; `reference/limites_validacao_ipca15.csv`; `METODOLOGIA.md`
+  6.1, 6.3 e 6.5.
+
 ### A-017 · 2026-10-19 · Categorias novas na troca de POF trazem acumulado herdado
 - **Contexto:** calibração do acumulado no ano (#5), pelo `validador-dados`.
 - **O que aconteceu:** na 1387 (ago/2006), categorias novas já vêm com acumulado no ano desde
