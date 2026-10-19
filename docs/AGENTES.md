@@ -50,7 +50,7 @@ O ciclo é **descoberta → registro → promoção → revisão**:
 
 1. Ao descobrir algo não óbvio, o agente roda `/aprender`.
 2. A lição entra em [`aprendizados.md`](aprendizados.md) e é promovida para a forma mais forte que
-   couber: teste > validação no pipeline > regra no `CLAUDE.md` > ficha.
+   couber: teste > validação no pipeline > regra no `AGENTS.md` > ficha.
 3. `/fechar-etapa` pergunta, ao fim de toda issue, o que a próxima sessão precisaria saber.
 4. O mantenedor revisa no PR toda mudança em regras e decisões.
 5. O hook de início de sessão lembra as lições mais recentes.
@@ -59,7 +59,7 @@ O ciclo é **descoberta → registro → promoção → revisão**:
 
 | Conhecimento | Arquivo |
 |---|---|
-| Regras para toda sessão | `CLAUDE.md` (raiz e, quando houver, por pasta) |
+| Regras para toda sessão | `AGENTS.md` (raiz e, quando houver, por pasta); o `CLAUDE.md` só importa o `AGENTS.md` |
 | Escopo, roteiro e índice de decisões | `docs/PLANEJAMENTO.md` |
 | Decisões com contexto | `docs/decisoes/` |
 | Lições aprendidas | `docs/aprendizados.md` |

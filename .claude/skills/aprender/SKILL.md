@@ -1,6 +1,6 @@
 ---
 name: aprender
-description: Registra uma lição aprendida em docs/aprendizados.md e a promove para a forma mais forte possível (teste, validação, regra no CLAUDE.md ou ficha). Use ao descobrir algo não óbvio sobre os dados, as APIs, o método ou o próprio fluxo de trabalho, ou quando o usuário pedir /aprender.
+description: Registra uma lição aprendida em docs/aprendizados.md e a promove para a forma mais forte possível (teste, validação, regra no AGENTS.md ou ficha). Use ao descobrir algo não óbvio sobre os dados, as APIs, o método ou o próprio fluxo de trabalho, ou quando o usuário pedir /aprender.
 ---
 
 # /aprender
@@ -15,7 +15,7 @@ o que não estiver no git se perde quando a sessão termina.
 - Uma decisão de método foi tomada (se tiver alternativas e consequências, faça também uma ADR).
 - Uma regra existente se mostrou errada ou incompleta.
 
-Não registre o óbvio nem o que já está em `CLAUDE.md`, no planejamento ou nas fichas.
+Não registre o óbvio nem o que já está em `AGENTS.md`, no planejamento ou nas fichas.
 
 ## Passos
 
@@ -25,7 +25,7 @@ Não registre o óbvio nem o que já está em `CLAUDE.md`, no planejamento ou na
    1. **Teste automatizado** (`tests/`): quando dá para verificar no código. Um bug vira teste de
       regressão.
    2. **Validação no pipeline** (`src/macroaf/validate/`): quando é propriedade dos dados.
-   3. **Regra no `CLAUDE.md`** (raiz ou de uma pasta): quando é conduta que vale em toda sessão.
+   3. **Regra no `AGENTS.md`** (raiz ou de uma pasta): quando é conduta que vale em toda sessão.
       Mantenha o arquivo curto; uma regra nova pode substituir outra.
    4. **Ficha** (`docs/indices/`, `docs/fontes/`): quando é conhecimento sobre um índice ou fonte.
 3. Faça a promoção no mesmo branch, se couber no escopo da issue. Se não couber, abra uma issue e
@@ -37,7 +37,7 @@ Não registre o óbvio nem o que já está em `CLAUDE.md`, no planejamento ou na
    - **Contexto:** o que estava sendo feito (issue/PR).
    - **O que aconteceu:** fato observado, com evidência.
    - **Lição:** o que fazer (ou evitar) daqui em diante.
-   - **Promovida para:** `tests/...` | validação `...` | `CLAUDE.md` | ficha `...` | issue #N | nenhuma (motivo).
+   - **Promovida para:** `tests/...` | validação `...` | `AGENTS.md` | ficha `...` | issue #N | nenhuma (motivo).
    ```
 
-5. Mudanças no `CLAUDE.md` ou em decisões vão no PR para revisão do mantenedor; avise no corpo do PR.
+5. Mudanças no `AGENTS.md` ou em decisões vão no PR para revisão do mantenedor; avise no corpo do PR.
