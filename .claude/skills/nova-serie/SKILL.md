@@ -31,7 +31,15 @@ Acione o subagente `explorador-sidra` (fontes IBGE) com as tabelas candidatas. P
 Adicione as entradas em `config/series.yaml` (fonte, tabela, variáveis, período, unidade, versão da
 POF), seguindo as entradas existentes. Se o catálogo ainda não existir, descreva as entradas na issue.
 
-## 5. Registrar
+## 5. Página de transformações
+
+Quando o índice tiver staging e validações, gere a página com
+`uv run python -m macroaf.relatorios.transformacoes --indice <indice>` e acrescente o índice ao
+teste `tests/test_relatorio_transformacoes.py`. Se a estrutura for diferente da do IPCA-15
+(sem classificação 315 ou sem tabela de referência), adapte `macroaf.relatorios.coleta` sem mudar
+o modelo da página (decisão 0004).
+
+## 6. Registrar
 
 - Atualize a tabela de escopo do `docs/PLANEJAMENTO.md` se a situação da frente mudou.
 - Rode `/aprender` para peculiaridades da fonte que valham para além da ficha.

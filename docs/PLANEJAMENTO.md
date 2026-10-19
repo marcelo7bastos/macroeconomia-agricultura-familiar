@@ -249,3 +249,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.6 | Memória dos agentes | **No próprio repositório** ([0001](decisoes/0001-memoria-dos-agentes-no-repositorio.md)) |
 | 9.7 | Organização dos agentes | **Por função, não por índice** ([0002](decisoes/0002-agentes-por-funcao.md)) |
 | 9.8 | Atualização dos dados | **Extração incremental, raw compactado e imutável, compilação completa** ([0003](decisoes/0003-extracao-incremental.md)) |
+| 9.9 | Documentação das transformações | **Página HTML por índice, em degraus, gerada dos dados** ([0004](decisoes/0004-explicacao-em-degraus.md)) |

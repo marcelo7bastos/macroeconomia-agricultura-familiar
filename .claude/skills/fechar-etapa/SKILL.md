@@ -33,6 +33,10 @@ Confira e atualize o que a mudança tocar:
       tratamento dos dados (com o A-NNN de origem)
 - [ ] `data/marts/README.md` (dicionário), quando a etapa mexer nos marts
 - [ ] `README.md` (situação do projeto)
+- [ ] `docs/transformacoes/<indice>.html`: regerar com
+      `uv run python -m macroaf.relatorios.transformacoes --indice <indice>` e revisar o que mudou
+      (resumo, dúvidas em aberto, o que existe); se uma dúvida foi resolvida ou surgiu, atualizar
+      `DUVIDAS` no gerador
 - [ ] `CHANGELOG.md`: entrada em "Não publicado"
 
 ## 4. Aprendizados

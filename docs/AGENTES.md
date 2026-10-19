@@ -42,6 +42,7 @@ Não há um agente por índice: o que muda entre índices é configuração (`co
 | Hook de início de sessão: instala dependências na nuvem e mostra as lições recentes | `.claude/hooks/session-start.sh` | ativo |
 | CI (ruff e pytest; validações de dados a partir da #5) em todo push e PR | `.github/workflows/ci.yml` | ativo |
 | Verificação de acesso às APIs do IBGE e do catálogo (PRs de extração e semanal) | `.github/workflows/api-ibge.yml` | ativo |
+| Página de transformações por índice, regerada em todo PR que muda transformação (teste exige) | `docs/transformacoes/` | ativo |
 | Atualização automática quando o IBGE divulga mês novo | GitHub Actions | #9 |
 | Retrospectiva semanal: lê PRs, issues e falhas e propõe ajustes nas regras | tarefa agendada | depois do piloto |
 

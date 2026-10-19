@@ -37,11 +37,14 @@ uv run python -m macroaf.extract.atualizar --verificar   # só confere o que fal
 uv run python -m macroaf.extract.atualizar               # baixa
 uv run python -m macroaf.transform.ipca15                # staging (dim, fato e referência)
 uv run python -m macroaf.validate.ipca15                 # validações (falha = não publicar)
+uv run python -m macroaf.relatorios.transformacoes       # página docs/transformacoes/ipca15.html
 ```
 
 ## Documentação
 
 - [Planejamento](docs/PLANEJAMENTO.md): escopo, fontes, transformação, indicadores e decisões.
+- [Transformações do IPCA-15](docs/transformacoes/ipca15.html): página interativa, gerada dos
+  dados, com o caminho da API ao fato, como as tabelas se juntam e o que existe.
 - [Metodologia](docs/METODOLOGIA.md): como as categorias são identificadas, os valores tratados
   e os dados validados, com as descobertas que justificam cada regra.
 - [Decisões](docs/decisoes/) e [aprendizados](docs/aprendizados.md): o porquê das escolhas e as

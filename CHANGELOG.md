@@ -11,6 +11,9 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Página de transformações `docs/transformacoes/ipca15.html`, gerada dos dados
+  (`python -m macroaf.relatorios.transformacoes`), com texto claro, diagramas e etapas
+  interativas; teste exige que esteja em dia (decisão 0004, #5).
 - `fato_ipca15` e `ref_ipca15_geral` (`python -m macroaf.transform.ipca15`) e as validações da
   seção 4.4 (`python -m macroaf.validate.ipca15`), com limites de arredondamento analíticos e
   exceções documentadas em `reference/excecoes_validacao_ipca15.csv` (#5).
