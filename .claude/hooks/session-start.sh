@@ -4,9 +4,9 @@ set -euo pipefail
 
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
-# Dependências: só em sessões na nuvem e só depois que o projeto tiver pyproject.toml (issue #1).
+# Dependências: só em sessões na nuvem, a partir do uv.lock (sem reescrevê-lo), como no CI.
 if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] && [ -f pyproject.toml ]; then
-  uv sync --all-groups >&2
+  uv sync --all-groups --frozen >&2
 fi
 
 # O texto impresso aqui entra no contexto da sessão.
