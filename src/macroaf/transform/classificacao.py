@@ -46,6 +46,31 @@ COLUNAS = [
     "item",
 ]
 
+
+def _pai(codigo: str) -> str | None:
+    if codigo == CODIGO_GERAL:
+        return None
+    digitos = DIGITOS_DO_PAI[len(codigo)]
+    return CODIGO_GERAL if digitos == 0 else codigo[:digitos]
+
+
+def _hierarquia_coerente(linha: pd.Series) -> bool:
+    """Pai e grupo/subgrupo/item batem com o que o código determina (protege edições futuras)."""
+    codigo = linha["codigo_ibge"]
+    if len(codigo) not in NIVEL_POR_DIGITOS and codigo != CODIGO_GERAL:
+        return False
+    esperado = {
+        "codigo_pai": _pai(codigo),
+        "grupo": _no_nivel(codigo, 1),
+        "subgrupo": _no_nivel(codigo, 2),
+        "item": _no_nivel(codigo, 4),
+    }
+    return all(
+        (pd.isna(linha[coluna]) if valor is None else linha[coluna] == valor)
+        for coluna, valor in esperado.items()
+    )
+
+
 ESQUEMA = pa.DataFrameSchema(
     {
         "versao_pof": pa.Column(str),
@@ -60,6 +85,25 @@ ESQUEMA = pa.DataFrameSchema(
         "item": pa.Column(str, nullable=True),
     },
     unique=["tabela_sidra", "codigo_ibge"],
+    checks=[
+        pa.Check(
+            lambda df: ~df.duplicated(["tabela_sidra", "codigo_sidra"]),
+            error="codigo_sidra repetido na mesma tabela (a #5 junta valores por ele)",
+        ),
+        pa.Check(
+            lambda df: (
+                df.nivel_hierarquico
+                == df.codigo_ibge.map(
+                    lambda c: "geral" if c == CODIGO_GERAL else NIVEL_POR_DIGITOS[len(c)]
+                )
+            ),
+            error="nivel_hierarquico incoerente com o número de dígitos do código",
+        ),
+        pa.Check(
+            lambda df: df.apply(_hierarquia_coerente, axis=1),
+            error="codigo_pai, grupo, subgrupo ou item incoerentes com o código",
+        ),
+    ],
     strict=True,
     ordered=True,
 )
@@ -92,19 +136,19 @@ def _no_nivel(codigo: str, digitos: int) -> str | None:
 def classificacao_da_tabela(metadados: dict, tabela: Tabela) -> list[dict]:
     """Linhas de `dim_classificacao` de uma tabela, a partir dos metadados guardados no raw."""
     contexto = f"tabela {tabela.tabela}"
-    classificacoes = [c for c in metadados.get("classificacoes", []) if c.get("id") == 315]
+    classificacoes = [
+        c for c in metadados.get("classificacoes", []) if c.get("id") == tabela.classificacao
+    ]
     if len(classificacoes) != 1:
-        raise ErroClassificacao(f"{contexto}: classificação 315 ausente nos metadados")
+        raise ErroClassificacao(
+            f"{contexto}: classificação {tabela.classificacao} ausente nos metadados"
+        )
 
     linhas = []
     for categoria in classificacoes[0]["categorias"]:
         codigo, nome = separar_codigo(categoria["nome"])
-        if codigo == CODIGO_GERAL:
-            nivel, pai = "geral", None
-        else:
-            nivel = NIVEL_POR_DIGITOS[len(codigo)]
-            digitos_pai = DIGITOS_DO_PAI[len(codigo)]
-            pai = CODIGO_GERAL if digitos_pai == 0 else codigo[:digitos_pai]
+        nivel = "geral" if codigo == CODIGO_GERAL else NIVEL_POR_DIGITOS[len(codigo)]
+        pai = _pai(codigo)
         linhas.append(
             {
                 "versao_pof": tabela.versao_pof,

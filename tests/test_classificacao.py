@@ -1,9 +1,11 @@
 import pandas as pd
+import pandera.errors
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
 from macroaf.extract.raw import ArmazemRaw
 from macroaf.transform.classificacao import (
+    ESQUEMA,
     ErroClassificacao,
     classificacao_da_tabela,
     montar_dim_classificacao,
@@ -146,3 +148,27 @@ def test_staging_grava_e_le_em_parquet(dim, tmp_path):
     caminho = tmp_path / "dim.parquet"
     dim.to_parquet(caminho, index=False)
     pd.testing.assert_frame_equal(pd.read_parquet(caminho), dim, check_dtype=False)
+
+
+@pytest.mark.parametrize(
+    ("coluna", "valor"),
+    [("codigo_pai", "2"), ("item", "1102"), ("nivel_hierarquico", "item"), ("codigo_sidra", 7169)],
+)
+def test_contrato_rejeita_edicao_incoerente(dim, coluna, valor):
+    alterada = dim.copy()
+    linha = alterada.index[(alterada.tabela_sidra == 7062) & (alterada.codigo_ibge == "1101002")]
+    alterada.loc[linha, coluna] = valor
+    with pytest.raises(pandera.errors.SchemaError):
+        ESQUEMA.validate(alterada)
+
+
+def test_codigo_sidra_identifica_sempre_a_mesma_categoria(dim):
+    # A #5 junta valores por (tabela, codigo_sidra); o mesmo id não muda de código nem nome (A-012).
+    variantes = dim.groupby("codigo_sidra")[["codigo_ibge", "nome"]].nunique()
+    assert (variantes == 1).all().all()
+
+
+def test_mesmo_codigo_ibge_pode_ter_outro_codigo_sidra_entre_pofs(dim):
+    # Fato registrado na A-012: a harmonização (#6) não pode emendar só pelo código IBGE.
+    ids = dim.groupby("codigo_ibge").codigo_sidra.nunique()
+    assert (ids > 1).sum() > 0
