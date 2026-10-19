@@ -16,6 +16,19 @@ APIs oficiais (IBGE/SIDRA) → extração (raw) → transformação (staging) �
 - Os dados são atualizados automaticamente pelo GitHub Actions quando o IBGE divulga um mês novo.
 - Todo indicador calculado é testado contra uma referência oficial antes de ser publicado.
 
+## Desenvolvimento
+
+Requer [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync --all-groups      # cria o ambiente com Python 3.12 e as dependências
+uv run pytest             # testes
+uv run ruff check .       # lint
+uv run ruff format .      # formatação
+```
+
+O CI roda lint, formatação e testes em todo push na `main` e em todo PR.
+
 ## Documentação
 
 - [Planejamento](docs/PLANEJAMENTO.md): escopo, fontes, transformação, indicadores e decisões.
