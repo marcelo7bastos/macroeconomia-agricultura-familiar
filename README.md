@@ -19,6 +19,11 @@ APIs oficiais (IBGE/SIDRA) → extração (raw) → transformação (staging) �
 ## Documentação
 
 - [Planejamento](docs/PLANEJAMENTO.md): escopo, fontes, transformação, indicadores e decisões.
+- [Decisões](docs/decisoes/) e [aprendizados](docs/aprendizados.md): o porquê das escolhas e as
+  lições registradas ao longo do projeto.
+- [Fichas de índices](docs/indices/) e [de fontes](docs/fontes/).
+- [Agentes de IA](docs/AGENTES.md): como o Claude Code trabalha no projeto.
+- [Changelog](CHANGELOG.md).
 - [Backlog](../../issues?q=is%3Aissue+is%3Aopen+label%3Abacklog): ideias e próximas frentes.
 - [Piloto IPCA-15](../../milestone/1): etapas em andamento.
 

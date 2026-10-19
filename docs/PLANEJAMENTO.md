@@ -1,6 +1,7 @@
 # Planejamento
 
-Documento vivo. Decisões tomadas ficam na seção 9; ideias e frentes futuras ficam como
+Documento vivo. Decisões tomadas ficam na seção 9 (contexto completo em [`decisoes/`](decisoes/));
+lições aprendidas ficam em [`aprendizados.md`](aprendizados.md); ideias e frentes futuras ficam como
 [issues com o rótulo `backlog`](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues?q=label%3Abacklog).
 
 ## 1. Objetivo
@@ -36,6 +37,8 @@ reaproveitável para o IPCA cheio trocando apenas a configuração.
 ## 3. Extração (piloto IPCA-15)
 
 ### 3.1 Tabelas SIDRA (conferidas na API do IBGE em 19/10/2026)
+
+Detalhes e peculiaridades na ficha [`indices/ipca15.md`](indices/ipca15.md).
 
 | Tabela | Período | Estrutura de pesos | Variáveis |
 |---|---|---|---|
@@ -179,7 +182,9 @@ src/macroaf/
 data/{raw,staging,marts}/
 reference/      mapeamentos revisados manualmente
 tests/
-docs/           PLANEJAMENTO.md, METODOLOGIA.md
+docs/           PLANEJAMENTO.md, METODOLOGIA.md, AGENTES.md, aprendizados.md,
+                decisoes/, indices/, fontes/
+.claude/        agents/, skills/, hooks/ (ver docs/AGENTES.md)
 .github/workflows/atualizacao.yml
 ```
 
@@ -187,6 +192,7 @@ docs/           PLANEJAMENTO.md, METODOLOGIA.md
 
 Cada etapa é uma issue do marco **Piloto IPCA-15**.
 
+0. Agentes, skills e registro de aprendizado ([`AGENTES.md`](AGENTES.md)).
 1. Base do repositório: estrutura, `uv`, `pytest`, `ruff`, CI.
 2. Catálogo de séries (`config/series.yaml`).
 3. Extração SIDRA + metadados, com camada `raw` (inclui testar a API a partir do runner do GitHub).
@@ -206,3 +212,5 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.3 | Método do indicador de agricultura familiar (ponderação contínua × corte) | **Em aberto**: issue de backlog |
 | 9.4 | Idioma de código e dados | **Português** |
 | 9.5 | Licenças | **MIT** (código) e **CC BY 4.0** (dados derivados) |
+| 9.6 | Memória dos agentes | **No próprio repositório** ([0001](decisoes/0001-memoria-dos-agentes-no-repositorio.md)) |
+| 9.7 | Organização dos agentes | **Por função, não por índice** ([0002](decisoes/0002-agentes-por-funcao.md)) |
