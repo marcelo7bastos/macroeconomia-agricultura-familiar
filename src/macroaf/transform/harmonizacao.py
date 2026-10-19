@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
 import sys
 import unicodedata
@@ -39,7 +40,8 @@ from macroaf.transform.ipca15 import montar_fato
 
 TIPOS = ["identico", "renomeado", "dividido", "fundido", "descontinuado", "novo"]
 CONTINUOS = {"identico", "renomeado"}
-SITUACOES = ["automatico", "proposto", "revisado"]
+SITUACOES = ["automatico", "proposto", "revisado", "rejeitado"]
+DECIDIDAS = {"revisado", "rejeitado"}
 PARENTESCO_CANDIDATO = 0.5
 PALAVRAS_VAZIAS = {"de", "da", "do", "das", "dos", "e", "em", "para", "com", "sem", "a", "o"}
 COLUNAS_MAPA = [
@@ -81,7 +83,12 @@ def similaridade(a: str, b: str) -> float:
 
 
 def _palavras(nome: str) -> set[str]:
-    return {p for p in normalizar_nome(nome).split() if p not in PALAVRAS_VAZIAS}
+    """Palavras significativas, com plural simples reduzido ("lentes" → "lente")."""
+    return {
+        p[:-1] if len(p) > 3 and p.endswith("s") else p
+        for p in normalizar_nome(nome).split()
+        if p not in PALAVRAS_VAZIAS
+    }
 
 
 def parentesco(a: str, b: str) -> float:
@@ -145,70 +152,108 @@ def _item_de(linha) -> str | None:
     return linha.item if linha.nivel_hierarquico == "subitem" else linha.subgrupo
 
 
-def _classificar_mesmo_codigo(origem, destino) -> tuple[str, str, str]:
-    """Tipo, situação e critério para um código presente nas duas tabelas."""
-    if destino.codigo_sidra == origem.codigo_sidra:
-        return "identico", "automatico", "mesmo código e mesmo id SIDRA"
-    if normalizar_nome(origem.nome) == normalizar_nome(destino.nome):
-        return "renomeado", "automatico", "mesmo código; id novo; só grafia mudou"
-    nota = similaridade(origem.nome, destino.nome)
-    return "renomeado", "proposto", f"mesmo código; id novo; nome mudou (similaridade {nota:.2f})"
+def _candidatos(saem: list, entram: list, codigos_novos: set, codigos_extintos: set) -> list[tuple]:
+    """Pares (origem, destino, parentesco) com evidência de nome.
 
-
-def _candidatos(saem: list, entram: list) -> list[tuple]:
-    """Pares (origem, destino, parentesco) com evidência forte: nome igual depois de normalizar,
-    em qualquer lugar da árvore, ou palavras em comum dentro do mesmo item."""
+    No mesmo item: palavras em comum (`PARENTESCO_CANDIDATO`). Entre itens diferentes, só quando
+    o código de origem some, o de destino é novo e todas as palavras do nome menor estão no maior
+    ("Fralda" → "Fralda descartável"); assim "Refrigerante" em casa não se liga a "Refrigerante"
+    fora de casa, que mantêm os seus códigos.
+    """
     pares = []
     for origem in saem:
         for destino in entram:
             if origem.nivel_hierarquico != destino.nivel_hierarquico:
                 continue
             nota = parentesco(origem.nome, destino.nome)
-            mesmo_nome = normalizar_nome(origem.nome) == normalizar_nome(destino.nome)
-            mesma_familia = _item_de(origem) == _item_de(destino)
-            if mesmo_nome or (mesma_familia and nota >= PARENTESCO_CANDIDATO):
+            if _item_de(origem) == _item_de(destino):
+                aceito = nota >= PARENTESCO_CANDIDATO
+            else:
+                migrou = (
+                    origem.codigo_ibge in codigos_extintos and destino.codigo_ibge in codigos_novos
+                )
+                aceito = migrou and nota == 1.0
+            if aceito:
                 pares.append((origem, destino, nota))
     return pares
 
 
 def propor_transicao(antes: pd.DataFrame, depois: pd.DataFrame, pesos) -> list[dict]:
-    """Proposta de correspondências entre duas tabelas consecutivas (dim de cada uma)."""
+    """Proposta de correspondências entre duas tabelas consecutivas (dim de cada uma).
+
+    Categorias que mantêm o código mas ganham id novo entram na busca de candidatos junto com as
+    que somem e aparecem: assim "Refrigerante" → "Refrigerante e água mineral" aparece como fusão
+    com "Água mineral", e não como renomeação 1 para 1 (A-021).
+    """
     por_codigo_depois = {r.codigo_ibge: r for r in depois.itertuples()}
     codigos_antes = set(antes.codigo_ibge)
-    linhas = [
-        _linha(origem, por_codigo_depois[origem.codigo_ibge], *classificacao, pesos)
-        for origem in antes.itertuples()
-        if origem.codigo_ibge in por_codigo_depois
-        for classificacao in [
-            _classificar_mesmo_codigo(origem, por_codigo_depois[origem.codigo_ibge])
-        ]
-    ]
+    linhas = []
+    id_novo = []
+    for origem in antes.itertuples():
+        destino = por_codigo_depois.get(origem.codigo_ibge)
+        if destino is None:
+            continue
+        if destino.codigo_sidra == origem.codigo_sidra:
+            linhas.append(
+                _linha(
+                    origem,
+                    destino,
+                    "identico",
+                    "automatico",
+                    "mesmo código e mesmo id SIDRA",
+                    pesos,
+                )
+            )
+        else:
+            id_novo.append((origem, destino))
 
     saem = [r for r in antes.itertuples() if r.codigo_ibge not in por_codigo_depois]
     entram = [r for r in depois.itertuples() if r.codigo_ibge not in codigos_antes]
-    pares = _candidatos(saem, entram)
+    pares = {}
+    for origem, destino in id_novo:
+        grafia = normalizar_nome(origem.nome) == normalizar_nome(destino.nome)
+        motivo = "mesmo código; id novo; " + (
+            "só a grafia mudou"
+            if grafia
+            else f"nome mudou (similaridade {similaridade(origem.nome, destino.nome):.2f})"
+        )
+        pares[(origem.codigo_sidra, destino.codigo_sidra)] = (origem, destino, motivo)
+    amplos_saem = saem + [o for o, _ in id_novo]
+    amplos_entram = entram + [d for _, d in id_novo]
+    extintos = {o.codigo_ibge for o in saem}
+    novos = {d.codigo_ibge for d in entram}
+    for origem, destino, nota in _candidatos(amplos_saem, amplos_entram, novos, extintos):
+        chave = (origem.codigo_sidra, destino.codigo_sidra)
+        if chave not in pares:
+            motivo = f"código diferente; nome aparentado (parentesco {nota:.2f})"
+            pares[chave] = (origem, destino, motivo)
+
     destinos_de, origens_de = {}, {}
-    for origem, destino, _ in pares:
+    for origem, destino, _ in pares.values():
         destinos_de.setdefault(origem.codigo_sidra, []).append(destino)
         origens_de.setdefault(destino.codigo_sidra, []).append(origem)
-    for origem, destino, nota in pares:
-        n_destinos, n_origens = (
-            len(destinos_de[origem.codigo_sidra]),
-            len(origens_de[destino.codigo_sidra]),
-        )
+    for origem, destino, motivo in pares.values():
+        n_destinos = len(destinos_de[origem.codigo_sidra])
+        n_origens = len(origens_de[destino.codigo_sidra])
         tipo = "fundido" if n_origens > 1 else "dividido" if n_destinos > 1 else "renomeado"
-        criterio = (
-            f"código mudou; nome parecido (parentesco {nota:.2f}); "
-            f"{n_origens} origem(ns) para {n_destinos} destino(s)"
-        )
+        criterio = f"{motivo}; {n_origens} origem(ns) para {n_destinos} destino(s)"
         linhas.append(_linha(origem, destino, tipo, "proposto", criterio, pesos))
     linhas += [
-        _linha(o, None, "descontinuado", "automatico", "código some e não há candidato", pesos)
+        _linha(
+            o,
+            None,
+            "descontinuado",
+            "automatico",
+            "código some; nenhum candidato pelas regras",
+            pesos,
+        )
         for o in saem
         if o.codigo_sidra not in destinos_de
     ]
     linhas += [
-        _linha(None, d, "novo", "automatico", "código aparece e não há candidato", pesos)
+        _linha(
+            None, d, "novo", "automatico", "código aparece; nenhum candidato pelas regras", pesos
+        )
         for d in entram
         if d.codigo_sidra not in origens_de
     ]
@@ -249,30 +294,109 @@ def ler_mapa(indice: Indice) -> pd.DataFrame:
     return _tipar(mapa[COLUNAS_MAPA])
 
 
+def id_ligacao(r) -> str:
+    """Identificador legível e estável de uma ligação: L-<tabela>.<id>-<tabela>.<id> (x = vazio)."""
+
+    def lado(tabela, sidra) -> str:
+        return "x" if pd.isna(sidra) else f"{int(tabela)}.{int(sidra)}"
+
+    origem = lado(r.tabela_origem, r.codigo_sidra_origem)
+    return f"L-{origem}-{lado(r.tabela_destino, r.codigo_sidra_destino)}"
+
+
+def aplicar_decisoes(mapa: pd.DataFrame, decisoes: list[dict], revisor: str) -> pd.DataFrame:
+    """Grava as decisões da página de revisão: aceita → revisado; rejeitada → rejeitado."""
+    situacao = {"aceita": "revisado", "rejeitada": "rejeitado"}
+    ids = [id_ligacao(r) for r in mapa.itertuples()]
+    mapa = mapa.copy()
+    desconhecidas = [d["id"] for d in decisoes if d["id"] not in ids]
+    if desconhecidas:
+        raise ErroHarmonizacao(f"decisões para ligações que não existem no mapa: {desconhecidas}")
+    posicao = {i: n for n, i in enumerate(ids)}
+    for decisao in decisoes:
+        if decisao["decisao"] not in situacao:
+            raise ErroHarmonizacao(f"decisão inválida em {decisao['id']}: {decisao['decisao']}")
+        indice = mapa.index[posicao[decisao["id"]]]
+        mapa.loc[indice, "situacao"] = situacao[decisao["decisao"]]
+        mapa.loc[indice, "revisor"] = revisor
+        mapa.loc[indice, "observacao"] = decisao.get("observacao") or None
+    return mapa
+
+
+def _chave(r) -> tuple:
+    return tuple(None if pd.isna(getattr(r, c)) else int(getattr(r, c)) for c in CHAVE)
+
+
 def atualizar_mapa(proposta: pd.DataFrame, atual: pd.DataFrame | None) -> pd.DataFrame:
-    """Mantém as linhas revisadas do mapa atual; o resto vem da proposta nova."""
+    """Mantém as decisões do mapa atual (revisado ou rejeitado); o resto vem da proposta nova.
+
+    Cada decisão substitui só a proposta da mesma ligação (mesmo par de categorias): revisar uma
+    linha de uma fusão não apaga as outras. Uma ligação acrescentada à mão pelo revisor faz sumir
+    o `descontinuado`/`novo` automático das categorias que ela liga.
+    """
     if atual is None or atual.empty:
         return proposta
-    revisadas = atual[atual.situacao == "revisado"]
-    # Uma revisão substitui toda proposta que envolva as mesmas categorias.
-    tocadas = set()
-    for r in revisadas.itertuples():
-        if pd.notna(r.codigo_sidra_origem):
-            tocadas.add(("origem", int(r.tabela_origem), int(r.codigo_sidra_origem)))
-        if pd.notna(r.codigo_sidra_destino):
-            tocadas.add(("destino", int(r.tabela_destino), int(r.codigo_sidra_destino)))
+    decididas = atual[atual.situacao.isin(DECIDIDAS)]
+    chaves_decididas = {_chave(r) for r in decididas.itertuples()}
+    restante = proposta[[_chave(r) not in chaves_decididas for r in proposta.itertuples()]]
+    mapa = pd.concat([decididas, restante], ignore_index=True)
 
-    def toca(r) -> bool:
-        return (
-            pd.notna(r.codigo_sidra_origem)
-            and ("origem", int(r.tabela_origem), int(r.codigo_sidra_origem)) in tocadas
-        ) or (
-            pd.notna(r.codigo_sidra_destino)
-            and ("destino", int(r.tabela_destino), int(r.codigo_sidra_destino)) in tocadas
+    ligadas_origem = {
+        (int(r.tabela_origem), int(r.codigo_sidra_origem))
+        for r in mapa.itertuples()
+        if pd.notna(r.codigo_sidra_origem) and pd.notna(r.codigo_sidra_destino)
+    }
+    ligadas_destino = {
+        (int(r.tabela_destino), int(r.codigo_sidra_destino))
+        for r in mapa.itertuples()
+        if pd.notna(r.codigo_sidra_origem) and pd.notna(r.codigo_sidra_destino)
+    }
+
+    def sobra(r) -> bool:
+        if r.situacao != "automatico":
+            return False
+        if r.tipo_correspondencia == "descontinuado":
+            return (int(r.tabela_origem), int(r.codigo_sidra_origem)) in ligadas_origem
+        if r.tipo_correspondencia == "novo":
+            return (int(r.tabela_destino), int(r.codigo_sidra_destino)) in ligadas_destino
+        return False
+
+    return mapa[[not sobra(r) for r in mapa.itertuples()]].reset_index(drop=True)
+
+
+def _conferir_decisoes(mapa: pd.DataFrame, dim: pd.DataFrame, indice: Indice) -> list[str]:
+    """Decisões humanas: têm revisor, apontam para categorias atuais e tabelas consecutivas."""
+    problemas = []
+    decididas = mapa[mapa.situacao.isin(DECIDIDAS)]
+    if decididas.revisor.isna().any():
+        problemas.append(f"{int(decididas.revisor.isna().sum())} linhas decididas sem revisor")
+    # Decisão antiga não pode apontar para categoria que mudou ou sumiu da classificação.
+    por_chave = dim.set_index(["tabela_sidra", "codigo_sidra"])
+    seguinte = dict(pairwise(t.tabela for t in indice.tabelas_dados))
+    for r in decididas.itertuples():
+        for lado in ["origem", "destino"]:
+            tabela, sidra = getattr(r, f"tabela_{lado}"), getattr(r, f"codigo_sidra_{lado}")
+            if pd.isna(sidra):
+                continue
+            chave = (int(tabela), int(sidra))
+            if chave not in por_chave.index:
+                problemas.append(f"decisão aponta para categoria inexistente: {lado} {chave}")
+                continue
+            categoria = por_chave.loc[chave]
+            if (categoria.codigo_ibge, categoria.nome) != (
+                getattr(r, f"codigo_ibge_{lado}"),
+                getattr(r, f"nome_{lado}"),
+            ):
+                problemas.append(f"decisão desatualizada (código ou nome mudou): {lado} {chave}")
+        consecutivas = (
+            pd.isna(r.tabela_origem)
+            or pd.isna(r.tabela_destino)
+            or (seguinte.get(int(r.tabela_origem)) == int(r.tabela_destino))
         )
+        if not consecutivas:
+            problemas.append(f"decisão entre tabelas não consecutivas: {_chave(r)}")
 
-    restante = proposta[[not toca(r) for r in proposta.itertuples()]]
-    return pd.concat([revisadas, restante], ignore_index=True)
+    return problemas
 
 
 def conferir_mapa(mapa: pd.DataFrame, dim: pd.DataFrame, indice: Indice) -> list[str]:
@@ -282,9 +406,7 @@ def conferir_mapa(mapa: pd.DataFrame, dim: pd.DataFrame, indice: Indice) -> list
         problemas.append(f"tipos inválidos: {set(mapa.tipo_correspondencia) - set(TIPOS)}")
     if not set(mapa.situacao) <= set(SITUACOES):
         problemas.append(f"situações inválidas: {set(mapa.situacao) - set(SITUACOES)}")
-    revisadas_sem_revisor = mapa[(mapa.situacao == "revisado") & mapa.revisor.isna()]
-    if not revisadas_sem_revisor.empty:
-        problemas.append(f"{len(revisadas_sem_revisor)} linhas revisadas sem revisor")
+    problemas += _conferir_decisoes(mapa, dim, indice)
 
     tabelas = [t.tabela for t in indice.tabelas_dados]
     for antes, depois in pairwise(tabelas):
@@ -303,7 +425,7 @@ def conferir_mapa(mapa: pd.DataFrame, dim: pd.DataFrame, indice: Indice) -> list
         # Mesmo código com id diferente precisa estar no mapa com tipo explícito (A-012).
         continuos = da_transicao[da_transicao.tipo_correspondencia.isin(CONTINUOS)]
         for coluna in ["codigo_sidra_origem", "codigo_sidra_destino"]:
-            confirmados = continuos[continuos.situacao != "proposto"]
+            confirmados = continuos[continuos.situacao.isin({"automatico", "revisado"})]
             repetidos = confirmados[coluna].dropna().duplicated()
             if repetidos.any():
                 problemas.append(
@@ -338,12 +460,16 @@ def montar_serie_longa(fato: pd.DataFrame, dim: pd.DataFrame, mapa: pd.DataFrame
     quebra_saida = {}
     quebra_entrada = {}
     for r in mapa.itertuples():
-        nao_emenda = r.tipo_correspondencia not in CONTINUOS or r.situacao == "proposto"
+        nao_emenda = r.tipo_correspondencia not in CONTINUOS or r.situacao in {
+            "proposto",
+            "rejeitado",
+        }
         if not nao_emenda:
             continue
-        rotulo = r.tipo_correspondencia + (
-            " (proposta não revisada)" if r.situacao == "proposto" else ""
-        )
+        rotulo = r.tipo_correspondencia + {
+            "proposto": " (proposta não revisada)",
+            "rejeitado": " (proposta rejeitada)",
+        }.get(r.situacao, "")
         if pd.notna(r.codigo_sidra_origem):
             quebra_saida.setdefault((int(r.tabela_origem), int(r.codigo_sidra_origem)), rotulo)
         if pd.notna(r.codigo_sidra_destino):
@@ -451,7 +577,11 @@ def caminho_serie_longa(indice: Indice) -> Path:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Atualiza o map_harmonizacao (preserva revisões).")
     parser.add_argument("--indice", default="ipca15")
+    parser.add_argument("--decisoes", help="JSON exportado da página de revisão")
+    parser.add_argument("--revisor", help="quem decidiu (obrigatório com --decisoes)")
     args = parser.parse_args(argv)
+    if args.decisoes and not args.revisor:
+        parser.error("--decisoes exige --revisor")
 
     indice = carregar_catalogo().indices[args.indice]
     armazem = ArmazemRaw(indice.fonte)
@@ -459,13 +589,23 @@ def main(argv: list[str] | None = None) -> int:
     fato = montar_fato(indice, armazem, dim)
     caminho = caminho_mapa(indice)
     atual = ler_mapa(indice) if caminho.exists() else None
+    if args.decisoes:
+        decisoes = json.loads(Path(args.decisoes).read_text(encoding="utf-8"))
+        atual = aplicar_decisoes(atual, decisoes, args.revisor)
     mapa = atualizar_mapa(propor_mapa(indice, dim, fato), atual)
     problemas = conferir_mapa(mapa, dim, indice)
     if problemas:
         print("\n".join(problemas), file=sys.stderr)
         return 1
     mapa = mapa.sort_values(
-        ["tabela_origem", "nivel_hierarquico", "codigo_ibge_origem", "codigo_ibge_destino"],
+        [
+            "tabela_origem",
+            "nivel_hierarquico",
+            "codigo_ibge_origem",
+            "tabela_destino",
+            "codigo_ibge_destino",
+            "codigo_sidra_destino",
+        ],
         na_position="last",
     )
     caminho.write_text(mapa.to_csv(index=False, lineterminator="\n"), encoding="utf-8")

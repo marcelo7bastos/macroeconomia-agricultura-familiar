@@ -25,6 +25,20 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-021 · 2026-10-19 · Busca de candidatos que ignora quem mantém o código esconde fusões
+- **Contexto:** revisão do mapa de harmonização (#6) pelo `revisor-metodologico`.
+- **O que aconteceu:** a busca só cruzava códigos que somem com códigos que aparecem. "Refrigerante"
+  → "Refrigerante e água mineral" (mesmo código, id novo) saía como renomeação 1 para 1 e "Água
+  mineral" como descontinuada; o revisor podia aprovar uma emenda que, na verdade, ampliou o
+  escopo. O mesmo com "Frango" → "Frango inteiro" + "Frango em pedaços". Ao ampliar a busca, a
+  ligação entre itens diferentes passou a parear "Refrigerante" em casa com "Refrigerante" fora de
+  casa.
+- **Lição:** categorias com o mesmo código e id novo entram na busca de candidatos; entre itens
+  diferentes, só código extinto → código novo. A grafia igual com id novo também é proposta.
+- **Promovida para:** `macroaf.transform.harmonizacao`; testes
+  `test_fusao_com_categoria_que_mantem_o_codigo_aparece` e
+  `test_mesmo_codigo_com_id_novo_nunca_emenda_sem_revisao`; `METODOLOGIA.md` 7.1; decisão 0005.
+
 ### A-020 · 2026-10-19 · Nem os subgrupos são totalmente estáveis entre POFs
 - **Contexto:** mapa de harmonização (#6).
 - **O que aconteceu:** grupos são idênticos em todas as trocas, mas o subgrupo `72` muda de id e
@@ -41,7 +55,8 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
   "Chuveiro elétrico" e 25 pares entre espécies de peixe diferentes (253 propostas ao todo).
 - **Lição:** comparar palavras, não letras: contar as palavras do nome menor presentes no maior,
   sem palavras vazias, exigir mais da metade das do maior (ou todas as do menor) e o mesmo item;
-  entre itens diferentes, só nome igual. Resultado: 115 propostas, todas plausíveis.
+  entre itens diferentes, só nome igual. Resultado: 115 propostas, plausíveis para revisão (algumas
+  fracas, como "Óculos sem grau" → "Óculos de grau", ficam para o revisor rejeitar).
 - **Promovida para:** `parentesco` em `macroaf.transform.harmonizacao`; teste
   `test_parentesco_de_nomes`; `METODOLOGIA.md` 7.1.
 

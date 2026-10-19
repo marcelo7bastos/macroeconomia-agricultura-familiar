@@ -3,11 +3,14 @@ import pytest
 
 from macroaf.catalogo import carregar_catalogo
 from macroaf.extract.raw import ArmazemRaw
+from macroaf.relatorios.revisao import caminho_pagina, coletar, renderizar
 from macroaf.transform.classificacao import montar_dim_classificacao
 from macroaf.transform.harmonizacao import (
+    aplicar_decisoes,
     atualizar_mapa,
     conferir_mapa,
     conferir_serie_longa,
+    id_ligacao,
     ler_mapa,
     montar_serie_longa,
     parentesco,
@@ -55,16 +58,22 @@ def test_mapa_do_repositorio_esta_em_dia_com_a_proposta(base):
 
 
 def test_mesmo_codigo_com_id_novo_nunca_emenda_sem_revisao(base):
-    # A-012: id novo é definição nova; só a grafia igual vira automático.
+    # A-012 e decisão 0005: id novo é definição nova; nem a grafia igual emenda sem revisão.
     _, _, mapa = base
     mesmo_codigo = mapa[
         (mapa.codigo_ibge_origem == mapa.codigo_ibge_destino)
         & (mapa.codigo_sidra_origem != mapa.codigo_sidra_destino)
     ]
-    automaticos = mesmo_codigo[mesmo_codigo.situacao == "automatico"]
-    assert set(automaticos.criterio) <= {"mesmo código; id novo; só grafia mudou"}
-    assert len(automaticos) == 1  # "Feijão - carioca (rajado))" -> "(rajado)"
-    assert (mesmo_codigo.situacao == "proposto").sum() == 79
+    assert (mesmo_codigo.situacao == "automatico").sum() == 0
+    assert (mesmo_codigo.situacao == "proposto").sum() == 80
+
+
+def test_fusao_com_categoria_que_mantem_o_codigo_aparece(base):
+    # A-021: Refrigerante (mesmo código, id novo) + Água mineral (some) -> fusão, não renomeação.
+    _, _, mapa = base
+    destino = mapa[(mapa.codigo_ibge_destino == "1114083") & (mapa.tabela_origem == 1646)]
+    assert set(destino.codigo_ibge_origem) >= {"1114083", "1114096"}
+    assert set(destino.tipo_correspondencia) == {"fundido"}
 
 
 def test_leite_pasteurizado_nao_emenda_no_longa_vida(base):
@@ -110,3 +119,87 @@ def test_serie_longa_respeita_os_invariantes(base):
     por_nivel = completas.drop_duplicates("serie_id").nivel_hierarquico.value_counts()
     assert por_nivel["geral"] == 1 and por_nivel["grupo"] == 9
     assert por_nivel["subitem"] >= 200
+
+
+def _decidir(mapa, filtro, situacao, **outros):
+    decidido = mapa.copy()
+    decidido.loc[filtro(decidido), ["situacao", "revisor"]] = [situacao, "teste"]
+    for coluna, valor in outros.items():
+        decidido.loc[filtro(decidido), coluna] = valor
+    return decidido
+
+
+def test_proposta_rejeitada_e_preservada_e_continua_quebra(base):
+    dim, fato, mapa = base
+    filtro = lambda df: (df.codigo_ibge_origem == "1111004") & (df.tabela_origem == 1387)  # noqa: E731
+    regerado = atualizar_mapa(propor_mapa(IPCA15, dim, fato), _decidir(mapa, filtro, "rejeitado"))
+    assert (regerado[filtro(regerado)].situacao == "rejeitado").all()
+    longa = montar_serie_longa(fato, dim, regerado)
+    antiga = longa[longa.serie_id == "1111004@1995-96"].iloc[0]
+    assert antiga.saida == "renomeado (proposta rejeitada)"
+
+
+def test_ligacao_acrescentada_a_mao_substitui_o_descontinuado_automatico(base):
+    dim, fato, mapa = base
+    # "Massa para pizza" (1646) -> "Massa semipreparada" (1387): fusão que as regras não veem.
+    origem = dim[(dim.tabela_sidra == 1646) & (dim.codigo_ibge == "1102038")].iloc[0]
+    destino = dim[(dim.tabela_sidra == 1387) & (dim.codigo_ibge == "1102029")].iloc[0]
+    manual = mapa.iloc[[0]].copy()
+    manual[list(manual.columns)] = None
+    manual = manual.assign(
+        versao_pof_origem=origem.versao_pof,
+        tabela_origem=1646,
+        codigo_ibge_origem=origem.codigo_ibge,
+        codigo_sidra_origem=origem.codigo_sidra,
+        nome_origem=origem.nome,
+        versao_pof_destino=destino.versao_pof,
+        tabela_destino=1387,
+        codigo_ibge_destino=destino.codigo_ibge,
+        codigo_sidra_destino=destino.codigo_sidra,
+        nome_destino=destino.nome,
+        nivel_hierarquico="subitem",
+        tipo_correspondencia="fundido",
+        situacao="revisado",
+        criterio="acrescentada pelo revisor",
+        revisor="teste",
+    )
+    com_manual = pd.concat([mapa, manual], ignore_index=True)
+    regerado = atualizar_mapa(propor_mapa(IPCA15, dim, fato), com_manual)
+    da_massa = regerado[
+        (regerado.tabela_origem == 1646) & (regerado.codigo_ibge_origem == "1102038")
+    ]
+    assert list(da_massa.tipo_correspondencia) == ["fundido"]
+    assert conferir_mapa(regerado, dim, IPCA15) == []
+
+
+def test_decisao_desatualizada_e_apontada(base):
+    dim, _, mapa = base
+    filtro = lambda df: (df.codigo_ibge_origem == "1111004") & (df.tabela_origem == 1387)  # noqa: E731
+    velho = _decidir(mapa, filtro, "revisado", nome_origem="Nome antigo")
+    assert any("desatualizada" in p for p in conferir_mapa(velho, dim, IPCA15))
+
+
+def test_pagina_de_revisao_esta_em_dia():
+    gerada = renderizar(coletar(IPCA15))
+    assert caminho_pagina(IPCA15).read_text(encoding="utf-8") == gerada, (
+        "regere com: uv run python -m macroaf.relatorios.revisao"
+    )
+
+
+def test_aplicar_decisoes_da_pagina(base):
+    _, _, mapa = base
+    propostas = mapa[mapa.situacao == "proposto"]
+    aceita, rejeitada = (id_ligacao(r) for r in propostas.head(2).itertuples())
+    decidido = aplicar_decisoes(
+        mapa,
+        [
+            {"id": aceita, "decisao": "aceita"},
+            {"id": rejeitada, "decisao": "rejeitada", "observacao": "quebra"},
+        ],
+        "teste",
+    )
+    por_id = {id_ligacao(r): r for r in decidido.itertuples()}
+    assert por_id[aceita].situacao == "revisado" and por_id[aceita].revisor == "teste"
+    assert por_id[rejeitada].situacao == "rejeitado" and por_id[rejeitada].observacao == "quebra"
+    with pytest.raises(ValueError, match="não existem"):
+        aplicar_decisoes(mapa, [{"id": "L-x-x", "decisao": "aceita"}], "teste")

@@ -18,7 +18,7 @@ import pandas as pd
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
-from macroaf.transform.harmonizacao import caminho_mapa, ler_mapa, montar_serie_longa
+from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
 from macroaf.validate.ipca15 import carregar_configuracao, validar
 
@@ -119,8 +119,7 @@ def _coletar_harmonizacao(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame)
 
     def registro(r) -> dict:
         return {
-            "id": f"P-{_texto(r.tabela_origem) or '-'}-{_texto(r.codigo_sidra_origem) or '-'}-"
-            f"{_texto(r.codigo_sidra_destino) or '-'}",
+            "id": id_ligacao(r),
             "transicao": r.transicao,
             "nivel": r.nivel_hierarquico,
             "tipo": r.tipo_correspondencia,

@@ -84,7 +84,7 @@ Em todas: nenhum código repetido e nenhum órfão (todo código tem o pai de 1,
 mesma tabela).
 
 Da 1705 para a 7062 some o item `7203.Fotografia e filmagem` (51 itens na 7062); é a única
-diferença de itens entre as duas. Entra no `map_harmonizacao` da #6.
+diferença de itens entre as duas. Está no `map_harmonizacao` (`reference/map_harmonizacao_ipca15.csv`).
 
 O id da categoria na API (`codigo_sidra`) muda quando o IBGE revisa nome ou definição: 87 códigos
 IBGE aparecem com ids diferentes entre tabelas, sempre com o nome alterado (ex.: `1101073`
@@ -133,6 +133,11 @@ Campo `nivel` por tabela (só para registro; não use):
   1646, 1387, 1705 e 3065 estão listados em `METODOLOGIA.md` 6.4 (A-015).
 - Categorias novas na 1387 já vêm com acumulado no ano herdado; na 1705 e na 7062 começam com
   acumulado = variação do mês (A-017).
+- Harmonização (#6): mapa em `reference/map_harmonizacao_ipca15.csv`, série longa em
+  `serie_longa_ipca15` no staging. O subgrupo `72` muda de nome duas vezes, o item `1117`
+  Alimentos prontos some na 1387 e o `7203` Fotografia e filmagem some na 7062 (A-020). Há
+  códigos que somem numa POF e reaparecem na seguinte (ex.: `7189` Amido de milho existe na 1646
+  e na 1705, não na 1387): viram `descontinuado` + `novo`, porque há lacuna.
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de
