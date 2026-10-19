@@ -15,7 +15,8 @@ CAMINHO_PADRAO = RAIZ / "config" / "series.yaml"
 
 VERSAO_ESQUEMA = 1
 PAPEIS = {"dados", "referencia"}
-FREQUENCIAS = {"mensal", "trimestral", "anual"}
+# Só o que a sucessão de tabelas sabe validar; outras frequências entram com a issue que as usar.
+FREQUENCIAS = {"mensal"}
 _PADRAO_PERIODO = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
 
 
@@ -28,8 +29,8 @@ class Fonte:
     codigo: str
     nome: str
     api_valores: str
-    api_metadados: str
     ficha: str
+    api_metadados: str | None = None
 
 
 @dataclass(frozen=True)
@@ -95,10 +96,22 @@ def carregar_catalogo(caminho: Path | str = CAMINHO_PADRAO) -> Catalogo:
     return _montar_catalogo(bruto)
 
 
-def _exigir(dados: dict[str, Any], campo: str, contexto: str) -> Any:
+def _exigir(dados: Any, campo: str, contexto: str, tipo: type | None = None) -> Any:
+    if not isinstance(dados, dict):
+        raise ErroCatalogo(f"{contexto}: esperado um mapeamento")
     if campo not in dados or dados[campo] in (None, ""):
         raise ErroCatalogo(f"{contexto}: campo obrigatório ausente: {campo}")
-    return dados[campo]
+    valor = dados[campo]
+    if tipo is not None and not isinstance(valor, tipo):
+        raise ErroCatalogo(f"{contexto}: {campo} deve ser {tipo.__name__}")
+    return valor
+
+
+def _inteiro(valor: Any, contexto: str) -> int:
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        raise ErroCatalogo(f"{contexto}: código não numérico: {valor!r}") from None
 
 
 def _montar_catalogo(bruto: Any) -> Catalogo:
@@ -113,20 +126,22 @@ def _montar_catalogo(bruto: Any) -> Catalogo:
             codigo=codigo,
             nome=_exigir(dados, "nome", f"fonte {codigo}"),
             api_valores=_exigir(dados, "api_valores", f"fonte {codigo}"),
-            api_metadados=_exigir(dados, "api_metadados", f"fonte {codigo}"),
             ficha=_exigir(dados, "ficha", f"fonte {codigo}"),
+            api_metadados=dados.get("api_metadados"),
         )
-        for codigo, dados in _exigir(bruto, "fontes", "catálogo").items()
+        for codigo, dados in _exigir(bruto, "fontes", "catálogo", dict).items()
     }
     indices = {
         codigo: _montar_indice(codigo, dados, fontes)
-        for codigo, dados in _exigir(bruto, "indices", "catálogo").items()
+        for codigo, dados in _exigir(bruto, "indices", "catálogo", dict).items()
     }
     return Catalogo(versao_esquema=versao, fontes=fontes, indices=indices)
 
 
-def _montar_indice(codigo: str, dados: dict[str, Any], fontes: dict[str, Fonte]) -> Indice:
+def _montar_indice(codigo: str, dados: Any, fontes: dict[str, Fonte]) -> Indice:
     contexto = f"índice {codigo}"
+    if not isinstance(dados, dict):
+        raise ErroCatalogo(f"{contexto}: esperado um mapeamento")
     fonte = _exigir(dados, "fonte", contexto)
     if fonte not in fontes:
         raise ErroCatalogo(f"{contexto}: fonte desconhecida: {fonte}")
@@ -135,13 +150,13 @@ def _montar_indice(codigo: str, dados: dict[str, Any], fontes: dict[str, Fonte])
         raise ErroCatalogo(f"{contexto}: frequência inválida: {frequencia}")
 
     variaveis = {
-        int(cod): Variavel(
-            codigo=int(cod),
+        _inteiro(cod, contexto): Variavel(
+            codigo=_inteiro(cod, contexto),
             nome=_exigir(var, "nome", f"{contexto}, variável {cod}"),
             descricao=_exigir(var, "descricao", f"{contexto}, variável {cod}"),
             unidade=_exigir(var, "unidade", f"{contexto}, variável {cod}"),
         )
-        for cod, var in _exigir(dados, "variaveis", contexto).items()
+        for cod, var in _exigir(dados, "variaveis", contexto, dict).items()
     }
     nomes = [v.nome for v in variaveis.values()]
     if len(nomes) != len(set(nomes)):
@@ -150,7 +165,7 @@ def _montar_indice(codigo: str, dados: dict[str, Any], fontes: dict[str, Fonte])
     classificacao_indice = dados.get("classificacao")
     tabelas = tuple(
         _montar_tabela(t, contexto, variaveis, classificacao_indice)
-        for t in _exigir(dados, "tabelas", contexto)
+        for t in _exigir(dados, "tabelas", contexto, list)
     )
     codigos = [t.tabela for t in tabelas]
     if len(codigos) != len(set(codigos)):
@@ -172,12 +187,12 @@ def _montar_indice(codigo: str, dados: dict[str, Any], fontes: dict[str, Fonte])
 
 
 def _montar_tabela(
-    dados: dict[str, Any],
+    dados: Any,
     contexto_indice: str,
     variaveis: dict[int, Variavel],
     classificacao_indice: int | None,
 ) -> Tabela:
-    numero = _exigir(dados, "tabela", contexto_indice)
+    numero = _inteiro(_exigir(dados, "tabela", contexto_indice), contexto_indice)
     contexto = f"{contexto_indice}, tabela {numero}"
     papel = _exigir(dados, "papel", contexto)
     if papel not in PAPEIS:
@@ -191,14 +206,14 @@ def _montar_tabela(
     if fim is None:
         periodo_em_meses(inicio)
 
-    codigos = tuple(int(v) for v in _exigir(dados, "variaveis", contexto))
+    codigos = tuple(_inteiro(v, contexto) for v in _exigir(dados, "variaveis", contexto, list))
     desconhecidas = sorted(set(codigos) - set(variaveis))
     if desconhecidas:
         raise ErroCatalogo(f"{contexto}: variáveis não descritas no índice: {desconhecidas}")
 
     versao_pof = dados.get("versao_pof")
     return Tabela(
-        tabela=int(numero),
+        tabela=numero,
         papel=papel,
         inicio=inicio,
         fim=fim,
@@ -209,7 +224,10 @@ def _montar_tabela(
 
 
 def _validar_sucessao(indice: Indice) -> None:
-    """As tabelas de dados se sucedem mês a mês e só a última fica em aberto (`fim: null`)."""
+    """As tabelas de dados se sucedem mês a mês e só a última fica em aberto (`fim: null`).
+
+    Toda tabela de referência cobre o período inteiro das tabelas de dados.
+    """
     contexto = f"índice {indice.codigo}"
     dados = sorted(indice.tabelas_dados, key=lambda t: periodo_em_meses(t.inicio))
     if not dados:
@@ -218,10 +236,24 @@ def _validar_sucessao(indice: Indice) -> None:
     for anterior, seguinte in pairwise(dados):
         if anterior.fim is None:
             raise ErroCatalogo(f"{contexto}: tabela {anterior.tabela} em aberto antes de outra")
-        if periodo_em_meses(seguinte.inicio) != periodo_em_meses(anterior.fim) + 1:
+        diferenca = periodo_em_meses(seguinte.inicio) - periodo_em_meses(anterior.fim)
+        if diferenca != 1:
+            tipo = "lacuna" if diferenca > 1 else "sobreposição"
             raise ErroCatalogo(
-                f"{contexto}: lacuna ou sobreposição entre as tabelas "
+                f"{contexto}: {tipo} entre as tabelas "
                 f"{anterior.tabela} ({anterior.fim}) e {seguinte.tabela} ({seguinte.inicio})"
+            )
+
+    inicio_dados = periodo_em_meses(dados[0].inicio)
+    fim_dados = dados[-1].fim
+    for referencia in indice.tabelas_referencia:
+        nao_cobre_inicio = periodo_em_meses(referencia.inicio) > inicio_dados
+        nao_cobre_fim = referencia.fim is not None and (
+            fim_dados is None or periodo_em_meses(referencia.fim) < periodo_em_meses(fim_dados)
+        )
+        if nao_cobre_inicio or nao_cobre_fim:
+            raise ErroCatalogo(
+                f"{contexto}: referência {referencia.tabela} não cobre o período dos dados"
             )
 
     versoes = [t.versao_pof for t in dados if t.versao_pof is not None]

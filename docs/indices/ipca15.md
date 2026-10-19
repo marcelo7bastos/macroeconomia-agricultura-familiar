@@ -27,7 +27,8 @@ Datas de troca da estrutura de pesos, conferidas em divulgações do IBGE e do B
   [IBGE, IPCA-15 de agosto de 2006](https://agenciadenoticias.ibge.gov.br/agencia-sala-de-imprensa/2013-agencia-de-noticias/releases/13163-asi-ipca-15-de-agosto-variou-019)).
 - **POF 2008-09 a partir de fev/2012.** No IPCA a estrutura vigorou de jan/2012 a dez/2019
   ([BCB, Relatório de Inflação dez/2019](https://www.bcb.gov.br/content/ri/relatorioinflacao/201912/ri201912b7p.pdf));
-  o início em fev/2012 no IPCA-15 segue o mesmo padrão e o início da tabela 1705.
+  o início em fev/2012 no IPCA-15 segue o mesmo padrão e o início da tabela 1705, mas **ainda não
+  tem fonte primária**: a confirmar pelos metadados da 1705 na extração (#3).
 - **POF 2017-18 a partir de fev/2020.** As novas estruturas geram "o IPCA e INPC de janeiro, além
   do IPCA-15 de fevereiro" de 2020 ([IBGE, nota técnica 01/2020](https://ftp.ibge.gov.br/Precos_Indices_de_Precos_ao_Consumidor/Sistema_de_Indices_de_Precos_ao_Consumidor/Notas_Tecnicas/snipc_nota_tecnica_2020_01.pdf)).
 
@@ -59,7 +60,7 @@ A contagem de 1387 e 1646 ainda precisa ser refeita pelo código IBGE (#4).
 - 1646 e 1387 não têm acumulado em 12 meses (1120); ele precisa ser calculado e conferido com a 3065
   no índice geral.
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
-  jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12).
+  jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de
   `map_harmonizacao` (#6).
 
