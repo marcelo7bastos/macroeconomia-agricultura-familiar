@@ -123,6 +123,14 @@ data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 **`dim_classificacao`**: uma linha por categoria em cada versão de POF.
 `versao_pof | tabela_sidra | codigo_sidra | codigo_ibge | nome | nivel_hierarquico | codigo_pai | grupo | subgrupo | item`
 
+- `codigo_sidra` é o id da categoria na API (ex.: 7169); `codigo_ibge` é o código no nome
+  (`1101002`), com `0` para o índice geral por convenção do projeto.
+- `nivel_hierarquico ∈ {geral, grupo, subgrupo, item, subitem}`, derivado do número de dígitos.
+- `grupo`, `subgrupo`, `item`: código do nível a que a categoria pertence (ela mesma, se for
+  daquele nível); vazio acima dele.
+- Gerada por `uv run python -m macroaf.transform.classificacao` a partir dos metadados no raw;
+  contrato `pandera` em `macroaf.transform.classificacao.ESQUEMA`.
+
 **`fato_ipca15`**: formato longo.
 `mes | versao_pof | codigo_sidra | codigo_ibge | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
 

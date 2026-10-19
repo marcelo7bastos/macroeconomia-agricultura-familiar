@@ -11,6 +11,9 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- `dim_classificacao` do IPCA-15 (`python -m macroaf.transform.classificacao`): 1.951 categorias
+  das quatro tabelas, hierarquia derivada do código IBGE, contrato `pandera` e testes de
+  contagem e de cadeia completa até o grupo. Dependências `pandas`, `pyarrow` e `pandera` (#4).
 - Extração incremental do SIDRA (`python -m macroaf.extract.atualizar`): confere o catálogo com
   os metadados, baixa só os meses ausentes, guarda revisões sem apagar e mantém a camada raw
   compactada com manifesto (decisão 0003). Carga inicial do IPCA-15 (mai/2000 a set/2026) em

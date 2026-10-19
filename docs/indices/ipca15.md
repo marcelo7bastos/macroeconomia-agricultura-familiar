@@ -83,6 +83,14 @@ Contagem pelo código IBGE (metadados de 2026-10-19):
 Em todas: nenhum código repetido e nenhum órfão (todo código tem o pai de 1, 2 ou 4 dígitos na
 mesma tabela).
 
+Da 1705 para a 7062 some o item `7203.Fotografia e filmagem` (51 itens na 7062); é a única
+diferença de itens entre as duas. Entra no `map_harmonizacao` da #6.
+
+O id da categoria na API (`codigo_sidra`) muda quando o IBGE revisa nome ou definição: 87 códigos
+IBGE aparecem com ids diferentes entre tabelas, sempre com o nome alterado (ex.: `1101073`
+"Feijão - carioca (rajado)" é 7180 na 1646/1387 e 12222 na 1705/7062). O contrário não ocorre:
+cada id corresponde sempre ao mesmo código e nome (A-012).
+
 O valor antigo de 1387 ("383 no nível mais detalhado") contava pelo campo `nivel`: um subitem da
 1387 vem com `nivel = 0` (ver Peculiaridades) e ficava de fora. Pelo código são 384.
 
