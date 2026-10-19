@@ -6,6 +6,8 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Base do repositório: pacote `macroaf` em `src/`, `pyproject.toml` com `uv` (Python 3.12),
+  `pytest`, `ruff` e CI no GitHub Actions (#1).
 - Estrutura de agentes de IA: subagentes `revisor-metodologico`, `validador-dados` e
   `explorador-sidra`; skills `/nova-serie`, `/fechar-etapa` e `/aprender`; hook de início de sessão
   (#20).

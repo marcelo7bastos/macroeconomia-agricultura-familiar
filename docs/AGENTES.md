@@ -40,7 +40,7 @@ Não há um agente por índice: o que muda entre índices é configuração (`co
 | Rotina | Onde | Situação |
 |---|---|---|
 | Hook de início de sessão: instala dependências na nuvem e mostra as lições recentes | `.claude/hooks/session-start.sh` | ativo |
-| CI (ruff, pytest, validações) em todo PR | GitHub Actions | #1 |
+| CI (ruff e pytest; validações de dados a partir da #5) em todo push e PR | `.github/workflows/ci.yml` | ativo |
 | Atualização automática quando o IBGE divulga mês novo | GitHub Actions | #9 |
 | Retrospectiva semanal: lê PRs, issues e falhas e propõe ajustes nas regras | tarefa agendada | depois do piloto |
 
