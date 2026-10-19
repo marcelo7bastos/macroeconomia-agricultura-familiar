@@ -3,18 +3,19 @@
 - **Situação:** aceita
 - **Data:** 2026-10-19
 - **Issue/PR:** #20
+- **Atualizada em:** #22 (`CLAUDE.md` → `AGENTS.md`, sem mudança na decisão)
 
 ## Contexto
 
 O projeto quer aprendizado contínuo dos agentes de IA. O desenvolvimento acontece principalmente em
 sessões do Claude Code na nuvem, que rodam em containers descartados ao fim da sessão: nada fora do
-git sobrevive. O projeto já tem documentação viva (`CLAUDE.md`, `docs/PLANEJAMENTO.md`, issues).
+git sobrevive. O projeto já tem documentação viva (`AGENTS.md`, `docs/PLANEJAMENTO.md`, issues).
 
 ## Decisão
 
 A memória de longo prazo dos agentes é o próprio repositório:
 
-- `CLAUDE.md` (raiz e por pasta): regras carregadas em toda sessão;
+- `AGENTS.md` (raiz e por pasta): regras carregadas em toda sessão;
 - `docs/aprendizados.md`: registro de lições, promovidas para teste, validação, regra ou ficha;
 - `docs/decisoes/`: decisões com contexto;
 - `docs/indices/` e `docs/fontes/`: conhecimento sobre índices e fontes;

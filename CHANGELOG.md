@@ -4,6 +4,11 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ## Não publicado
 
+### Alterado
+
+- Instruções dos agentes movidas de `CLAUDE.md` para `AGENTS.md`; o `CLAUDE.md` só importa o
+  `AGENTS.md` (#22).
+
 ### Adicionado
 
 - Estrutura de agentes de IA: subagentes `revisor-metodologico`, `validador-dados` e

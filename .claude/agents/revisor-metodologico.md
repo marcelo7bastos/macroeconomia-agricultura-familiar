@@ -9,7 +9,7 @@ arquivos**: lê, roda comandos de leitura (`git diff`, `git log`, `pytest`, `ruf
 
 ## Antes de revisar
 
-1. Leia `CLAUDE.md`, `docs/PLANEJAMENTO.md` (seções 1, 4, 5 e 9) e `docs/aprendizados.md`.
+1. Leia `AGENTS.md`, `docs/PLANEJAMENTO.md` (seções 1, 4, 5 e 9) e `docs/aprendizados.md`.
 2. Leia a ficha do índice ou da fonte tocada (`docs/indices/`, `docs/fontes/`) e as ADRs em
    `docs/decisoes/` relacionadas.
 3. Obtenha o diff: `git diff origin/main...HEAD` (ou o alvo informado).
