@@ -27,6 +27,7 @@ Não registre o óbvio nem o que já está em `AGENTS.md`, no planejamento ou na
    2. **Validação no pipeline** (`src/macroaf/validate/`): quando é propriedade dos dados.
    3. **Regra no `AGENTS.md`** (raiz ou de uma pasta): quando é conduta que vale em toda sessão.
       Mantenha o arquivo curto; uma regra nova pode substituir outra.
+      Numa pasta nova, crie também um `CLAUDE.md` contendo só `@AGENTS.md`.
    4. **Ficha** (`docs/indices/`, `docs/fontes/`): quando é conhecimento sobre um índice ou fonte.
 3. Faça a promoção no mesmo branch, se couber no escopo da issue. Se não couber, abra uma issue e
    anote o número na entrada.

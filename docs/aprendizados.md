@@ -23,6 +23,14 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-006 · 2026-10-19 · Instruções em `AGENTS.md`; `CLAUDE.md` só importa
+- **Contexto:** troca de `CLAUDE.md` por `AGENTS.md` (#22).
+- **O que aconteceu:** `AGENTS.md` é lido por vários agentes de código, mas o Claude Code carrega
+  `CLAUDE.md`. Duas cópias das regras divergiriam.
+- **Lição:** as regras ficam só em `AGENTS.md`; cada `CLAUDE.md` contém apenas `@AGENTS.md`. Uma regra
+  por pasta exige os dois arquivos na pasta: `AGENTS.md` com o conteúdo e `CLAUDE.md` com o import.
+- **Promovida para:** `AGENTS.md` (seção "Aprendizado contínuo"); verificação no CI prevista na #1.
+
 ### A-005 · 2026-10-19 · `gh` sem GraphQL nas sessões na nuvem
 - **Contexto:** levantamento das issues para a etapa 0 (#20).
 - **O que aconteceu:** `gh issue list` e `gh label list` falham com HTTP 403 ("GitHub GraphQL is
@@ -44,7 +52,7 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 - **Contexto:** auditoria do modelo Power BI anterior (`PLANEJAMENTO.md`, 3.3).
 - **O que aconteceu:** links de planilhas do Google Drive foram a principal fonte de fragilidade.
 - **Lição:** fonte só por API oficial ou CSV versionado em `reference/`.
-- **Promovida para:** `AGENTS.md`.
+- **Promovida para:** `CLAUDE.md` (movida para `AGENTS.md` em #22).
 
 ### A-002 · 2026-10-19 · IPCA-15 tem classificação própria
 - **Contexto:** auditoria do modelo Power BI anterior.
@@ -58,4 +66,4 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 - **O que aconteceu:** 7062/1705 começam em 0 = geral; 1646/1387 usam outra escala.
 - **Lição:** derive a hierarquia pelo código IBGE no nome da categoria (1 dígito = grupo,
   2 = subgrupo, 4 = item, 7 = subitem).
-- **Promovida para:** `AGENTS.md`; teste previsto na #4.
+- **Promovida para:** `CLAUDE.md` (movida para `AGENTS.md` em #22); teste previsto na #4.

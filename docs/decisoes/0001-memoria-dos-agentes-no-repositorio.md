@@ -3,6 +3,7 @@
 - **Situação:** aceita
 - **Data:** 2026-10-19
 - **Issue/PR:** #20
+- **Atualizada em:** #22 (`CLAUDE.md` → `AGENTS.md`, sem mudança na decisão)
 
 ## Contexto
 

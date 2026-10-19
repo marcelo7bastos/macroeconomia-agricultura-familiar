@@ -33,4 +33,5 @@ lições recentes em `docs/aprendizados.md`.
   em `docs/aprendizados.md` e promova para a forma mais forte que couber: teste > validação no
   pipeline > regra neste arquivo > ficha.
 - Decisões com alternativas e consequências viram ADR em `docs/decisoes/`.
-- Não altere regras deste arquivo nem decisões sem PR revisado pelo mantenedor.
+- As regras ficam em `AGENTS.md` (raiz ou pasta); o `CLAUDE.md` ao lado contém só `@AGENTS.md`.
+- Não altere regras deste arquivo, do `CLAUDE.md` nem decisões sem PR revisado pelo mantenedor.
