@@ -131,8 +131,11 @@ data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 - Gerada por `uv run python -m macroaf.transform.classificacao` a partir dos metadados no raw;
   contrato `pandera` em `macroaf.transform.classificacao.ESQUEMA`.
 
-**`fato_ipca15`**: formato longo.
-`mes | versao_pof | codigo_sidra | codigo_ibge | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
+**`fato_ipca15`**: uma linha por mês e categoria, variáveis em colunas.
+`mes | versao_pof | tabela_sidra | codigo_sidra | codigo_ibge | nivel_hierarquico | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
+
+Ligado à `dim_classificacao` por `(tabela_sidra, codigo_sidra)` (METODOLOGIA.md, 2.2).
+`ref_ipca15_geral` guarda a tabela 3065 (número-índice e acumulados do geral) para as validações.
 
 **`map_harmonizacao`**: correspondência entre categorias de POFs consecutivas.
 `codigo_ibge_origem | versao_pof_origem | codigo_ibge_destino | versao_pof_destino | tipo_correspondencia`
@@ -153,12 +156,16 @@ item, subitem). O modelo Power BI anterior já usava o subitem como folha da hie
 
 ### 4.4 Validações (bloqueiam a publicação se falharem)
 
-1. **Esquema:** colunas, tipos, nulos e faixas plausíveis (variação mensal entre -50% e +50%).
-2. **Pesos:** em cada mês, grupos somam ≈ 100 e filhos somam o peso do pai (tolerância a definir
-   empiricamente, por arredondamento do IBGE).
+Limites, exceções e as descobertas que os justificam: [METODOLOGIA.md, seção 6](METODOLOGIA.md#6-validações).
+
+1. **Esquema:** colunas, tipos, nulos e faixas plausíveis.
+2. **Pesos:** em cada mês, grupos somam 100 e filhos somam o peso do pai.
 3. **Reconciliação:** média ponderada dos filhos (peso × variação) reproduz a variação oficial do
-   pai e do índice geral; tolerância inicial 0,01 p.p.
+   pai e do índice geral.
 4. **Continuidade:** nenhum mês faltando por série ativa.
+
+Na #5, a tolerância fixa prevista (0,01 p.p.) foi substituída pelo **limite analítico de
+arredondamento** de cada conta (A-014), com exceções documentadas e contadas.
 5. **Acumulados:** acumulados calculados a partir das variações mensais batem com as variáveis
    oficiais (356, 1120 e, para o geral, 1118/1119 da tabela 3065).
 6. **Costura entre tabelas:** o índice geral encadeado pelas quatro tabelas reproduz o
@@ -242,3 +249,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.6 | Memória dos agentes | **No próprio repositório** ([0001](decisoes/0001-memoria-dos-agentes-no-repositorio.md)) |
 | 9.7 | Organização dos agentes | **Por função, não por índice** ([0002](decisoes/0002-agentes-por-funcao.md)) |
 | 9.8 | Atualização dos dados | **Extração incremental, raw compactado e imutável, compilação completa** ([0003](decisoes/0003-extracao-incremental.md)) |
+| 9.9 | Documentação das transformações | **Página HTML por índice, em degraus, gerada dos dados** ([0004](decisoes/0004-explicacao-em-degraus.md)) |

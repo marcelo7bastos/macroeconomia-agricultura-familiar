@@ -32,6 +32,11 @@ lições recentes em `docs/aprendizados.md`.
 - Ao descobrir algo não óbvio (erro, peculiaridade da API, decisão de método), registre com `/aprender`
   em `docs/aprendizados.md` e promova para a forma mais forte que couber: teste > validação no
   pipeline > regra neste arquivo > ficha.
+- Descoberta que muda **como os dados são tratados** (identificação, valores, validação, quebras)
+  também é registrada em `docs/METODOLOGIA.md`, com a regra que dela decorre e o A-NNN de origem.
+- Toda etapa que muda uma transformação regera `docs/transformacoes/<indice>.html`
+  (`python -m macroaf.relatorios.transformacoes --indice <indice>`) no mesmo PR; um teste exige.
+  Mudar o formato da explicação não muda os fatos: dúvida continua dúvida (decisão 0004).
 - Decisões com alternativas e consequências viram ADR em `docs/decisoes/`.
 - As regras ficam em `AGENTS.md` (raiz ou pasta); o `CLAUDE.md` ao lado contém só `@AGENTS.md`.
 - Não altere regras deste arquivo, do `CLAUDE.md` nem decisões sem PR revisado pelo mantenedor.

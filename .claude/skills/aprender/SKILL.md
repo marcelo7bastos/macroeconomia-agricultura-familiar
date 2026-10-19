@@ -41,4 +41,8 @@ Não registre o óbvio nem o que já está em `AGENTS.md`, no planejamento ou na
    - **Promovida para:** `tests/...` | validação `...` | `AGENTS.md` | ficha `...` | issue #N | nenhuma (motivo).
    ```
 
-5. Mudanças no `AGENTS.md` ou em decisões vão no PR para revisão do mantenedor; avise no corpo do PR.
+5. Se a lição muda como os dados são tratados (identificação de categorias, valores, validações,
+   quebras de série), registre também em `docs/METODOLOGIA.md` a regra que dela decorre, citando o
+   A-NNN. A entrada em `aprendizados.md` conta como a descoberta foi feita; a metodologia diz o que
+   o projeto faz por causa dela.
+6. Mudanças no `AGENTS.md` ou em decisões vão no PR para revisão do mantenedor; avise no corpo do PR.

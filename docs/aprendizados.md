@@ -16,23 +16,92 @@ prazo dos agentes: sessões na nuvem são descartadas, o git fica.
    | 4 | ficha (`docs/indices/`, `docs/fontes/`) | é conhecimento sobre um índice ou fonte |
 
 3. Mudanças em `AGENTS.md` e em decisões passam por PR revisado pelo mantenedor.
-4. O hook de início de sessão mostra os títulos das cinco lições mais recentes.
+4. Se a lição muda como os dados são tratados, a regra resultante vai também para
+   [`METODOLOGIA.md`](METODOLOGIA.md), citando o A-NNN.
+5. O hook de início de sessão mostra os títulos das cinco lições mais recentes.
 
 Entradas novas vão **no topo** do registro, com numeração crescente (`A-NNN`). Uma lição que deixou
 de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-018 · 2026-10-19 · Exceção estreita, contada e com limite empírico separado
+- **Contexto:** revisão das validações (#5) pelo `revisor-metodologico`, com erros injetados.
+- **O que aconteceu:** (1) exceções da 3065 cobriam o mês inteiro de todos os acumulados, e um
+  erro injetado na 1118 e na 1120 de 2006-04 passava; (2) a sentinela "ao menos uma falha" não
+  via correção parcial nem erro novo no escopo; (3) o limite empírico das tabelas antigas igual ao
+  máximo observado deixava passar +0,10 num subitem da 1387; (4) janeiro tinha folga de 0,015 onde
+  a identidade é exata; (5) a continuidade partia dos meses do raw, não do catálogo; (6) diferença
+  não calculável era descartada em silêncio.
+- **Lição:** exceção tem o escopo da justificativa (uma variável) e a contagem exata de falhas;
+  limite empírico fica no p99,9, com o que passa dele listado como exceção contada; identidades
+  exatas são validadas por igualdade; o esperado vem do catálogo e da classificação; diferença
+  ausente é falha.
+- **Promovida para:** `macroaf.validate.ipca15` e testes de erro injetado em
+  `tests/test_validacao_ipca15.py`; `reference/limites_validacao_ipca15.csv`; `METODOLOGIA.md`
+  6.1, 6.3 e 6.5.
+
+### A-017 · 2026-10-19 · Categorias novas na troca de POF trazem acumulado herdado
+- **Contexto:** calibração do acumulado no ano (#5), pelo `validador-dados`.
+- **O que aconteceu:** na 1387 (ago/2006), categorias novas já vêm com acumulado no ano desde
+  janeiro (ex.: 8104007 com variação -2,14 e acumulado 0,68), sem dados anteriores publicados; na
+  1705 e na 7062 as novas começam com acumulado = variação do mês.
+- **Lição:** não validar o acumulado no ano no primeiro mês de uma categoria nova; a série longa
+  dessas categorias começa na troca de POF.
+- **Promovida para:** regra de um passo da validação `acumulado_ano` (só valida com o mês
+  anterior na mesma tabela); `METODOLOGIA.md` 6.1; pedido na #6.
+
+### A-016 · 2026-10-19 · A 356 das tabelas antigas é mais ruidosa que o arredondamento
+- **Contexto:** calibração do acumulado no ano (#5).
+- **O que aconteceu:** na 1705 e na 7062 a 356 fecha com a 355 dentro do arredondamento; na 1646
+  e na 1387 passa dele (até 0,02 no geral, que também difere da 356 da 3065 em 29 meses).
+- **Lição:** nessas tabelas o limite é o máximo observado por nível, documentado como ruído da
+  fonte; para o índice geral, a referência é a 3065.
+- **Promovida para:** validação `acumulado_ano` (limite por nível); `METODOLOGIA.md` 6.3.
+
+### A-015 · 2026-10-19 · O SIDRA publica erros pontuais
+- **Contexto:** falhas de validação investigadas pelo `validador-dados` (#5), conferidas na API.
+- **O que aconteceu:** 356 trocada ou repetida na 1646 (2003-02, 2004-07); pesos da 1387
+  escalados por 1,000999 (2010-07/08); item 1115 da 1387 incoerente (2011-10/11); subitem 9101022
+  da 1705 com 0,00 contrariando o peso (2014-07/09); acumulados 1118/1119 da 3065 que contradizem
+  o próprio número-índice (2006-04, 2011-11, 2012-11).
+- **Lição:** manter o dado publicado, explicar e listar como exceção do tipo `fonte`; cada exceção
+  é sentinela: se o IBGE corrigir, o teste avisa.
+- **Promovida para:** `reference/excecoes_validacao_ipca15.csv`; teste
+  `test_toda_excecao_ainda_cobre_uma_falha`; `METODOLOGIA.md` 6.4 e 6.5.
+
+### A-014 · 2026-10-19 · Tolerância é o limite analítico de arredondamento
+- **Contexto:** calibração das validações (#5).
+- **O que aconteceu:** tolerâncias fixas (0,01 p.p.) davam falsos positivos (1705, itens com
+  variação grande e subitens de peso pequeno) e não diziam se a diferença era arredondamento.
+- **Lição:** com variações em 2 casas e pesos em 4, o erro máximo de cada conta é calculável; a
+  diferença é comparada com ele. Maior razão observada fora das exceções: 0,97.
+- **Promovida para:** `macroaf.validate.ipca15`; `METODOLOGIA.md` 6.1.
+
+### A-013 · 2026-10-19 · Cesta variável nos in natura da POF 1995-96 (tabela 1646)
+- **Contexto:** falha sistemática da reconciliação na 1646 (#5), investigada pelo `validador-dados`.
+- **O que aconteceu:** os itens 1103, 1105 e 1106 não reproduzem a média ponderada dos subitens
+  (até 6,6 p.p.); os pesos dos subitens seguem o calendário de safra, há 93 pesos zero e o
+  acumulado no ano dos subitens não fecha. O subgrupo 11 reconcilia pelos itens; na 1387 em diante
+  o fenômeno some.
+- **Lição:** na 1646, validar esses itens pelo nível acima e calcular contribuições a partir do
+  item; exceção estrutural, não tolerância.
+- **Promovida para:** exceções `estrutural` em `reference/excecoes_validacao_ipca15.csv`; teste
+  `test_sem_excecoes_os_erros_da_fonte_aparecem`; `METODOLOGIA.md` 6.2; ficha; pedido na #7.
+
 ### A-012 · 2026-10-19 · Mesmo código IBGE, id SIDRA diferente entre POFs
 - **Contexto:** revisão da `dim_classificacao` (#4).
 - **O que aconteceu:** 87 códigos IBGE têm `codigo_sidra` diferente entre tabelas, sempre com o
   nome alterado (ex.: `1101073` é 7180 na 1646/1387 e 12222 na 1705/7062). Cada `codigo_sidra`,
   por outro lado, corresponde sempre ao mesmo código e nome.
+  As mudanças vão de grafia ("(rajado))" → "(rajado)") a escopo ampliado (Refrigerante →
+  Refrigerante e água mineral) e produto diferente (Leite pasteurizado → Leite longa vida).
 - **Lição:** juntar valores por `(tabela, codigo_sidra)`, nunca só pelo código IBGE; na
-  harmonização, código igual não garante categoria igual, e id diferente é candidato a quebra.
+  harmonização, código igual não garante categoria igual, e id diferente exige revisão manual.
 - **Promovida para:** testes `test_codigo_sidra_identifica_sempre_a_mesma_categoria` e
   `test_mesmo_codigo_ibge_pode_ter_outro_codigo_sidra_entre_pofs`; contrato da
-  `dim_classificacao` (id único por tabela); ficha; pedidos nas #5 e #6.
+  `dim_classificacao` (id único por tabela); junção do `fato_ipca15` (#5); `METODOLOGIA.md`
+  seção 2; ficha; pedido na #6.
 
 ### A-011 · 2026-10-19 · Tudo o que o staging consome precisa estar no raw
 - **Contexto:** revisão da extração (#3).
@@ -102,6 +171,9 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
   *Allowed domains* do ambiente. Sem isso, pare e avise; nunca simule dados. O runner do GitHub
   Actions tem rede própria e é testado na #3.
 - **Promovida para:** ficha `docs/fontes/ibge-sidra.md` e `docs/AGENTES.md`.
+- **Complemento (#5):** mesmo com as APIs liberadas, `ftp.ibge.gov.br`, `www.ibge.gov.br`,
+  `biblioteca.ibge.gov.br` e `agenciadenoticias.ibge.gov.br` seguem bloqueados; para consultar a
+  documentação metodológica do IBGE numa sessão, eles também precisam ser liberados.
 
 ### A-003 · 2026-10-19 · Planilhas por link quebram o pipeline
 - **Contexto:** auditoria do modelo Power BI anterior (`PLANEJAMENTO.md`, 3.3).

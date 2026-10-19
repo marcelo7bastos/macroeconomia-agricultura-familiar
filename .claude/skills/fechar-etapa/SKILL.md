@@ -29,9 +29,14 @@ Confira e atualize o que a mudança tocar:
 - [ ] `docs/PLANEJAMENTO.md` (escopo, roteiro, seção 9 de decisões)
 - [ ] `docs/decisoes/` (ADR nova se houve escolha entre alternativas)
 - [ ] `docs/indices/` e `docs/fontes/` (fichas)
-- [ ] `docs/METODOLOGIA.md` (fórmula de indicador novo ou alterado), quando existir
+- [ ] `docs/METODOLOGIA.md`: fórmula de indicador novo ou alterado e toda descoberta que mude o
+      tratamento dos dados (com o A-NNN de origem)
 - [ ] `data/marts/README.md` (dicionário), quando a etapa mexer nos marts
 - [ ] `README.md` (situação do projeto)
+- [ ] `docs/transformacoes/<indice>.html`: regerar com
+      `uv run python -m macroaf.relatorios.transformacoes --indice <indice>` e revisar o que mudou
+      (resumo, dúvidas em aberto, o que existe); se uma dúvida foi resolvida ou surgiu, atualizar
+      `DUVIDAS` no gerador
 - [ ] `CHANGELOG.md`: entrada em "Não publicado"
 
 ## 4. Aprendizados

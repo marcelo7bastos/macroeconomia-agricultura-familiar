@@ -70,4 +70,7 @@ Medido em 2026-10-19 (#3):
   domínios (403 no proxy). É preciso incluir `servicodados.ibge.gov.br` e `apisidra.ibge.gov.br` em
   *Allowed domains* nas configurações do ambiente (A-004). Depois de liberados, no mesmo dia, as
   duas APIs responderam normalmente pelo proxy (apisidra atrás do Cloudflare).
+- **Documentação do IBGE na sessão na nuvem:** `ftp.ibge.gov.br`, `www.ibge.gov.br`,
+  `biblioteca.ibge.gov.br` e `agenciadenoticias.ibge.gov.br` continuavam bloqueados em 2026-10-19
+  (A-004).
 - **GitHub Actions:** testado pelo workflow `API do IBGE` (`.github/workflows/api-ibge.yml`) no PR da #3; resultado registrado no PR.
