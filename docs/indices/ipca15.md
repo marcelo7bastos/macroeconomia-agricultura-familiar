@@ -83,6 +83,9 @@ Contagem pelo código IBGE (metadados de 2026-10-19):
 Em todas: nenhum código repetido e nenhum órfão (todo código tem o pai de 1, 2 ou 4 dígitos na
 mesma tabela).
 
+Da 1705 para a 7062 some o item `7203.Fotografia e filmagem` (51 itens na 7062); é a única
+diferença de itens entre as duas. Entra no `map_harmonizacao` da #6.
+
 O valor antigo de 1387 ("383 no nível mais detalhado") contava pelo campo `nivel`: um subitem da
 1387 vem com `nivel = 0` (ver Peculiaridades) e ficava de fora. Pelo código são 384.
 
