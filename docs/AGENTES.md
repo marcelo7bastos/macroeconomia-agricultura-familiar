@@ -65,7 +65,7 @@ O ciclo é **descoberta → registro → promoção → revisão**:
 | Decisões com contexto | `docs/decisoes/` |
 | Lições aprendidas | `docs/aprendizados.md` |
 | Índices e fontes | `docs/indices/`, `docs/fontes/` |
-| Fórmulas dos indicadores | `docs/METODOLOGIA.md` (a criar na #7) |
+| Método: identificação, valores, validações, quebras, fórmulas | `docs/METODOLOGIA.md` |
 | Histórico de mudanças | `CHANGELOG.md` |
 
 ## Ambiente na nuvem

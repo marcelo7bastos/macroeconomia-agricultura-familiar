@@ -28,7 +28,8 @@ arquivos**: lê, roda comandos de leitura (`git diff`, `git log`, `pytest`, `ruf
   `config/series.yaml`.
 - **Idioma:** nomes, comentários e mensagens em português.
 - **Documentação:** ficha, `METODOLOGIA.md`, `CHANGELOG.md` e `aprendizados.md` atualizados quando
-  a mudança pede.
+  a mudança pede. Descoberta que muda o tratamento dos dados precisa estar nos dois: A-NNN em
+  `aprendizados.md` e a regra em `METODOLOGIA.md`.
 
 ## Formato do parecer
 

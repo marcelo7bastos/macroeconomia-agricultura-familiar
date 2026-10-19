@@ -16,7 +16,9 @@ prazo dos agentes: sessões na nuvem são descartadas, o git fica.
    | 4 | ficha (`docs/indices/`, `docs/fontes/`) | é conhecimento sobre um índice ou fonte |
 
 3. Mudanças em `AGENTS.md` e em decisões passam por PR revisado pelo mantenedor.
-4. O hook de início de sessão mostra os títulos das cinco lições mais recentes.
+4. Se a lição muda como os dados são tratados, a regra resultante vai também para
+   [`METODOLOGIA.md`](METODOLOGIA.md), citando o A-NNN.
+5. O hook de início de sessão mostra os títulos das cinco lições mais recentes.
 
 Entradas novas vão **no topo** do registro, com numeração crescente (`A-NNN`). Uma lição que deixou
 de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
@@ -28,11 +30,14 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 - **O que aconteceu:** 87 códigos IBGE têm `codigo_sidra` diferente entre tabelas, sempre com o
   nome alterado (ex.: `1101073` é 7180 na 1646/1387 e 12222 na 1705/7062). Cada `codigo_sidra`,
   por outro lado, corresponde sempre ao mesmo código e nome.
+  As mudanças vão de grafia ("(rajado))" → "(rajado)") a escopo ampliado (Refrigerante →
+  Refrigerante e água mineral) e produto diferente (Leite pasteurizado → Leite longa vida).
 - **Lição:** juntar valores por `(tabela, codigo_sidra)`, nunca só pelo código IBGE; na
-  harmonização, código igual não garante categoria igual, e id diferente é candidato a quebra.
+  harmonização, código igual não garante categoria igual, e id diferente exige revisão manual.
 - **Promovida para:** testes `test_codigo_sidra_identifica_sempre_a_mesma_categoria` e
   `test_mesmo_codigo_ibge_pode_ter_outro_codigo_sidra_entre_pofs`; contrato da
-  `dim_classificacao` (id único por tabela); ficha; pedidos nas #5 e #6.
+  `dim_classificacao` (id único por tabela); junção do `fato_ipca15` (#5); `METODOLOGIA.md`
+  seção 2; ficha; pedido na #6.
 
 ### A-011 · 2026-10-19 · Tudo o que o staging consome precisa estar no raw
 - **Contexto:** revisão da extração (#3).
