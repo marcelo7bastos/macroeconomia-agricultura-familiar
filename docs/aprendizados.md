@@ -25,6 +25,17 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-025 · 2026-10-20 · Linha excluída muda o denominador de quem fica
+- **Contexto:** contribuições (#43), revisão do `revisor-metodologico`.
+- **O que aconteceu:** os subitens in natura da 1646 saem da contribuição (A-013). A participação
+  no grupo dos outros subitens do grupo 1 passou a ser dividida pela soma dos que sobraram, que não
+  é a variação do grupo (razão de −5,9 a 5,5). O teste "soma 100%" passava por construção.
+- **Lição:** indicador que exclui linhas precisa esvaziar ou marcar tudo o que usa a soma delas
+  como denominador. Teste de "soma 100%" não basta: confira a soma contra o pai.
+- **Promovida para:** `participacao_no_grupo` vazia onde falta contribuição no nível e grupo;
+  testes `test_participacao_vazia_onde_falta_contribuicao_no_grupo` e
+  `test_participacao_presente_soma_a_contribuicao_do_grupo`; `METODOLOGIA.md` 10.
+
 ### A-024 · 2026-10-20 · Escopo de exceção não é o mês do erro
 - **Contexto:** acumulados por janela (#42), revisão do `revisor-metodologico`.
 - **O que aconteceu:** para trocar o oficial pelo calculado onde a fonte errou, usei o escopo das

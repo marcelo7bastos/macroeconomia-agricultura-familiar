@@ -413,16 +413,27 @@ janela (`mes` e as janelas da seção 9), com `contribuicao` em pontos percentua
   1387 (100,1, A-015), faz a soma dos grupos reproduzir a média ponderada.
 - **Participação no grupo:** a contribuição dividida pela soma das contribuições do mesmo nível no
   mesmo grupo. Soma 100% por construção; com variação do grupo perto de zero, as participações
-  ficam grandes e de sinais opostos, e devem ser lidas com cuidado.
+  ficam grandes e de sinais opostos, e devem ser lidas com cuidado. Fica **vazia** quando falta
+  alguma contribuição no mesmo nível e grupo: é o caso dos subitens do grupo 1 nos 75 meses da 1646,
+  em que os in natura saem da conta e a soma dos restantes deixa de ser a variação do grupo (A-025).
 - **Para o acumulado:** `Σ_m c_m × I_geral(m−1) / I_geral(início − 1)` sobre os meses da janela. A
   contribuição acumulada do geral é exatamente o seu acumulado calculado (seção 9), e a soma dos
   grupos difere dele no máximo pela soma, reescalada, dos limites mensais da reconciliação. A janela
   não sai da série longa da categoria (decisão 0005).
 - **Cesta variável:** subitens in natura da 1646 ficam sem contribuição; o produto entra pelo item
   (A-013).
+- **Geral:** a contribuição acumulada do geral é o acumulado **calculado** pelo índice. Pode diferir
+  do `acumulados_ipca15`, que usa o oficial da 3065 (seção 9): nos meses de erro publicado da 3065
+  (1118/1119 em 2006-04, 2011-11 e 2012-11) a diferença é grande, e o certo é o calculado.
+- **Erros publicados (A-015):** a contribuição usa peso e variação como publicados. Onde a fonte
+  errou (9101022 da 1705 em 2014-07/09, com contribuição 0; item 1115 da 1387 em 2011-10/11), a
+  contribuição herda o erro; a soma dos grupos continua dentro do limite.
+- **Fórmula:** o PLANEJAMENTO 5.2 escreve `peso × variação / 100`; aqui o denominador é a soma dos
+  pesos dos grupos, que é 100 salvo o erro de 2010 na 1387. Muda só esses dois meses.
 
-Conferência: no mês, a soma dos grupos difere do geral em no máximo 0,007 p.p., dentro do limite da
-reconciliação em todos os 317 meses.
+Conferência: a soma dos grupos difere do geral em no máximo 0,007 p.p. no mês e 0,014 (3 meses),
+0,026 (12 meses), 0,023 (no ano) e 0,039 p.p. (36 meses) nos acumulados, sempre dentro do limite
+da reconciliação, reescalado como as contribuições.
 
 ## 11. Registro de descobertas
 

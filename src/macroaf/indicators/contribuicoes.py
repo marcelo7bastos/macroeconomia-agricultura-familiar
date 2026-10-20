@@ -5,7 +5,7 @@
   contribuições dos grupos reproduzir a média ponderada que dá a variação do geral.
 - **Participação no grupo:** a contribuição da categoria dividida pela soma das contribuições das
   categorias do mesmo nível no mesmo grupo, em %. Soma 100% por construção; perde sentido quando
-  a variação do grupo é próxima de zero.
+  a variação do grupo é próxima de zero, e fica vazia onde falta contribuição no nível e grupo.
 - **Para o acumulado:** cada mês da janela é reescalado pelo índice geral acumulado até o mês
   anterior: `Σ_m c_m * I_geral(m-1) / I_geral(início - 1)`. A soma dos grupos dá o acumulado do
   geral. A janela não sai da série longa da categoria (decisão 0005).
@@ -58,12 +58,17 @@ def contribuicao_mensal(dados: pd.DataFrame) -> pd.Series:
 
 
 def participacao_no_grupo(dados: pd.DataFrame, contribuicao: pd.Series) -> pd.Series:
-    """% da soma das contribuições do mesmo nível e grupo (vazio no geral e se a soma é 0)."""
+    """% da soma das contribuições do mesmo nível e grupo.
+
+    Vazia no geral, se a soma é 0 e se falta alguma contribuição no mesmo nível e grupo (ex.:
+    subitens in natura da 1646): sem ela, a soma não é a variação do grupo (A-025).
+    """
     grupo = dados.codigo_ibge.str[0]
     chave = [dados.mes, dados.tabela_sidra, dados.nivel_hierarquico, grupo]
     soma = contribuicao.groupby(chave).transform("sum")
+    completo = contribuicao.isna().groupby(chave).transform("sum") == 0
     participacao = contribuicao / soma.where(soma != 0) * 100
-    return participacao.where(dados.codigo_ibge != "0")
+    return participacao.where((dados.codigo_ibge != "0") & completo)
 
 
 def contribuicao_acumulada(

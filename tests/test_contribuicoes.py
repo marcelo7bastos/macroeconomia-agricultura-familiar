@@ -127,3 +127,31 @@ def test_acumulada_nao_sai_da_serie(base):
         pd.PeriodIndex(doze.mes, freq="M") - pd.PeriodIndex(doze.serie_id.map(inicio), freq="M")
     ).map(lambda d: d.n)
     assert (meses_desde_o_inicio >= 11).all()
+
+
+def test_participacao_vazia_onde_falta_contribuicao_no_grupo(base):
+    # A-025: sem os subitens in natura da 1646, a soma dos subitens do grupo 1 não é o grupo.
+    _, _, contribuicoes = base
+    subitens_1646_grupo1 = contribuicoes[
+        (contribuicoes.janela == "mes")
+        & (contribuicoes.tabela_sidra == 1646)
+        & (contribuicoes.nivel_hierarquico == "subitem")
+        & contribuicoes.codigo_ibge.str.startswith("1")
+    ]
+    assert len(subitens_1646_grupo1) > 0
+    assert subitens_1646_grupo1.participacao_no_grupo.isna().all()
+
+
+def test_participacao_presente_soma_a_contribuicao_do_grupo(base):
+    # Onde há participação, a soma das contribuições do nível reproduz a do grupo (reconciliação).
+    _, _, contribuicoes = base
+    mensais = contribuicoes[contribuicoes.janela == "mes"]
+    com_participacao = mensais[
+        mensais.participacao_no_grupo.notna() & (mensais.nivel_hierarquico == "subgrupo")
+    ]
+    soma = com_participacao.groupby(
+        [com_participacao.mes, com_participacao.codigo_ibge.str[0]]
+    ).contribuicao.sum()
+    grupos = mensais[mensais.nivel_hierarquico == "grupo"].set_index(["mes", "codigo_ibge"])
+    diferenca = (soma - grupos.contribuicao.reindex(soma.index)).abs()
+    assert diferenca.max() < 0.01
