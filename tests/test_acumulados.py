@@ -25,6 +25,7 @@ IPCA15 = carregar_catalogo().indices["ipca15"]
 ARMAZEM = ArmazemRaw(IPCA15.fonte)
 REFERENCIA = next(t.tabela for t in IPCA15.tabelas if t.papel == "referencia")
 SEM_EXCECOES = carregar_excecoes(IPCA15).iloc[0:0]
+CONTAGEM_RUIDO_356 = {1387: 309, 1646: 329}  # A-024: sentinela; mudou, investigar
 
 
 def _longa(series: dict[str, tuple[str, list[float]]], entrada="novo") -> pd.DataFrame:
@@ -115,24 +116,43 @@ def test_janelas_longas_so_calculadas(base):
     assert set(longas.origem) == {"calculado"}
 
 
-def test_onde_os_dois_existem_calculado_bate_com_oficial(base):
-    # O oficial é o publicado; o calculado pelo índice tem de concordar com ele (A-014), salvo
-    # ruído da 356 nas tabelas antigas (A-016), cesta variável (A-013) e erros publicados (A-015).
-    indice, _, acumulados = base
+def _oficial_contra_calculado(indice: pd.DataFrame, acumulados: pd.DataFrame) -> pd.DataFrame:
+    """Linhas oficiais sem cesta variável, com o calculado pelo índice e o limite (A-014)."""
     oficiais = acumulados[(acumulados.origem == "oficial") & ~acumulados.cesta_variavel]
-    oficiais = oficiais[~oficiais.tabela_sidra.isin([1646, 1387]) | (oficiais.janela != "ano")]
+    partes = []
     for janela, linhas in oficiais.groupby("janela"):
+        meses = JANELAS[janela]
+        calculado = acumulado_no_ano(indice) if meses is None else acumulado(indice, meses)
         tamanho = tamanho_da_janela(indice, janela)
-        if JANELAS[janela] is None:
-            calculado = acumulado_no_ano(indice)
-        else:
-            calculado = acumulado(indice, JANELAS[janela])
         conferir = indice[["serie_id", "mes"]].assign(
             calculado=calculado, limite=limite_acumulado(indice, calculado, tamanho)
         )
-        comparar = linhas.merge(conferir, on=["serie_id", "mes"]).dropna(subset=["calculado"])
-        assert len(comparar) > 300, janela
-        assert ((comparar.acumulado - comparar.calculado).abs() <= comparar.limite).all(), janela
+        partes.append(linhas.merge(conferir, on=["serie_id", "mes"]))
+    juntos = pd.concat(partes).dropna(subset=["calculado"])
+    return juntos.assign(erro=(juntos.acumulado - juntos.calculado).abs())
+
+
+def test_onde_os_dois_existem_calculado_bate_com_oficial(base):
+    # O calculado pelo índice concorda com o publicado (A-014), salvo o ruído da 356 nas tabelas
+    # antigas (A-024).
+    indice, _, acumulados = base
+    juntos = _oficial_contra_calculado(indice, acumulados)
+    ruido = (juntos.janela == "ano") & juntos.tabela_sidra.isin([1646, 1387])
+    for janela, linhas in juntos[~ruido].groupby("janela"):
+        assert len(linhas) > 300, janela
+        assert (linhas.erro <= linhas.limite).all(), janela
+
+
+def test_356_das_tabelas_antigas_fica_oficial_mesmo_com_ruido(base):
+    # A-024: na 1646 e na 1387 a 356 composta desde janeiro diverge do índice acima do
+    # arredondamento em centenas de linhas (até ~0,25 p.p.). Fica o oficial; a contagem é sentinela.
+    indice, _, acumulados = base
+    juntos = _oficial_contra_calculado(indice, acumulados)
+    antigas = juntos[(juntos.janela == "ano") & juntos.tabela_sidra.isin([1646, 1387])]
+    acima = antigas[antigas.erro > antigas.limite]
+    assert acima.groupby("tabela_sidra").size().to_dict() == CONTAGEM_RUIDO_356
+    assert acima.erro.max() < 0.3
+    assert set(acima.nivel_hierarquico) <= {"item", "subitem", "subgrupo"}
 
 
 def test_erro_publicado_da_3065_vira_calculado(base):
@@ -141,6 +161,13 @@ def test_erro_publicado_da_3065_vira_calculado(base):
     for janela, mes in [("3m", "2012-11"), ("6m", "2006-04"), ("6m", "2011-11"), ("6m", "2012-11")]:
         assert geral[(janela, mes)] == "calculado"
     assert geral[("3m", "2012-10")] == "oficial"
+
+
+def test_mes_que_so_falha_pela_ancora_fica_oficial(base):
+    # 2003-03 e 2004-08 estão no escopo das exceções A-015, mas a 356 desses meses está certa.
+    _, _, acumulados = base
+    linhas = acumulados[(acumulados.janela == "ano") & acumulados.mes.isin(["2003-03", "2004-08"])]
+    assert set(linhas.origem) == {"oficial"}
 
 
 def test_356_trocada_de_2003_02_vira_calculado(base):

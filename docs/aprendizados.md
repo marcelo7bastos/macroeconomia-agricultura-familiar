@@ -25,6 +25,21 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-024 · 2026-10-20 · Escopo de exceção não é o mês do erro
+- **Contexto:** acumulados por janela (#42), revisão do `revisor-metodologico`.
+- **O que aconteceu:** para trocar o oficial pelo calculado onde a fonte errou, usei o escopo das
+  exceções A-015. Mas a exceção de 2003-02..2003-03 cobre 2003-03 só porque a validação de um passo
+  ancora no mês anterior; a 356 de 2003-03 está certa. Cerca de 100 valores oficiais corretos (91
+  com cesta variável) viraram calculados. Na mesma conferência, a 356 da 1646 e da 1387, composta
+  desde janeiro, diverge do índice em 638 linhas fora da cesta (até ~0,25 p.p.), mais que os 58
+  casos de um passo da validação.
+- **Lição:** exceção diz o que a validação aceita; erro publicado diz o que está errado. São
+  colunas diferentes (`meses_com_erro_publicado`). Ruído sem erro identificado não autoriza trocar
+  o oficial.
+- **Promovida para:** coluna `meses_com_erro_publicado` (conferida ao carregar as exceções);
+  testes `test_mes_que_so_falha_pela_ancora_fica_oficial` e
+  `test_356_das_tabelas_antigas_fica_oficial_mesmo_com_ruido`; `METODOLOGIA.md` 6.5 e 9.
+
 ### A-023 · 2026-10-20 · O acumulado no ano do IBGE segue o código, não a série longa
 - **Contexto:** índice encadeado por série longa (#41), conferido contra a 356 por categoria;
   revisão do `revisor-metodologico`.

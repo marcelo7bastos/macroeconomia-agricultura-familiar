@@ -12,8 +12,8 @@ O oficial é preferido quando mede o mesmo que a série longa:
 - a janela cabe na série, ou começa antes do início dos dados (não há quebra, só falta de dado);
 - no ano: a 356 só vale se o código de janeiro é o da linha (A-023). Série que começa no meio do
   ano ou cujo código mudou no ano fica sem o oficial, porque a 356 atravessaria a quebra;
-- não está no escopo de um erro publicado pela fonte (exceção A-015) com divergência acima do
-  limite de arredondamento; aí vale o calculado.
+- não é um valor que a fonte publicou errado (coluna `meses_com_erro_publicado` das exceções,
+  A-015) e diverge do calculado acima do limite de arredondamento; aí vale o calculado.
 
 `origem` diz de onde veio o valor. `cesta_variavel` marca a janela que contém mês com cesta
 variável (A-013): o valor não reproduz um índice encadeado da categoria (METODOLOGIA 8.3).
@@ -84,18 +84,16 @@ def limite_acumulado(dados: pd.DataFrame, calculado: pd.Series, tamanho: pd.Seri
     return MEIA_CASA_VARIACAO * (1 + calculado.abs() / 100) * soma + MEIA_CASA_VARIACAO
 
 
-def _no_escopo(dados: pd.DataFrame, excecoes: pd.DataFrame, validacao, tabela) -> pd.Series:
-    """Linhas no escopo de um erro publicado pela fonte (exceção A-015) daquela validação."""
-    escopo = pd.Series(False, index=dados.index)
-    erros = excecoes[(excecoes.aprendizado == "A-015") & (excecoes.validacao == validacao)]
-    for e in erros.itertuples():
-        escopo |= (
+def _erro_publicado(dados: pd.DataFrame, excecoes: pd.DataFrame, validacao, tabela) -> pd.Series:
+    """Linhas cujo valor publicado está errado (A-015): o mês do erro, não o escopo da exceção."""
+    erro = pd.Series(False, index=dados.index)
+    for e in excecoes[excecoes.validacao == validacao].itertuples():
+        erro |= (
             (tabela == e.tabela_sidra)
             & dados.codigo_ibge.str.fullmatch(e.codigo_ibge)
-            & (dados.mes >= e.mes_inicio)
-            & (dados.mes <= e.mes_fim)
+            & dados.mes.isin(e.meses_com_erro_publicado)
         )
-    return escopo
+    return erro
 
 
 def _cesta_na_janela(dados: pd.DataFrame, janela: str) -> pd.Series:
@@ -117,6 +115,11 @@ def montar_acumulados(
     """Uma linha por série, mês e janela: o oficial onde mede o mesmo; senão, o calculado."""
     publicados = longa[["serie_id", "mes", *OFICIAL_CATEGORIA.values(), "entrada"]]
     dados = indice.merge(publicados, on=["serie_id", "mes"], how="left", validate="one_to_one")
+    # As janelas por deslocamento e o limite supõem linhas ordenadas por série e mês.
+    if not dados[["serie_id", "mes"]].equals(
+        dados[["serie_id", "mes"]].sort_values(["serie_id", "mes"], ignore_index=True)
+    ):
+        raise ValueError("índice fora da ordem por série e mês")
     geral = dados.codigo_ibge == "0"
     posicao = dados.groupby("serie_id").cumcount()
     antes_dos_dados = dados.entrada == INICIO_DOS_DADOS
@@ -137,13 +140,13 @@ def montar_acumulados(
         valido = oficial.notna() & (cabe | antes_dos_dados)
         if meses is None:
             valido &= mesmo_codigo_no_ano
-        erro_publicado = _no_escopo(
+        erro_publicado = _erro_publicado(
             dados, excecoes, VALIDACAO_GERAL.get(janela), tabela_referencia
-        ).where(geral, False) | _no_escopo(
+        ).where(geral, False) | _erro_publicado(
             dados, excecoes, VALIDACAO_CATEGORIA.get(janela), dados.tabela_sidra
         ).where(~geral, False)
         diverge = (oficial - calculado).abs() > limite_acumulado(dados, calculado, tamanho)
-        valido &= ~(erro_publicado & diverge)
+        valido &= ~(erro_publicado & (diverge | calculado.isna()))
         parte = dados.assign(
             janela=janela,
             acumulado=oficial.where(valido, calculado),

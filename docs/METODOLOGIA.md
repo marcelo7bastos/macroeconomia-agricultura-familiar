@@ -200,6 +200,9 @@ cobre**. Regras (A-018):
   o dado; mais: há erro novo no escopo. Nos dois casos a validação falha até a exceção ser revista.
 - As exceções de 2003-03 e 2004-08 na 1646 existem só porque a validação de um passo usa o mês
   anterior (errado na fonte) como âncora.
+- **Mês com erro publicado.** A coluna `meses_com_erro_publicado` separa o mês em que o valor
+  publicado está errado (ex.: 2003-02) dos meses que a exceção cobre só por consequência (2003-03).
+  Só ela autoriza os indicadores a trocar o oficial pelo calculado (seção 9).
 
 ## 7. Harmonização entre POFs e série longa
 
@@ -361,7 +364,7 @@ em pedaços, aceita na revisão). São evidência para revisão humana, nunca em
 
 `cesta_variavel` marca os meses da 1646 cobertos pela exceção A-013. Um acumulado cuja janela
 contém mês marcado também não reproduz o IBGE: é o caso da 356 de 2006 dos 34 subitens in natura,
-já na 1387, e dos acumulados de 12 meses até jul/2007. Na #42, a janela que contém mês marcado
+já na 1387, e dos acumulados de 12 meses até jun/2007 (a janela de jul/2007 começa em ago/2006). Na #42, a janela que contém mês marcado
 herda a marca.
 
 ## 9. Acumulados por janela (#42)
@@ -379,16 +382,25 @@ herda a marca.
   - no acumulado no ano, o código de janeiro é o mesmo do mês (A-023, seção 8.2). Série que nasce
     no meio do ano da troca ou que mudou de código no ano fica sem a 356, porque ela atravessaria a
     quebra pelo código;
-  - não está no escopo de um erro publicado pela fonte (A-015) com divergência acima do limite de
-    arredondamento. Nesses casos (356 trocada de 2003-02 e de 2004-07 na 1646; 1118 e 1119 da 3065
-    em 4 meses), vale o calculado. No escopo da exceção, o oficial fica onde concorda com o
-    calculado (ex.: 2003-03, que a exceção cobre só pela âncora: 542 oficiais e 50 calculados).
+  - não é valor publicado errado (A-015) que diverge do calculado. Erro publicado é só o mês
+    listado em `meses_com_erro_publicado` (6.5): 356 trocada de 2003-02 e de 2004-07 na 1646 e
+    1118/1119 da 3065 em 4 meses. Nesses meses vale o calculado, salvo onde o publicado concorda
+    com ele (7 linhas em 2003-02, 29 em 2004-07). Os meses seguintes, que a exceção cobre só pela
+    âncora (2003-03 e 2004-08), ficam com o oficial em todas as 593 linhas.
+  - no acumulado em 12 meses, a 1120 cobre sempre 12 meses da mesma tabela (ela só é publicada
+    depois do primeiro ano da 1705 e da 7062, A-009), então não há troca de código dentro da janela.
 - **24 e 36 meses** não são publicados: só calculados.
 - **Cesta variável:** a janela que contém mês marcado (seção 8.3) herda a marca, por exemplo a 356
   de 2006 dos subitens in natura na 1387 e os acumulados de 12 meses até jun/2007.
 
 Teste: onde o oficial é usado e o calculado existe, os dois concordam dentro do limite de
-arredondamento (A-014), fora do ruído da 356 nas tabelas antigas (A-016) e da cesta variável.
+arredondamento (A-014), fora da cesta variável e da 356 da 1646 e da 1387.
+
+**Ruído da 356 composta desde janeiro (A-024).** Na 1646 e na 1387, a 356 publicada diverge do
+acumulado desde janeiro pelo índice acima do arredondamento em 638 linhas fora da cesta variável
+(329 na 1646, 309 na 1387; até cerca de 0,25 p.p., só subgrupos, itens e subitens). É mais que os
+58 casos da validação (A-016), porque ela compara um passo e esta comparação compõe o ano inteiro.
+Fica o oficial: é o número do IBGE e não há erro identificado; a contagem é sentinela em teste.
 
 ## 10. Registro de descobertas
 
