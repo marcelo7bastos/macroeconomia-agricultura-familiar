@@ -148,7 +148,8 @@ Campo `nivel` por tabela (só para registro; não use):
 - Contribuições (#43): `contribuicoes_ipca15` no staging, em p.p. para o geral, no mês e nos
   acumulados (`METODOLOGIA.md` 10).
 - Difusão e sazonalidade (#44): `difusao_ipca15` e `sazonalidade_ipca15` no staging
-  (`METODOLOGIA.md` 11).
+  (`METODOLOGIA.md` 11). O BCB publica a difusão do IPCA cheio (SGS 21379), não a do IPCA-15;
+  quando o IPCA cheio entrar (#12), a oficial vem primeiro.
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de

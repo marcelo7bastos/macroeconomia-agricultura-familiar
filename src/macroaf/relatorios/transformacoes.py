@@ -304,14 +304,14 @@ def _etapas(f: dict) -> list[dict]:
                     "entrada": "serie_longa (difusão) e indice_"
                     + f["indice"]["codigo"]
                     + " (sazonalidade).",
-                    "regra": f"Difusão: subitens com variação maior que zero sobre os subitens do mês; na ponderada, a soma dos pesos deles sobre a soma dos pesos. No geral e em cada grupo. Sazonalidade: média e mediana da variação de cada mês do ano nos últimos {f['difusao']['anos']} anos, só com anos seguidos da própria série.",
+                    "regra": f"Difusão: subitens com variação maior que zero sobre os subitens coletados no mês (peso 0 fica fora, A-026); na ponderada, a soma dos pesos deles sobre a soma dos pesos. No geral e em cada grupo; a troca de cesta fica marcada. Sazonalidade: média e mediana da variação de cada mês do ano nos últimos {f['difusao']['anos']} anos, só com anos seguidos da própria série.",
                     "saida": "difusao_"
                     + f["indice"]["codigo"]
                     + " (mês e recorte) e sazonalidade_"
                     + f["indice"]["codigo"]
                     + " (série, mês do ano e ano final).",
-                    "comando": "uv run python -m macroaf.indicators.difusao",
-                    "codigo": "src/macroaf/indicators/difusao.py",
+                    "comando": "uv run python -m macroaf.indicators.difusao e macroaf.indicators.sazonalidade",
+                    "codigo": "src/macroaf/indicators/difusao.py e sazonalidade.py",
                     "numeros": [
                         ("Meses com difusão", _n(f["difusao"]["meses"])),
                         (

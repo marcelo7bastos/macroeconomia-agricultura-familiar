@@ -19,8 +19,9 @@ from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
 from macroaf.indicators.acumulados import JANELAS, montar_acumulados
 from macroaf.indicators.contribuicoes import montar_contribuicoes
-from macroaf.indicators.difusao import ANOS, montar_difusao, montar_sazonalidade
+from macroaf.indicators.difusao import montar_difusao
 from macroaf.indicators.indice import marcar_cesta_variavel, montar_indice
+from macroaf.indicators.sazonalidade import ANOS, montar_sazonalidade
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia

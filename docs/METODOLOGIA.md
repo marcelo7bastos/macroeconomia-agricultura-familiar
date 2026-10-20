@@ -437,20 +437,30 @@ da reconciliação, reescalado como as contribuições.
 
 ## 11. Difusão e sazonalidade (#44)
 
-`macroaf.indicators.difusao` grava `difusao_ipca15` e `sazonalidade_ipca15`.
+`macroaf.indicators.difusao` grava `difusao_ipca15`, e `macroaf.indicators.sazonalidade` grava
+`sazonalidade_ipca15`.
 
 - **Difusão:** % dos subitens com variação mensal maior que zero, por mês, no geral e em cada grupo.
   A simples conta subitens; a ponderada soma os pesos deles sobre a soma dos pesos dos subitens. A
   cesta é a da tabela do mês (POF vigente), sem série longa: a difusão compara a parte da cesta que
-  subiu, não a mesma lista de produtos ao longo do tempo. Na 1646, subitens in natura fora de safra
-  têm peso 0 (A-013): entram na simples e não pesam na ponderada.
+  subiu, não a mesma lista de produtos ao longo do tempo. A troca de cesta (512 → 384 → 365 → 367
+  subitens) aparece em `versao_pof` e em `cesta_nova`, no primeiro mês de cada POF.
+- **Peso 0 fica fora (A-026).** Os 93 subitens com peso 0 da 1646 (in natura fora de safra, A-013)
+  quase sempre publicam variação 0,00, que é "não coletado", não "preço estável". Saem dos dois
+  denominadores e são contados em `subitens_peso_zero`. Contá-los como "não subiu" baixaria a
+  simples em até 0,40 p.p. no geral e 0,90 p.p. no grupo 1.
+- **Erro publicado entra como publicado:** o subitem 9101022 da 1705 com 0,00 em 2014-07/09
+  (A-015) conta como "não subiu" (até cerca de 0,3 p.p. no geral). A difusão não tem valor oficial
+  para comparar, e o erro está registrado.
 - **Sazonalidade:** para cada série longa e mês do ano, média e mediana da variação mensal nos
   últimos 5 anos, em janela móvel que termina em cada ano. Só anos seguidos da própria série:
   janela que pularia um ano ou sairia da série fica vazia (decisão 0005). `cesta_variavel` marca a
   janela com mês de cesta variável.
 
-Testes: difusão entre 0 e 100 e um valor por mês no geral; sazonalidade igual à conta direta para
-o geral (dezembro, 2021–2025) e sempre dentro da série.
+Testes: difusão entre 0 e 100, um valor por mês no geral e trocas de cesta nos meses certos; soma
+dos pesos dos subitens igual ao peso publicado do geral e de cada grupo (salvo o erro de 2010,
+A-015); sazonalidade igual à conta direta para o geral, dentro da série e com a marca de cesta só
+nas janelas certas.
 
 ## 12. Registro de descobertas
 

@@ -25,6 +25,17 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-026 · 2026-10-20 · Peso 0 com variação 0,00 é "não coletado"
+- **Contexto:** difusão (#44), revisão do `revisor-metodologico`.
+- **O que aconteceu:** na 1646 há 93 subitens com peso 0 (fora de safra, A-013); em 84 a variação
+  publicada é exatamente 0,00 e em 9 vai de −26,54 a 10,04. Na difusão simples, contavam como "não
+  subiu" e baixavam o geral em até 0,40 p.p.
+- **Lição:** indicador que conta linhas não conta subitem com peso 0: a variação dele não informa
+  preço. Generaliza A-013 e A-025 (linha sem informação mexendo no denominador).
+- **Promovida para:** `montar_difusao` (coluna `subitens_peso_zero`); testes
+  `test_difusao_simples_e_ponderada` e `test_difusao_real_entre_0_e_100_e_um_valor_por_mes`;
+  `METODOLOGIA.md` 11.
+
 ### A-025 · 2026-10-20 · Linha excluída muda o denominador de quem fica
 - **Contexto:** contribuições (#43), revisão do `revisor-metodologico`.
 - **O que aconteceu:** os subitens in natura da 1646 saem da contribuição (A-013). A participação
