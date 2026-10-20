@@ -19,7 +19,9 @@ from html import escape
 from pathlib import Path
 
 from macroaf.catalogo import RAIZ, carregar_catalogo
+from macroaf.relatorios import graficos
 from macroaf.relatorios.coleta import coletar
+from macroaf.relatorios.graficos import MENOS, TRACO
 
 NOMES_MEDIDA = {
     "variacao_mensal": "Variação mensal",
@@ -57,6 +59,15 @@ DUVIDAS = [
     ),
 ]
 
+
+# Medidas que o projeto também calcula (onde falta o oficial ou por série longa), por coluna.
+CALCULADA = {
+    "variacao_acum_ano": '<span class="selo parcial">onde a 356 não mede a série (#42)</span>',
+    "variacao_acum_12m": '<span class="selo parcial">onde falta ou não serve (#42)</span>',
+    "numero_indice": '<span class="selo sim">por série longa, base 100 (#41)</span>',
+    "variacao_acum_3m": '<span class="selo parcial">nos meses de erro publicado (#42)</span>',
+    "variacao_acum_6m": '<span class="selo parcial">nos meses de erro publicado (#42)</span>',
+}
 
 # Indicadores da seção 5.2 do planejamento já calculados, com a issue que os entregou.
 FEITOS = {
@@ -522,7 +533,7 @@ def _existe(f: dict) -> str:
                 celulas.append(f'<span class="selo parcial">oficial, {_n(cobertura)}%</span>')
             else:
                 celulas.append('<span class="selo nao">não publicado</span>')
-        linhas.append([nome, *celulas, '<span class="selo nao">não</span>'])
+        linhas.append([nome, *celulas, CALCULADA.get(coluna, '<span class="selo nao">não</span>')])
     oficial_geral = [
         ("Número-índice do geral", "numero_indice"),
         ("Acumulada em 3 meses do geral", "variacao_acum_3m"),
@@ -534,7 +545,7 @@ def _existe(f: dict) -> str:
                 [
                     nome,
                     *['<span class="selo sim">pela 3065</span>'] * len(dados),
-                    '<span class="selo nao">não</span>',
+                    CALCULADA.get(coluna, '<span class="selo nao">não</span>'),
                 ]
             )
     if f.get("difusao"):
@@ -585,8 +596,16 @@ def _secao_resumo(f: dict) -> str:
         f"Montamos a lista de categorias das {len(dados)} tabelas ({_n(f['dim']['linhas'])} linhas), com a hierarquia tirada do código IBGE.",
         f"Juntamos os valores das {len(dados)} tabelas num só fato ({_n(f['fato']['linhas'])} linhas), ligados à categoria certa pelo par tabela e id.",
         f"Conferimos tudo com {len(f['validacoes'])} validações ({ok} ok) e documentamos {len(f['excecoes'])} exceções explicadas.",
-        "Ainda não calculamos nenhuma inflação: todos os números do fato são oficiais. Os cálculos feitos até agora servem só para conferir.",
     ]
+    if f.get("resultados"):
+        feito.append(
+            "Calculamos, por série longa, o índice encadeado (base 100), os acumulados de 3 a 36 meses e no ano, as contribuições em pontos percentuais e a sazonalidade; e, pela cesta de cada mês, a difusão. "
+            "Onde o IBGE publica o mesmo número, vale o oficial; o calculado entra onde falta ou onde o oficial não serve (erro publicado, ou acumulado que não mede a série), com a origem marcada."
+        )
+    else:
+        feito.append(
+            "Ainda não calculamos nenhuma inflação: todos os números do fato são oficiais. Os cálculos feitos até agora servem só para conferir."
+        )
     if f.get("harmonizacao"):
         h = f["harmonizacao"]
         conta = {
@@ -605,6 +624,7 @@ def _secao_resumo(f: dict) -> str:
         ("macroaf.extract", "baixa e guarda o raw"),
         ("macroaf.transform", "monta dim, fato e referência"),
         ("macroaf.validate", "confere e bloqueia a publicação se algo não fecha"),
+        ("macroaf.indicators", "calcula índice, acumulados, contribuições, difusão e sazonalidade"),
         *[(a["nome"], a["descricao"].split(". ")[0] + ".") for a in f["agentes"]],
         ("mantenedor", "revisa e aprova cada PR, decisão e regra"),
     ]
@@ -619,6 +639,211 @@ def _secao_resumo(f: dict) -> str:
     <div class="bloco alerta"><h3>Dúvidas em aberto</h3><ul>{"".join(f"<li>{escape(t)} <small>({escape(o)})</small></li>" for t, o in DUVIDAS)}</ul></div>
   </div>
 </section>"""
+
+
+def _pct(valor: float | None, casas: int = 2) -> str:
+    return TRACO if valor is None else f"{valor:.{casas}f}".replace(".", ",").replace("-", MENOS)
+
+
+def _secao_resultados(f: dict) -> str:
+    r = f.get("resultados")
+    if not r:
+        return ""
+    nome = f["indice"]["nome"]
+    meses = [m for m, _ in r["doze_meses"]]
+    trocas = [(m, "POF") for m in r["trocas"]]
+    doze = graficos.linha(
+        f"{nome} acumulado em 12 meses, índice geral, de {_mes(meses[0])} a {_mes(meses[-1])}",
+        meses,
+        [("12 meses", "serie-1", [v for _, v in r["doze_meses"]])],
+        marcas=trocas,
+    )
+    grupos = r["grupos"]
+    contrib_12m = graficos.barras(
+        f"Contribuição de cada grupo para o {nome} em 12 meses até {_mes(r['ultimo_mes'])}, em pontos percentuais",
+        [g["nome"] for g in grupos],
+        [g["contribuicao_12m"] for g in grupos],
+        unidade=" p.p.",
+    )
+    contrib_mes = graficos.barras(
+        f"Contribuição de cada grupo para o {nome} em {_mes(r['ultimo_mes'])}, em pontos percentuais",
+        [g["nome"] for g in grupos],
+        [g["contribuicao_mes"] for g in grupos],
+        unidade=" p.p.",
+        casas=3,
+    )
+    dif = r["difusao"]
+    difusao = graficos.linha(
+        f"Difusão do {nome}: porcentagem dos subitens com alta de preço, simples e ponderada pelo peso",
+        [m for m, _, _ in dif],
+        [
+            ("simples", "serie-1", [v for _, v, _ in dif]),
+            ("ponderada", "serie-2", [v for _, _, v in dif]),
+        ],
+        marcas=trocas,
+    )
+    saz = r["sazonalidade"]
+    sazonalidade = graficos.barras(
+        f"Variação média de cada mês do ano no índice geral, {saz['ano_final'] - saz['anos'] + 1} a {saz['ano_final']}",
+        [graficos.MESES[int(m) - 1] for m, _, _ in saz["meses"]],
+        [media for _, media, _ in saz["meses"]],
+        unidade="%",
+        altura_barra=22,
+        largura_rotulo=60,
+    )
+    c = r["conferencias"]
+    conferencias = [
+        [
+            "Índice encadeado do geral",
+            "número-índice (1117) da 3065",
+            f"desvio máximo de {_pct(c['desvio_1117'], 4)}%",
+        ],
+        [
+            "Acumulados do geral em 3, 6 e 12 meses e no ano",
+            "1118, 1119, 1120 e 356 da 3065",
+            f"diferença máxima de {_pct(c['geral_diferenca'], 3)} p.p. em {_n(c['geral_valores'])} valores (fora os {_n(c['erros_3065'])} erros publicados)",
+        ],
+        [
+            "Acumulado em 12 meses por categoria",
+            "1120 das tabelas de dados",
+            f"diferença máxima de {_pct(c['doze_diferenca'], 3)} p.p. em {_n(c['doze_valores'])} valores",
+        ],
+        [
+            "Soma das contribuições dos grupos no mês",
+            "variação do geral",
+            f"diferença máxima de {_pct(c['grupos_mes'], 4)} p.p. em {_n(c['grupos_meses'])} meses",
+        ],
+        [
+            "Soma das contribuições dos grupos nos acumulados",
+            "acumulado calculado do geral",
+            f"diferença máxima de {_pct(c['grupos_acumulados'], 3)} p.p.",
+        ],
+    ]
+    tabela_grupos = _tabela_html(
+        ["Grupo", "Peso", "Variação no mês", "Contribuição no mês", "Contribuição em 12 meses"],
+        [
+            [
+                escape(g["nome"]),
+                _pct(g["peso"]),
+                f"{_pct(g['variacao'])}%",
+                f"{_pct(g['contribuicao_mes'], 3)} p.p.",
+                f"{_pct(g['contribuicao_12m'], 3)} p.p.",
+            ]
+            for g in grupos
+        ],
+    )
+    ancora = ""
+    if r.get("ancora"):
+        a = r["ancora"]
+        ancora = f"""
+  <h3>Por que nem todo número oficial serve: o acumulado no ano na troca de POF</h3>
+  <p>Na troca de POF, o IBGE publica o acumulado no ano (variável 356) seguindo o <b>código</b> da categoria, não a série longa (A-023). Em geral, quando o código é novo, o acumulado recomeça no mês da troca; há exceções na troca de 2006, em que o IBGE encadeou desde janeiro por um antecessor de outro código (METODOLOGIA 8.2). Exemplo: <b>{escape(a["nome_antes"] or "")}</b> virou <b>{escape(a["nome_depois"])}</b>; a revisão emendou as duas numa série só ({escape(a["serie_id"])}). O IBGE trata a categoria como nova e acumula só desde a troca; a série longa acumula desde janeiro. Por isso, aqui, o projeto usa o calculado.</p>
+  {_tabela_html(["Mês", "Variação no mês", "356 publicada (desde a troca)", "Acumulado da série (desde janeiro)"], [[_mes(m), f"{_pct(v)}%", f"{_pct(pub)}%", f"<b>{_pct(acu)}%</b>"] for m, v, pub, acu in a["linhas"]])}"""
+    return f"""
+<section id="resultados" class="secao">
+  <h2>Resultados</h2>
+  <p>Os números que saem do pipeline, para o índice geral e os grupos. Cada gráfico tem a tabela dos dados ao lado ou abaixo; passe o mouse sobre as linhas para ver os valores.</p>
+  <div class="destaques">
+    <div class="destaque"><span>{escape(nome)} em {_mes(r["ultimo_mes"])}</span><b>{_pct(r["geral_mes"])}%</b></div>
+    <div class="destaque"><span>Em 12 meses</span><b>{_pct(r["geral_12m"])}%</b></div>
+    <div class="destaque"><span>Subitens com alta no mês</span><b>{_pct(dif[-1][1], 1)}%</b></div>
+  </div>
+  <h3>Acumulado em 12 meses</h3>
+  <figure><div class="rolagem">{doze}</div><div class="dica" hidden></div>
+    <figcaption>Índice geral, acumulado em 12 meses. As linhas verticais marcam as trocas de POF; no geral não há quebra, porque a 3065 publica a série inteira.</figcaption></figure>
+  <h3>Quem puxou a inflação</h3>
+  <div class="abas" role="group" aria-label="Período das contribuições">
+    <button type="button" class="aba ativa" data-contrib="12m" id="contrib-12m">12 meses</button>
+    <button type="button" class="aba" data-contrib="mes" id="contrib-mes">{_mes(r["ultimo_mes"])}</button>
+  </div>
+  <figure data-painel-contrib="12m"><div class="rolagem">{contrib_12m}</div>
+    <figcaption>Contribuição de cada grupo, em pontos percentuais: somadas, dão o acumulado do índice geral em 12 meses ({_pct(r["geral_12m"])}%).</figcaption></figure>
+  <figure data-painel-contrib="mes" hidden><div class="rolagem">{contrib_mes}</div>
+    <figcaption>Contribuição de cada grupo no mês: peso vezes variação, dividido pela soma dos pesos dos grupos (100, salvo erro da fonte). Somadas, dão a variação do geral ({_pct(r["geral_mes"])}%).</figcaption></figure>
+  <details><summary>Tabela dos grupos</summary>{tabela_grupos}</details>
+  <h3>Difusão</h3>
+  <figure><div class="rolagem">{difusao}</div><div class="dica" hidden></div>
+    <figcaption><span class="chave serie-1"></span> simples (porcentagem dos subitens com alta) e <span class="chave serie-2"></span> ponderada (pelo peso dos subitens). A cesta muda a cada troca de POF (linhas verticais), então a difusão compara a parte da cesta que subiu, não a mesma lista de produtos.</figcaption></figure>
+  <h3>Sazonalidade</h3>
+  <figure><div class="rolagem">{sazonalidade}</div>
+    <figcaption>Média da variação de cada mês do ano no índice geral, nos últimos {saz["anos"]} anos ({saz["ano_final"] - saz["anos"] + 1} a {saz["ano_final"]}).</figcaption></figure>
+  <h3>Os indicadores conferem com o IBGE</h3>
+  <p>Onde o IBGE publica o mesmo número, o calculado pelo projeto tem de dar igual, dentro do erro de arredondamento. Testes automáticos travam estas conferências.</p>
+  {_tabela_html(["O que", "Comparado com", "Resultado"], conferencias)}
+  {ancora}
+</section>"""
+
+
+GLOSSARIO = [
+    (
+        "POF",
+        "Pesquisa de Orçamentos Familiares. Define a cesta e os pesos do índice; a cada POF nova, o IBGE abre uma tabela nova.",
+    ),
+    (
+        "Grupo, subgrupo, item, subitem",
+        "Os níveis da classificação, do mais agregado ao mais detalhado. O nível sai do número de dígitos do código IBGE (1, 2, 4 e 7).",
+    ),
+    (
+        "Código IBGE e id SIDRA",
+        "O código diz a posição na árvore; o id diz qual definição vale naquela tabela. O mesmo código pode ter ids diferentes.",
+    ),
+    (
+        "355, 356, 1120, 357",
+        "Variáveis do SIDRA: variação mensal, acumulada no ano, acumulada em 12 meses e peso.",
+    ),
+    ("3065", "Tabela com só o índice geral, do início ao fim, usada como gabarito."),
+    (
+        "Série longa",
+        "Uma categoria acompanhada através das tabelas de POFs diferentes, emendada só onde há prova de que é a mesma.",
+    ),
+    (
+        "Quebra",
+        "Ponto em que a série longa termina e outra começa, porque não há prova de que a categoria continua.",
+    ),
+    (
+        "Índice encadeado",
+        "Número que começa em 100 e acumula as variações mensais da série; dele saem os acumulados.",
+    ),
+    ("p.p.", "Pontos percentuais: diferença entre duas porcentagens, ou parte de uma porcentagem."),
+    (
+        "Contribuição",
+        "A parte da variação do índice geral, em p.p., que vem de cada grupo, item ou subitem.",
+    ),
+    ("Difusão", "Porcentagem dos subitens cujo preço subiu no mês."),
+    (
+        "Cesta variável",
+        "Na POF 1995-96, os pesos dos produtos in natura mudavam mês a mês com a safra (A-013).",
+    ),
+]
+
+
+def _secao_glossario() -> str:
+    itens = "".join(f"<dt>{escape(t)}</dt><dd>{escape(d)}</dd>" for t, d in GLOSSARIO)
+    return f"""
+<section id="glossario" class="secao">
+  <h2>Glossário</h2>
+  <dl class="glossario">{itens}</dl>
+</section>"""
+
+
+def _texto_series_rastreio(f: dict) -> str:
+    """Quantas séries longas o código rastreado atravessa, a partir dos dados."""
+    series = {}
+    for r in f["rastreios"]:
+        if r.get("indicadores"):
+            i = r["indicadores"]
+            series[i["serie_id"]] = (i["serie_inicio"], i["serie_fim"], r["dim"]["nome"])
+    if len(series) <= 1:
+        return "O código está numa série longa só, sem quebra."
+    partes = "; ".join(
+        f"<code>{escape(s)}</code> ({escape(n)}, {_mes(a)} a {_mes(b)})"
+        for s, (a, b, n) in sorted(series.items(), key=lambda x: x[1][0])
+    )
+    return (
+        f"O código atravessa {len(series)} séries longas: {partes}. Onde a série muda, o IBGE "
+        "reformulou a categoria (id SIDRA novo) e a emenda não foi aceita na revisão; o índice "
+        "recomeça em 100 (veja a decisão na seção Harmonização)."
+    )
 
 
 def _secao_juncao(f: dict) -> str:
@@ -641,7 +866,7 @@ def _secao_juncao(f: dict) -> str:
   <p>Por isso o fato liga cada valor à categoria pelo par <b>(tabela, id SIDRA)</b>. Ligar só pelo código misturaria produtos diferentes, como mostram os exemplos.</p>
   {_tabela_html(["Código IBGE", "Versões ao longo das tabelas"], exemplos)}
   <h3>Rastreie um valor</h3>
-  <p>O mesmo subitem (<code>1111004</code>) no último mês de cada tabela: o registro como veio da API, a linha da classificação e a linha final no fato.</p>
+  <p>O mesmo código (<code>1111004</code>) no último mês de cada tabela: o registro como veio da API, a linha da classificação, a linha no fato e, por fim, os indicadores da série longa. {_texto_series_rastreio(f)}</p>
   <div class="abas" role="group" aria-label="Escolha a tabela">{botoes}</div>
   <div id="rastreio" class="rastreio" aria-live="polite"></div>
 </section>"""
@@ -726,7 +951,8 @@ def _secao_harmonizacao(f: dict) -> str:
   <h3>Séries longas hoje</h3>
   <p>{_n(s["linhas"])} linhas em {_n(s["total"])} séries. "Completas" vão do primeiro ao último mês dos dados sem quebra.</p>
   {_tabela_html(["Nível", "Séries", "Completas"], linhas_series)}
-  <h3>Propostas e decisões da revisão</h3>
+  <details>
+  <summary>Propostas e decisões da revisão ({_n(len(h["propostas"]))} ligações)</summary>
   <p>Cada linha é uma ligação sugerida pelas regras, com a evidência (nomes, ids, critério, peso no último mês da tabela antiga e no primeiro da nova) e a decisão do revisor. Aceita emenda a série (renomeado) ou confirma a fusão ou divisão; não aceita mantém a quebra e cita a issue de investigação. A revisão é feita na página <code>docs/revisao/harmonizacao_{escape(f["indice"]["codigo"])}.html</code>.</p>
   <div class="controles">
     <label for="busca-propostas">Buscar:</label>
@@ -736,6 +962,7 @@ def _secao_harmonizacao(f: dict) -> str:
     </div>
   </div>
   {_tabela_html(cab, [linha(p) for p in h["propostas"]], "propostas")}
+  </details>
   <details>
     <summary>O que some e o que aparece sem candidato ({_n(len(h["entram_saem"]))} categorias)</summary>
     <p>Use esta lista para achar fusões que as regras não viram (por exemplo, "Massa para pizza" e "Massa semipreparada").</p>
@@ -761,7 +988,7 @@ def _secao_existe(f: dict) -> str:
   {_existe(f)}
   <ul class="notas">
     <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Onde falta, acumulados_{f["indice"]["codigo"]} traz o calculado pelo índice, com origem marcada (#42).</li>
-    <li>Agregação: o projeto não agrega nada que guarde. As validações recalculam médias ponderadas, acumulados e o número-índice só para conferir com o IBGE.</li>
+    <li>Agregação: o projeto não recalcula a variação de grupos e itens a partir dos subitens; usa a publicada. Médias ponderadas servem só para conferir com o IBGE.</li>
     <li>Índice encadeado: calculado por série longa, a partir da variação mensal oficial. O do geral reproduz o número-índice da 3065. Os acumulados por janela (#42) e as contribuições (#43) partem dele.</li>
     <li>Acumulado no ano no ano da troca de POF: o IBGE ancora janeiro pelo código, não pela série longa; para código novo, começa no mês da troca (A-023). A 356 só vale como acumulado da série quando a série tem janeiro e o código não mudou; o índice encadeado só dá o acumulado no ano nesse caso.</li>
     <li>Série longa: emenda as tabelas só onde há prova de que a categoria é a mesma; o resto fica como quebra marcada até a revisão humana (seção Harmonização).</li>
@@ -841,6 +1068,11 @@ def _secao_manter(f: dict) -> str:
 uv run python -m macroaf.transform.{codigo}
 uv run python -m macroaf.validate.{codigo}
 uv run python -m macroaf.transform.harmonizacao --indice {codigo}
+uv run python -m macroaf.indicators.indice --indice {codigo}
+uv run python -m macroaf.indicators.acumulados --indice {codigo}
+uv run python -m macroaf.indicators.contribuicoes --indice {codigo}
+uv run python -m macroaf.indicators.difusao --indice {codigo}
+uv run python -m macroaf.indicators.sazonalidade --indice {codigo}
 uv run python -m macroaf.relatorios.transformacoes --indice {codigo}</code></pre>
   <p>Um teste regera a página e falha se o arquivo do repositório estiver diferente. Toda etapa que muda uma transformação regera a página no mesmo PR. Um índice novo ganha a sua página com <code>--indice</code>.</p>
   <p class="tecnico">Degraus de explicação usados aqui: texto claro (resumo), diagramas (fluxo e linha do tempo) e página interativa. O degrau de vídeo ainda não foi feito.</p>
@@ -854,6 +1086,7 @@ CSS = """
   --destaque: #1d5b8f; --destaque-fundo: #e3eef8; --pof0: #9fbfdc; --pof1: #7fb2a9; --pof2: #c9b37a; --pof3: #b394c2;
   --sim: #2e7d4f; --sim-fundo: #e4f3ea; --parcial: #8a6100; --parcial-fundo: #fbf0d6; --nao: #8b95a3; --nao-fundo: #eef1f4;
   --falha: #b3261e; --falha-fundo: #fbe4e2; --alerta-fundo: #fff7e6;
+  --serie-1: #2a78d6; --serie-2: #eb6834; --positivo: #2a78d6; --negativo: #e34948; --eixo: #c3c2b7;
   --fonte-titulo: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   --fonte-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --fonte-dados: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -862,12 +1095,12 @@ CSS = """
   --papel: #11161d; --superficie: #19202a; --tinta: #e6eaf0; --suave: #9aa6b5; --linha: #2c3643;
   --destaque: #7db4e6; --destaque-fundo: #1b2e42; --pof0: #3d5f80; --pof1: #3b6b63; --pof2: #6e5f33; --pof3: #5d4a6b;
   --sim: #7dd3a0; --sim-fundo: #183528; --parcial: #e6c070; --parcial-fundo: #3a3018; --nao: #8b95a3; --nao-fundo: #222a35;
-  --falha: #f2a49d; --falha-fundo: #3d1d1b; --alerta-fundo: #2e2717; color-scheme: dark; } }
+  --falha: #f2a49d; --falha-fundo: #3d1d1b; --alerta-fundo: #2e2717; --serie-1: #3987e5; --serie-2: #d95926; --positivo: #3987e5; --negativo: #e66767; --eixo: #4a5563; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --papel: #11161d; --superficie: #19202a; --tinta: #e6eaf0; --suave: #9aa6b5; --linha: #2c3643;
   --destaque: #7db4e6; --destaque-fundo: #1b2e42; --pof0: #3d5f80; --pof1: #3b6b63; --pof2: #6e5f33; --pof3: #5d4a6b;
   --sim: #7dd3a0; --sim-fundo: #183528; --parcial: #e6c070; --parcial-fundo: #3a3018; --nao: #8b95a3; --nao-fundo: #222a35;
-  --falha: #f2a49d; --falha-fundo: #3d1d1b; --alerta-fundo: #2e2717; color-scheme: dark; }
+  --falha: #f2a49d; --falha-fundo: #3d1d1b; --alerta-fundo: #2e2717; --serie-1: #3987e5; --serie-2: #d95926; --positivo: #3987e5; --negativo: #e66767; --eixo: #4a5563; color-scheme: dark; }
 body { background: var(--papel); color: var(--tinta); font-family: var(--fonte-texto); font-size: 15px; line-height: 1.55; }
 .pagina { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -940,7 +1173,22 @@ table.propostas td:nth-child(8) { min-width: 220px; color: var(--suave); }
 ol.descobertas { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 ol.descobertas .cod { display: inline-block; min-width: 4.2em; color: var(--destaque); font-weight: 600; }
 pre { background: var(--superficie); border: 1px solid var(--linha); border-radius: 6px; padding: 12px; overflow-x: auto; margin: 0; }
+[hidden] { display: none !important; }
 body.executiva .tecnico { display: none; }
+svg.grafico { min-width: 560px; } svg.grafico .grade { stroke: var(--linha); } svg.grafico .eixo { stroke: var(--eixo); stroke-width: 1.2; }
+svg .linha { fill: none; stroke-width: 2; stroke-linejoin: round; } svg .linha.serie-1 { stroke: var(--serie-1); } svg .linha.serie-2 { stroke: var(--serie-2); }
+svg .barra-h.positivo { fill: var(--positivo); } svg .barra-h.negativo { fill: var(--negativo); }
+svg .barra-g:hover .barra-h { opacity: 0.8; } svg .valor { fill: var(--tinta); font-variant-numeric: tabular-nums; }
+svg .regua { stroke: var(--suave); stroke-width: 1; stroke-dasharray: 3 3; }
+figure { position: relative; }
+.dica { position: absolute; top: 4px; right: 8px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; font-variant-numeric: tabular-nums; pointer-events: none; max-width: 90%; }
+.chave { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; }
+.chave.serie-1 { background: var(--serie-1); } .chave.serie-2 { background: var(--serie-2); }
+.destaques { display: flex; flex-wrap: wrap; gap: 12px; }
+.destaque { background: var(--superficie); border: 1px solid var(--linha); border-radius: 6px; padding: 12px 16px; display: grid; gap: 2px; min-width: 160px; }
+.destaque span { color: var(--suave); font-size: 0.85rem; } .destaque b { font-family: var(--fonte-titulo); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+dl.glossario { margin: 0; display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 8px 16px; max-width: 90ch; }
+dl.glossario dt { font-weight: 600; } dl.glossario dd { margin: 0; color: var(--suave); }
 @media (prefers-reduced-motion: no-preference) { button.aba, svg .caixa { transition: background 0.15s, fill 0.15s, stroke 0.15s; } }
 """
 
@@ -972,7 +1220,8 @@ function mostrarRastreio(i) {
   document.getElementById('rastreio').innerHTML = `
     <div class="bloco"><h3>1. Como veio da API</h3><small><code>${esc(r.arquivo)}</code>: ${r.raw.length} registros, um por variável</small><pre>${json(r.raw)}</pre></div>
     <div class="bloco"><h3>2. dim_classificacao</h3><small>linha da tabela ${r.tabela} com id ${r.dim.codigo_sidra}</small><pre>${json(r.dim)}</pre></div>
-    <div class="bloco"><h3>3. fato</h3><small>uma linha, variáveis em colunas; null = não publicado</small><pre>${json(r.fato)}</pre></div>`;
+    <div class="bloco"><h3>3. fato</h3><small>uma linha, variáveis em colunas; null = não publicado</small><pre>${json(r.fato)}</pre></div>
+    ${r.indicadores ? `<div class="bloco"><h3>4. Indicadores</h3><small>série ${esc(r.indicadores.serie_id)}, de ${esc(r.indicadores.serie_inicio)} a ${esc(r.indicadores.serie_fim)}</small><pre>${json(r.indicadores)}</pre></div>` : ''}`;
 }
 document.querySelectorAll('[data-rastreio]').forEach((b) => b.addEventListener('click', () => mostrarRastreio(Number(b.dataset.rastreio))));
 mostrarRastreio(dados.rastreios.length - 1);
@@ -1000,6 +1249,27 @@ document.querySelectorAll('[data-transicao]').forEach((b) => b.addEventListener(
   filtrarPropostas();
 }));
 if (busca) busca.addEventListener('input', filtrarPropostas);
+
+document.querySelectorAll('svg.grafico-linha').forEach((svg) => {
+  const rotulos = JSON.parse(svg.dataset.rotulos);
+  const x0 = Number(svg.dataset.x0), dx = Number(svg.dataset.dx);
+  const regua = svg.querySelector('.regua');
+  const dica = svg.closest('figure').querySelector('.dica');
+  svg.addEventListener('mousemove', (ev) => {
+    const caixa = svg.getBoundingClientRect();
+    const x = (ev.clientX - caixa.left) * (svg.viewBox.baseVal.width / caixa.width);
+    const i = Math.max(0, Math.min(rotulos.length - 1, Math.round((x - x0) / dx)));
+    const xi = x0 + i * dx;
+    regua.setAttribute('x1', xi); regua.setAttribute('x2', xi); regua.setAttribute('visibility', 'visible');
+    dica.textContent = rotulos[i]; dica.hidden = false;
+  });
+  svg.addEventListener('mouseleave', () => { regua.setAttribute('visibility', 'hidden'); dica.hidden = true; });
+});
+
+document.querySelectorAll('[data-contrib]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-contrib]').forEach((o) => o.classList.toggle('ativa', o === b));
+  document.querySelectorAll('[data-painel-contrib]').forEach((f) => { f.hidden = f.dataset.painelContrib !== b.dataset.contrib; });
+}));
 
 const botoesVisao = document.querySelectorAll('[data-visao]');
 function definirVisao(v) {
@@ -1046,12 +1316,13 @@ def renderizar(f: dict) -> str:
       <button type="button" class="aba" data-visao="tecnica" id="visao-tecnica" aria-pressed="true">Técnica</button>
     </div>
     <nav class="indice" aria-label="Seções">
-      <a href="#resumo">Em resumo</a><a href="#fluxo">Caminho dos dados</a><a href="#tempo">Linha do tempo</a>
+      <a href="#resumo">Em resumo</a><a href="#resultados">Resultados</a><a href="#fluxo">Caminho dos dados</a><a href="#tempo">Linha do tempo</a>
       <a href="#juncao">Como as tabelas se juntam</a><a href="#harmonizacao">Harmonização</a><a href="#existe">O que existe</a>
-      <a href="#validacoes">Validações</a><a href="#descobertas">Descobertas</a><a href="#manter">Manter atualizado</a>
+      <a href="#validacoes">Validações</a><a href="#descobertas">Descobertas</a><a href="#glossario">Glossário</a><a href="#manter">Manter atualizado</a>
     </nav>
   </header>
   {_secao_resumo(f)}
+  {_secao_resultados(f)}
   <section id="fluxo" class="secao">
     <h2>O caminho dos dados</h2>
     <p>Clique numa etapa para ver o que entra, a regra aplicada, o que sai e o comando que a executa. A visão executiva esconde os detalhes técnicos.</p>
@@ -1075,6 +1346,7 @@ def renderizar(f: dict) -> str:
   {_secao_existe(f)}
   {_secao_validacoes(f)}
   {_secao_descobertas(f)}
+  {_secao_glossario()}
   {_secao_manter(f)}
 </main>
 <script type="application/json" id="dados">{dados_js}</script>

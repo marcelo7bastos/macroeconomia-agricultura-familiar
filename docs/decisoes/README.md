@@ -14,7 +14,7 @@ recebe `Situação: substituída por NNNN`.
 | [0003](0003-extracao-incremental.md) | Extração incremental, compilação completa | aceita |
 | [0004](0004-explicacao-em-degraus.md) | Explicação em degraus, gerada a partir dos dados | aceita |
 | [0005](0005-na-duvida-quebra.md) | Na dúvida, quebra (emenda de séries entre POFs) | aceita |
-| [0006](0006-chave-estavel-dos-marts.md) | Chave estável dos marts: categoria publicada, não série | proposta |
+| [0006](0006-chave-estavel-dos-marts.md) | Chave estável dos marts: categoria publicada, não série | aceita |
 
 ## Modelo
 

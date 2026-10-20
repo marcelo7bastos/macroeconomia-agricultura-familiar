@@ -257,3 +257,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.8 | Atualização dos dados | **Extração incremental, raw compactado e imutável, compilação completa** ([0003](decisoes/0003-extracao-incremental.md)) |
 | 9.9 | Documentação das transformações | **Página HTML por índice, em degraus, gerada dos dados** ([0004](decisoes/0004-explicacao-em-degraus.md)) |
 | 9.10 | Emenda de séries entre POFs | **Na dúvida, quebra**: só emenda com prova ou revisão humana ([0005](decisoes/0005-na-duvida-quebra.md)) |
+| 9.11 | Chave dos marts | **Categoria publicada (tabela e id SIDRA) e mês**; a série longa é atributo ([0006](decisoes/0006-chave-estavel-dos-marts.md)) |

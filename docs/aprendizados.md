@@ -25,6 +25,15 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-027 · 2026-10-20 · "Fecha #N" não fecha a issue
+- **Contexto:** depois do merge dos PRs #49 a #52, as issues #41 a #44 continuaram abertas; o mesmo
+  com #1 a #7, #20 e #22.
+- **O que aconteceu:** o GitHub só fecha a issue no merge com as palavras-chave em inglês (close,
+  closes, fix, fixes, resolve, resolves) e só se a base do PR for o branch padrão. "Fecha #N" vira
+  só uma referência. Em PRs empilhados, nem a palavra certa fecha, porque a base não é a `main`.
+- **Lição:** o PR cita `Closes #N (fecha #N)`; em PR empilhado, feche a issue à mão depois do merge.
+- **Promovida para:** `AGENTS.md` (fluxo de trabalho); issues antigas fechadas à mão.
+
 ### A-026 · 2026-10-20 · Peso 0 com variação 0,00 é "não coletado"
 - **Contexto:** difusão (#44), revisão do `revisor-metodologico`.
 - **O que aconteceu:** na 1646 há 93 subitens com peso 0 (fora de safra, A-013); em 84 a variação

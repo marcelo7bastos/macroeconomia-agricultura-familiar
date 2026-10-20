@@ -46,3 +46,4 @@ ignore = ["PLR2004", "PLR0913", "PLR0917"]
 # Modelos de HTML e textos da página: linhas longas são conteúdo, não código.
 "src/macroaf/relatorios/transformacoes.py" = ["E501"]
 "src/macroaf/relatorios/revisao.py" = ["E501"]
+"src/macroaf/relatorios/graficos.py" = ["E501"]

@@ -1,6 +1,6 @@
 # 0006. Chave estável dos marts: categoria publicada, não série
 
-- **Situação:** proposta
+- **Situação:** aceita (PR #47, mergeado pelo mantenedor; confirmada na conversa da #53)
 - **Data:** 2026-10-20
 - **Issue/PR:** #8
 
