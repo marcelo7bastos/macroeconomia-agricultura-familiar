@@ -11,6 +11,12 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Página de transformações com a seção Resultados (gráficos do acumulado em 12 meses, contribuições
+  dos grupos, difusão e sazonalidade, conferência dos indicadores com o IBGE e exemplo da âncora do
+  acumulado no ano, A-023), rastreio do leite até os indicadores e glossário; fatos atualizados
+  depois dos indicadores (#53).
+- Decisão 0006 aceita (chave dos marts) e registrada no PLANEJAMENTO 9.11; PR cita
+  `Closes #N (fecha #N)` (A-027).
 - Testes que exigem que todo `CLAUDE.md` contenha só `@AGENTS.md`, com `AGENTS.md` ao lado, e que
   todo `AGENTS.md` tenha o `CLAUDE.md` que o importa (A-006, #45).
 - Difusão (simples e ponderada, no geral e por grupo) e sazonalidade (média e mediana por mês do
