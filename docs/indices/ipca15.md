@@ -143,6 +143,8 @@ Campo `nivel` por tabela (só para registro; não use):
 - Índice encadeado (#41): `indice_ipca15` no staging, base 100 por série longa; o geral reproduz o
   número-índice da 3065. No ano da troca de POF, a 356 segue o código (e, em 12 casos da 1387, um
   antecessor escolhido pelo IBGE), não a série longa (A-023, `METODOLOGIA.md` 8.2).
+- Acumulados por janela (#42): `acumulados_ipca15` no staging, 3 a 36 meses e no ano, com origem
+  oficial ou calculada (`METODOLOGIA.md` 9).
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de

@@ -364,7 +364,33 @@ contém mês marcado também não reproduz o IBGE: é o caso da 356 de 2006 dos 
 já na 1387, e dos acumulados de 12 meses até jul/2007. Na #42, a janela que contém mês marcado
 herda a marca.
 
-## 9. Registro de descobertas
+## 9. Acumulados por janela (#42)
+
+`acumulados_ipca15` (`macroaf.indicators.acumulados`) tem uma linha por série longa, mês e janela
+(3, 6, 12, 24 e 36 meses e no ano), com `acumulado`, `origem` (`oficial` ou `calculado`) e
+`cesta_variavel`.
+
+- **Calculado:** pelo índice encadeado (seção 8), `(I_t / I_(t-k) − 1) × 100`. A janela que sai do
+  início da série fica vazia: o acumulado nunca atravessa uma quebra.
+- **Oficial primeiro, onde mede o mesmo:** 1120 (12 meses) e 356 (no ano) da própria categoria; para
+  o geral, 1118, 1119, 1120 e 356 da 3065. O oficial vale quando:
+  - a janela cabe na série, ou começa antes do início dos dados (mai/2000), o que é falta de dado e
+    não quebra;
+  - no acumulado no ano, o código de janeiro é o mesmo do mês (A-023, seção 8.2). Série que nasce
+    no meio do ano da troca ou que mudou de código no ano fica sem a 356, porque ela atravessaria a
+    quebra pelo código;
+  - não está no escopo de um erro publicado pela fonte (A-015) com divergência acima do limite de
+    arredondamento. Nesses casos (356 trocada de 2003-02 e de 2004-07 na 1646; 1118 e 1119 da 3065
+    em 4 meses), vale o calculado. No escopo da exceção, o oficial fica onde concorda com o
+    calculado (ex.: 2003-03, que a exceção cobre só pela âncora: 542 oficiais e 50 calculados).
+- **24 e 36 meses** não são publicados: só calculados.
+- **Cesta variável:** a janela que contém mês marcado (seção 8.3) herda a marca, por exemplo a 356
+  de 2006 dos subitens in natura na 1387 e os acumulados de 12 meses até jun/2007.
+
+Teste: onde o oficial é usado e o calculado existe, os dois concordam dentro do limite de
+arredondamento (A-014), fora do ruído da 356 nas tabelas antigas (A-016) e da cesta variável.
+
+## 10. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é

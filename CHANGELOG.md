@@ -11,6 +11,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Acumulados por janela (3, 6, 12, 24 e 36 meses e no ano) por série longa
+  (`python -m macroaf.indicators.acumulados`): oficial onde mede o mesmo que a série (A-023), calculado
+  pelo índice onde falta ou onde a fonte publicou erro, com `origem` e `cesta_variavel`;
+  `METODOLOGIA.md` 9 (#42).
 - Índice encadeado por série longa, base 100 (`python -m macroaf.indicators.indice`), com rebase
   por divisão, acumulado em janela e no ano, e marca de cesta variável; o geral reproduz o
   número-índice da 3065 e os acumulados batem com a 3065, a 356 e a 1120 (#41).

@@ -17,6 +17,7 @@ import pandas as pd
 
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
+from macroaf.indicators.acumulados import JANELAS, montar_acumulados
 from macroaf.indicators.indice import marcar_cesta_variavel, montar_indice
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
@@ -101,6 +102,19 @@ def _coletar_indice(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFram
         "linhas": len(encadeado),
         "cesta_variavel": int(encadeado.cesta_variavel.sum()),
         "desvio_max_1117": float(desvio.max() * 100),
+    }
+
+
+def _coletar_acumulados(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
+    excecoes = carregar_excecoes(indice)
+    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, excecoes))
+    tabela_referencia = next(t.tabela for t in indice.tabelas if t.papel == "referencia")
+    acumulados = montar_acumulados(encadeado, longa, referencia, excecoes, tabela_referencia)
+    contagem = acumulados.groupby(["janela", "origem"]).size().unstack(fill_value=0)
+    contagem = contagem.reindex(index=list(JANELAS), columns=["oficial", "calculado"], fill_value=0)
+    return {
+        "linhas": len(acumulados),
+        "janelas": [[j, int(r.oficial), int(r.calculado)] for j, r in contagem.iterrows()],
     }
 
 
@@ -273,11 +287,12 @@ def coletar(indice: Indice) -> dict:
             }
         )
 
-    harmonizacao = encadeado = None
+    harmonizacao = encadeado = acumulados = None
     if caminho_mapa(indice).exists():
         longa = montar_serie_longa(fato, dim, ler_mapa(indice))
         harmonizacao = _coletar_harmonizacao(indice, fato, longa)
         encadeado = _coletar_indice(indice, longa, referencia)
+        acumulados = _coletar_acumulados(indice, longa, referencia)
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")
     limites = configuracao.limites.to_dict("records")
@@ -331,5 +346,6 @@ def coletar(indice: Indice) -> dict:
         "agentes": coletar_agentes(),
         "harmonizacao": harmonizacao,
         "indice_encadeado": encadeado,
+        "acumulados": acumulados,
         "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
     }
