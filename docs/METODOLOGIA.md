@@ -435,7 +435,24 @@ Conferência: a soma dos grupos difere do geral em no máximo 0,007 p.p. no mês
 0,026 (12 meses), 0,023 (no ano) e 0,039 p.p. (36 meses) nos acumulados, sempre dentro do limite
 da reconciliação, reescalado como as contribuições.
 
-## 11. Registro de descobertas
+## 11. Difusão e sazonalidade (#44)
+
+`macroaf.indicators.difusao` grava `difusao_ipca15` e `sazonalidade_ipca15`.
+
+- **Difusão:** % dos subitens com variação mensal maior que zero, por mês, no geral e em cada grupo.
+  A simples conta subitens; a ponderada soma os pesos deles sobre a soma dos pesos dos subitens. A
+  cesta é a da tabela do mês (POF vigente), sem série longa: a difusão compara a parte da cesta que
+  subiu, não a mesma lista de produtos ao longo do tempo. Na 1646, subitens in natura fora de safra
+  têm peso 0 (A-013): entram na simples e não pesam na ponderada.
+- **Sazonalidade:** para cada série longa e mês do ano, média e mediana da variação mensal nos
+  últimos 5 anos, em janela móvel que termina em cada ano. Só anos seguidos da própria série:
+  janela que pularia um ano ou sairia da série fica vazia (decisão 0005). `cesta_variavel` marca a
+  janela com mês de cesta variável.
+
+Testes: difusão entre 0 e 100 e um valor por mês no geral; sazonalidade igual à conta direta para
+o geral (dezembro, 2021–2025) e sempre dentro da série.
+
+## 12. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é
