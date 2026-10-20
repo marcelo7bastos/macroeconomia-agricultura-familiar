@@ -62,6 +62,8 @@ DUVIDAS = [
 FEITOS = {
     "Índice base 100": '<span class="selo sim">feito (#41)</span>',
     "Acumulados em janelas": '<span class="selo sim">feito (#42)</span>',
+    "Contribuição (p.p.)": '<span class="selo sim">feito (#43)</span>',
+    "Contribuição dentro do grupo": '<span class="selo sim">feito (#43)</span>',
 }
 
 
@@ -264,6 +266,33 @@ def _etapas(f: dict) -> list[dict]:
             if f.get("acumulados")
             else []
         ),
+        *(
+            [
+                {
+                    "id": "contribuicoes",
+                    "titulo": "Contribuições",
+                    "executiva": "Quanto cada grupo, item ou subitem pôs na variação do índice geral, em pontos percentuais, no mês e nos acumulados. Somadas, as dos grupos dão o geral.",
+                    "entrada": "indice_" + f["indice"]["codigo"] + " e os pesos da serie_longa.",
+                    "regra": "No mês: peso vezes variação, dividido pela soma dos pesos dos grupos daquele mês. No acumulado: cada mês da janela pesa pelo índice geral até o mês anterior. Participação no grupo: a contribuição dividida pela soma das do mesmo nível no grupo. Subitens in natura da 1646 ficam só pelo item (A-013).",
+                    "saida": "contribuicoes_"
+                    + f["indice"]["codigo"]
+                    + ": uma linha por série, mês e janela (mes, 3m, 6m, 12m, 24m, 36m, ano), com contribuição e, no mês, participação no grupo.",
+                    "comando": "uv run python -m macroaf.indicators.contribuicoes",
+                    "codigo": "src/macroaf/indicators/contribuicoes.py",
+                    "numeros": [
+                        ("Linhas", _n(f["contribuicoes"]["linhas"])),
+                        (
+                            "Maior diferença mensal entre a soma dos grupos e o geral",
+                            f"{f['contribuicoes']['diferenca_max_mes']:.4f} p.p.".replace(
+                                ".", ",", 1
+                            ),
+                        ),
+                    ],
+                }
+            ]
+            if f.get("contribuicoes")
+            else []
+        ),
         {
             "id": "marts",
             "titulo": "Marts (a fazer)",
@@ -351,6 +380,18 @@ def _svg_fluxo(f: dict) -> str:
         if f.get("acumulados")
         else "",
         seta(920, 79, 920, 117) if f.get("acumulados") else "",
+        no(
+            "contribuicoes",
+            670,
+            221,
+            140,
+            "contribuições",
+            f"{_n(f['contribuicoes']['linhas'])} linhas",
+        )
+        if f.get("contribuicoes")
+        else "",
+        seta(900, 79, 800, 217) if f.get("contribuicoes") else "",
+        seta(810, 250, 846, 250, "", pendente=True) if f.get("contribuicoes") else "",
         seta(920, 179, 920, 217, "", pendente=True) if f.get("acumulados") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
@@ -366,7 +407,8 @@ def _svg_fluxo(f: dict) -> str:
         "a camada raw; os metadados viram a dim_classificacao, os valores viram o fato (ligado à dim "
         "pelo par tabela e id) e a tabela 3065 vira a referência; as validações conferem fato e "
         "referência; a série longa, pelo mapa de harmonização, vira o índice base 100, e dele saem "
-        'os acumulados por janela; os marts ainda não existem.">'
+        "os acumulados por janela e as contribuições em pontos percentuais; os marts ainda não "
+        'existem.">'
         '<defs><marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
         'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ponta"/></marker></defs>'
         + "".join(partes)
@@ -451,6 +493,14 @@ def _existe(f: dict) -> str:
                     '<span class="selo nao">não</span>',
                 ]
             )
+    if f.get("contribuicoes"):
+        linhas.append(
+            [
+                "Contribuição em p.p. (no mês e nos acumulados) e participação no grupo",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#43)</span>',
+            ]
+        )
     if f.get("acumulados"):
         linhas.append(
             [

@@ -402,7 +402,29 @@ acumulado desde janeiro pelo índice acima do arredondamento em 638 linhas fora 
 58 casos da validação (A-016), porque ela compara um passo e esta comparação compõe o ano inteiro.
 Fica o oficial: é o número do IBGE e não há erro identificado; a contagem é sentinela em teste.
 
-## 10. Registro de descobertas
+## 10. Contribuições (#43)
+
+`contribuicoes_ipca15` (`macroaf.indicators.contribuicoes`) tem uma linha por série longa, mês e
+janela (`mes` e as janelas da seção 9), com `contribuicao` em pontos percentuais e, no mês,
+`participacao_no_grupo` em %.
+
+- **No mês:** `c = peso × v / Σ pesos dos grupos`, peso e variação do mesmo mês e tabela (como na
+  reconciliação). Dividir pela soma dos pesos dos grupos, que é 100 salvo o erro de 2010-07/08 na
+  1387 (100,1, A-015), faz a soma dos grupos reproduzir a média ponderada.
+- **Participação no grupo:** a contribuição dividida pela soma das contribuições do mesmo nível no
+  mesmo grupo. Soma 100% por construção; com variação do grupo perto de zero, as participações
+  ficam grandes e de sinais opostos, e devem ser lidas com cuidado.
+- **Para o acumulado:** `Σ_m c_m × I_geral(m−1) / I_geral(início − 1)` sobre os meses da janela. A
+  contribuição acumulada do geral é exatamente o seu acumulado calculado (seção 9), e a soma dos
+  grupos difere dele no máximo pela soma, reescalada, dos limites mensais da reconciliação. A janela
+  não sai da série longa da categoria (decisão 0005).
+- **Cesta variável:** subitens in natura da 1646 ficam sem contribuição; o produto entra pelo item
+  (A-013).
+
+Conferência: no mês, a soma dos grupos difere do geral em no máximo 0,007 p.p., dentro do limite da
+reconciliação em todos os 317 meses.
+
+## 11. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é
