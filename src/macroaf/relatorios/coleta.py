@@ -17,10 +17,11 @@ import pandas as pd
 
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
+from macroaf.indicators.indice import marcar_cesta_variavel, montar_indice
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
-from macroaf.validate.ipca15 import carregar_configuracao, validar
+from macroaf.validate.ipca15 import carregar_configuracao, carregar_excecoes, validar
 
 COLUNAS_MEDIDA = ["variacao_mensal", "variacao_acum_ano", "variacao_acum_12m", "peso"]
 
@@ -89,9 +90,22 @@ def _texto(valor) -> str | None:
     return None if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
 
 
-def _coletar_harmonizacao(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame) -> dict:
+def _coletar_indice(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
+    marcas = marcar_cesta_variavel(longa, carregar_excecoes(indice))
+    encadeado = montar_indice(longa, marcas)
+    geral = encadeado[encadeado.codigo_ibge == "0"].set_index("mes").indice
+    oficial = referencia.set_index("mes").numero_indice
+    desvio = (geral / geral.iloc[0] * oficial.iloc[0] / oficial - 1).abs()
+    return {
+        "series": int(encadeado.serie_id.nunique()),
+        "linhas": len(encadeado),
+        "cesta_variavel": int(encadeado.cesta_variavel.sum()),
+        "desvio_max_1117": float(desvio.max() * 100),
+    }
+
+
+def _coletar_harmonizacao(indice: Indice, fato: pd.DataFrame, longa: pd.DataFrame) -> dict:
     mapa = ler_mapa(indice)
-    longa = montar_serie_longa(fato, dim, mapa)
     pofs = {t.tabela: t.versao_pof for t in indice.tabelas_dados}
     mapa = mapa.assign(
         transicao=[
@@ -259,9 +273,11 @@ def coletar(indice: Indice) -> dict:
             }
         )
 
-    harmonizacao = (
-        _coletar_harmonizacao(indice, dim, fato) if caminho_mapa(indice).exists() else None
-    )
+    harmonizacao = encadeado = None
+    if caminho_mapa(indice).exists():
+        longa = montar_serie_longa(fato, dim, ler_mapa(indice))
+        harmonizacao = _coletar_harmonizacao(indice, fato, longa)
+        encadeado = _coletar_indice(indice, longa, referencia)
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")
     limites = configuracao.limites.to_dict("records")
@@ -314,5 +330,6 @@ def coletar(indice: Indice) -> dict:
         "indicadores_planejados": coletar_indicadores_planejados(),
         "agentes": coletar_agentes(),
         "harmonizacao": harmonizacao,
+        "indice_encadeado": encadeado,
         "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
     }

@@ -46,10 +46,19 @@ DUVIDAS = [
         "METODOLOGIA.md 6.4 · A-015",
     ),
     (
+        "No ano da troca para a 1387 (2006), 12 categorias de código novo, entre elas o item 8104, "
+        "têm acumulado no ano sem âncora identificada: nem desde janeiro, nem desde a troca.",
+        "METODOLOGIA.md 8.2 · A-023",
+    ),
+    (
         "Como o projeto absorve a próxima troca de POF (tabela nova no lugar da 7062).",
         "issue #27",
     ),
 ]
+
+
+# Indicadores da seção 5.2 do planejamento já calculados, com a issue que os entregou.
+FEITOS = {"Índice base 100": '<span class="selo sim">feito (#41)</span>'}
 
 
 def caminho_pagina(codigo_indice: str) -> Path:
@@ -199,6 +208,34 @@ def _etapas(f: dict) -> list[dict]:
             if f.get("harmonizacao")
             else []
         ),
+        *(
+            [
+                {
+                    "id": "indice",
+                    "titulo": "Índice encadeado",
+                    "executiva": "Transforma as variações mensais de cada série longa num índice que começa em 100. Dele saem os acumulados de qualquer janela por uma divisão.",
+                    "entrada": "serie_longa e as exceções de cesta variável em reference/excecoes_validacao_"
+                    + f["indice"]["codigo"]
+                    + ".csv.",
+                    "regra": "Índice do mês = índice do mês anterior vezes (1 + variação/100), com 100 no mês anterior ao início da série. Cada série começa de novo em 100: o índice nunca atravessa uma quebra. Mês faltando ou variação ausente param a transformação.",
+                    "saida": "indice_"
+                    + f["indice"]["codigo"]
+                    + ": serie_id, mês, tabela, ids, nível, variação mensal, índice e a marca cesta_variavel.",
+                    "comando": "uv run python -m macroaf.indicators.indice",
+                    "codigo": "src/macroaf/indicators/indice.py",
+                    "numeros": [
+                        ("Séries", _n(f["indice_encadeado"]["series"])),
+                        ("Linhas com cesta variável", _n(f["indice_encadeado"]["cesta_variavel"])),
+                        (
+                            "Maior desvio do geral para o número-índice da 3065",
+                            f"{f['indice_encadeado']['desvio_max_1117']:.4f}%".replace(".", ","),
+                        ),
+                    ],
+                }
+            ]
+            if f.get("indice_encadeado")
+            else []
+        ),
         {
             "id": "marts",
             "titulo": "Marts (a fazer)",
@@ -264,7 +301,18 @@ def _svg_fluxo(f: dict) -> str:
         if f.get("harmonizacao")
         else "",
         seta(590, 140, 666, 60, "mapa") if f.get("harmonizacao") else "",
-        seta(810, 55, 866, 135, "", pendente=True) if f.get("harmonizacao") else "",
+        no(
+            "indice",
+            850,
+            21,
+            140,
+            "índice base 100",
+            f"{_n(f['indice_encadeado']['series'])} séries",
+        )
+        if f.get("indice_encadeado")
+        else "",
+        seta(810, 50, 846, 50) if f.get("indice_encadeado") else "",
+        seta(920, 79, 925, 117, "", pendente=True) if f.get("indice_encadeado") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
         seta(330, 150, 416, 150, "valores"),
@@ -278,7 +326,8 @@ def _svg_fluxo(f: dict) -> str:
         '<svg viewBox="0 0 1000 300" role="img" aria-label="Fluxo dos dados: a API do IBGE alimenta '
         "a camada raw; os metadados viram a dim_classificacao, os valores viram o fato (ligado à dim "
         "pelo par tabela e id) e a tabela 3065 vira a referência; as validações conferem fato e "
-        'referência; os marts ainda não existem.">'
+        "referência; a série longa, pelo mapa de harmonização, vira o índice base 100; os marts "
+        'ainda não existem.">'
         '<defs><marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
         'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ponta"/></marker></defs>'
         + "".join(partes)
@@ -363,6 +412,14 @@ def _existe(f: dict) -> str:
                     '<span class="selo nao">não</span>',
                 ]
             )
+    if f.get("indice_encadeado"):
+        linhas.append(
+            [
+                "Índice encadeado por série longa (base 100)",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#41)</span>',
+            ]
+        )
     cabecalho = [
         "Medida",
         *[f"{t['tabela']}<br><small>POF {t['versao_pof']}</small>" for t in dados],
@@ -544,7 +601,7 @@ def _secao_existe(f: dict) -> str:
             escape(i["indicador"]),
             escape(i["definicao"]),
             escape(i["teste"]),
-            '<span class="selo nao">a fazer (#7)</span>',
+            FEITOS.get(i["indicador"], '<span class="selo nao">a fazer (#7)</span>'),
         ]
         for i in f["indicadores_planejados"]
     ]
@@ -556,6 +613,8 @@ def _secao_existe(f: dict) -> str:
   <ul class="notas">
     <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Calcular onde falta é tarefa da #7.</li>
     <li>Agregação: o projeto não agrega nada que guarde. As validações recalculam médias ponderadas, acumulados e o número-índice só para conferir com o IBGE.</li>
+    <li>Índice encadeado: calculado por série longa, a partir da variação mensal oficial. O do geral reproduz o número-índice da 3065. Os acumulados por janela (#42) e as contribuições (#43) partem dele.</li>
+    <li>Acumulado no ano no ano da troca de POF: para código que já existia, o IBGE encadeia desde janeiro; para código novo, começa no mês da troca (A-023). O índice encadeado só dá o acumulado no ano onde a série tem janeiro.</li>
     <li>Série longa: emenda as tabelas só onde há prova de que a categoria é a mesma; o resto fica como quebra marcada até a revisão humana (seção Harmonização).</li>
   </ul>
   <h3>Indicadores planejados</h3>

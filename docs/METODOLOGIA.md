@@ -291,7 +291,57 @@ que, quando uma categoria vira várias, ainda é possível comparar com o passad
 no nível da antiga, mas não seguir a série antiga para o presente e o futuro. Por isso uma divisão
 não aceita não é emendada; a comparação retroativa agregada é tema das issues #35, #38 e #40.
 
-## 8. Registro de descobertas
+## 8. Índice encadeado (#41)
+
+O índice encadeado é a base dos acumulados por janela (#42) e das contribuições acumuladas (#43).
+É calculado em `indice_ipca15` (`macroaf.indicators.indice`) para cada `serie_id` da série longa,
+a partir da variação mensal oficial (variável 355):
+
+    I_t = I_(t-1) × (1 + v_t / 100),   com I = 100 no mês anterior ao início da série
+
+- **Cada série começa em 100.** O índice nunca atravessa uma quebra da harmonização (decisão 0005):
+  série nova, índice novo. Comparar níveis de séries diferentes não faz sentido; comparar
+  variações, sim.
+- **Uma base só.** O acumulado de k meses é `(I_t / I_(t-k) − 1) × 100`, e a primeira janela
+  completa usa a base 100. Mudar a base para um mês escolhido é uma divisão (`rebasear`); não se
+  guardam várias bases.
+- **Sem lacuna.** Mês faltando, mês repetido ou variação ausente param a transformação, porque o
+  encadeamento e as janelas por deslocamento supõem séries contínuas.
+- **Cesta variável marcada.** As linhas cobertas pela exceção estrutural de `acumulado_ano` da 1646
+  (subitens in natura da POF 1995-96, A-013) recebem `cesta_variavel = True`: o índice é calculável,
+  mas não reproduz os acumulados do IBGE.
+
+### 8.1 Conferência contra o IBGE
+
+| O que | Referência | Resultado |
+|---|---|---|
+| Índice do geral | número-índice (1117) da 3065 | desvio relativo máximo de 0,003% (teste exige ≤ 0,01%) |
+| Acumulados em 3, 6 e 12 meses do geral | 1118, 1119 e 1120 da 3065 | dentro do limite de arredondamento (A-014), salvo os 4 erros publicados já conhecidos (A-015) |
+| Acumulado no ano do geral | 356 da 3065 | dentro do limite em todos os meses |
+| Acumulado em 12 meses por categoria | 1120 | dentro do limite em todas as linhas publicadas |
+| Acumulado no ano por categoria, dentro de uma tabela | 356 da 1705 e da 7062 | dentro do limite em todas as linhas (na 1646 e na 1387 o ruído da fonte é tratado na validação, A-016) |
+
+O limite é o mesmo das validações: o índice é composto de variações com 2 casas, e o erro máximo
+de um acumulado de k meses é `0,005 × (1 + A/100) × Σ 1/(1 + v_j/100) + 0,005`.
+
+### 8.2 Acumulado no ano no ano da troca de POF (A-023)
+
+A 356 publicada no ano em que entra uma tabela nova revela a âncora que o IBGE usou:
+
+- **Código que já existia na tabela anterior** (mesmo com outro id SIDRA): o IBGE encadeia desde
+  janeiro pelo código. O índice encadeado reproduz a 356 sempre que a série longa continua no mesmo
+  código, salvo os 34 subitens in natura que vêm da cesta variável da 1646 (2006, na 1387).
+- **Código novo:** a 356 do ano da troca começa no **primeiro mês da tabela nova**; não é um
+  acumulado no ano. Isso vale também para as 8 séries emendadas pela revisão humana em que o código
+  muda (por exemplo, Cinema → Cinema, teatro e concertos em 2020). Para essas séries, a 356 do ano
+  da troca e o acumulado no ano da série longa medem coisas diferentes.
+- **Sem âncora identificada:** 12 categorias de código novo na 1387 (2006), entre elas o item 8104
+  e os seus subitens, não seguem nenhuma das duas regras.
+
+Regra que decorre: no ano da troca, a 356 de código novo não é usada como acumulado no ano da série
+longa; o acumulado oficial só é preferido onde mede a mesma coisa (#42).
+
+## 9. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é

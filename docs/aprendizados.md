@@ -25,6 +25,20 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-023 · 2026-10-20 · O acumulado no ano do IBGE recomeça na troca para código novo
+- **Contexto:** índice encadeado por série longa (#41), conferido contra a 356 por categoria.
+- **O que aconteceu:** o índice reproduziu a 356 em 98% das linhas dos anos de troca de POF, mas
+  falhou em 7 séries emendadas pela revisão (ex.: Cinema → Cinema, teatro e concertos, 2020). O
+  janeiro implícito na 356 dessas séries é exatamente 0,000: para código novo, o IBGE começa o
+  "acumulado no ano" no primeiro mês da tabela nova. Para código que já existia (mesmo com id
+  SIDRA novo), encadeia desde janeiro pelo código. Doze categorias da 1387 (item 8104 e outras)
+  não seguem nenhuma das duas regras.
+- **Lição:** no ano da troca, a 356 de código novo é acumulado desde a troca, não no ano. Não serve
+  como acumulado no ano da série longa nem como "oficial primeiro" nesse ano (#42).
+- **Promovida para:** testes `test_acumulado_no_ano_atravessa_a_troca_quando_o_codigo_continua` e
+  `test_codigo_novo_no_ano_da_troca_acumula_desde_a_troca`; `METODOLOGIA.md` 8.2; dúvida na
+  página de transformações.
+
 ### A-022 · 2026-10-20 · Divisão permite comparar para trás, não seguir para a frente
 - **Contexto:** revisão humana das propostas de harmonização (#6), observação do mantenedor sobre
   "Peixe" dividido em espécies na POF 2017-18.
