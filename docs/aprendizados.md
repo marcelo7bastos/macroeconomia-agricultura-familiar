@@ -25,6 +25,38 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-035 · 2026-10-20 · IPCA: inconsistências oficiais precisam de contagens e origens próprias
+- **Contexto:** extração integral e validação do IPCA (#12), confronto com respostas oficiais.
+- **O que aconteceu:** na 2938, os grupos somam 100,0999 em 2010-07 e 550 passos anuais excedem
+  o limite analítico. Separadamente,239 acumulados anuais em 53 categorias divergem da composição
+  desde janeiro; duas categorias desse conjunto não têm passo isolado fora do limite. A1419
+  publica 13 zeros em 12 meses de Depilação (dez/2012–dez/2013), incompatíveis com as mensais.
+  A1737 publica 2,46 em 6 meses emjan/2010 contra 2,219154 pela composição mensal.
+- **Lição:** não ampliar tolerâncias nem copiar exceções do IPCA-15. Contar passos e marcar
+  meses anuais errados por critérios separados. Preservar o oficial no fato; usar calculado
+  com origem explícita apenas nos casos documentados e aferidos por identidade.
+- **Promovida para:** `excecoes_validacao_ipca.csv`, `diagnostico_acumulado_ano_ipca.csv`, testes
+  independentes da lista 239, `VALIDACAO_CATEGORIA` para 12 meses e `METODOLOGIA.md`14.
+
+### A-034 · 2026-10-20 · Categoria listada pode não ter coleta em todo o período da POF
+- **Contexto:** tabela 1419 do IPCA, extração integral (#12).
+- **O que aconteceu:**952 observações de 18 categorias têm mensal, anual e peso simultaneamente
+  ausentes. Oito começam em 2014-01; dez em 2018-05. Quatro existiam na POF anterior, mas voltam
+  depois de uma lacuna. Emendar só pelo código/id criaria uma continuidade falsa.
+- **Lição:** preservar o raw e excluir do fato apenas linhas com as três medidas fundamentais
+  ausentes. Aferir a cobertura esperada independentemente no raw para detectar perda de linhas
+  ativas e zeros fabricados. Não emendar categorias com meses observados não adjacentes.
+- **Promovida para:** `montar_fato`, `Configuracao.indisponiveis`, `validar_continuidade`,
+  `propor_mapa`, testes reais do IPCA e `METODOLOGIA.md`14.
+
+### A-033 · 2026-10-20 · O hífen do SIDRA é zero absoluto, confirmado na fonte
+- **Contexto:** erro de transformação da variável 2265 do IPCA (#12).
+- **O que aconteceu:** a 1419 traz 13 valores `-` para Depilação. A ajuda oficial
+  https://apisidra.ibge.gov.br/home/ajuda define `-` como zero absoluto e `...` como indisponível.
+- **Lição:** converter `-` em 0,0, mantendo o literal original no raw. Isso não atesta que a série
+  publicada está correta: zeros também precisam passar nas identidades contábeis.
+- **Promovida para:** `converter_valor`, teste de regressão e `METODOLOGIA.md`4 e 14.
+
 ### A-032 · 2026-10-20 · IPCA exige composição no histórico anterior a julho/2006
 - **Contexto:** planejamento da fonte IPCA cheio (#12), levantamento nas APIs oficiais.
 - **O que aconteceu:** 655, 656 e 657 cobrem os mesmos 83 meses (ago/1999–jun/2006) e categorias,

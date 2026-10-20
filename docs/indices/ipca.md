@@ -1,7 +1,7 @@
 # IPCA
 
 - **Fonte:** IBGE, SIDRA ([ficha da fonte](../fontes/ibge-sidra.md)).
-- **Situação no projeto:** planejamento da [issue #12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12); extração histórica e transformação ainda não implementadas para este índice.
+- **Situação no projeto:** implementação em revisão da [issue #12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12); detalhe extraído e validado de julho/2006 a setembro/2026. A extensão anterior permanece separada.
 - **Última conferência dos metadados:** 2026-10-20, nas APIs oficiais de metadados, períodos e pequenas amostras de valores.
 - **Recorte territorial inicial:** Brasil (`N1`). A existência de outros níveis territoriais nas tabelas não os inclui nesta entrega.
 
@@ -109,3 +109,22 @@ Todos os endpoints a seguir foram consultados em 20/10/2026. As respostas usadas
 - Amostras legadas: `/values/t/655/n1/all/v/63/p/199908/c315/7169,7173`, `/values/t/656/n1/all/v/66/p/199908/c315/7169,7173` e `/values/t/657/n1/all/v/69/p/199908/c315/7169,7173`, no domínio `apisidra.ibge.gov.br`.
 
 A extração futura deve continuar incremental, com uma requisição por tabela × mês, verificando contagens, preservando resposta oficial e revisão, e respeitando o limite de 50.000 valores do SIDRA já documentado na ficha da fonte. As amostras desta ficha não substituem os testes de dados históricos nem autorizam publicar séries ainda não validadas.
+
+
+## Implementação e qualidade do histórico
+
+A coleta integral da entrega principal produziu 111.299 observações válidas em 243 meses,
+com 952 respostas de categorias ainda sem coleta preservadas no raw e excluídas do fato.
+Os sinais `-` foram confirmados como zero absoluto na ajuda oficial:
+https://apisidra.ibge.gov.br/home/ajuda. As ocorrências e as anomalias de publicação estão
+registradas em A-033 a A-035 e na seção 14 da metodologia, sem afrouxar limites.
+
+Exemplos reproduzíveis:
+
+- https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2264/p/201001
+- https://apisidra.ibge.gov.br/values/t/2938/n1/all/v/63,69/p/200705,200706/c315/7269
+- https://apisidra.ibge.gov.br/values/t/1419/n1/all/v/63,69,2265/p/201306/c315/7721
+
+O mapa tem 63 propostas não revisadas, mantidas como quebras. Os arquivos de consumo ficam em
+`data/marts/ipca_*.csv`, com dicionário próprio `ipca_README.md`. A ativação da automação depende
+do merge e de uma execução manual no GitHub Actions; nenhuma execução remota é presumida.

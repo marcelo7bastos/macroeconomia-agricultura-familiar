@@ -5,6 +5,9 @@ Brasil, a partir de dados públicos (IBGE, Banco Central).
 
 > **Situação:** piloto **IPCA-15** publicado em [`data/marts/`](data/marts/README.md) (extração,
 > harmonização entre POFs, indicadores e marts), com atualização automática mensal.
+> **IPCA cheio:** dados de julho/2006 a setembro/2026 preparados e validados;
+> [dicionário próprio](data/marts/ipca_README.md), [transformações](docs/transformacoes/ipca.html)
+> e [limitações históricas](docs/METODOLOGIA.md#14-preparação-do-ipca-cheio-a-033-a-a-035).
 
 ## Como o projeto funciona
 
@@ -71,3 +74,17 @@ uv run python -m macroaf.relatorios.transformacoes       # página docs/transfor
 - Código: [MIT](LICENSE).
 - Dados derivados: [CC BY 4.0](LICENSE-DADOS.md). Os dados originais são do IBGE e do Banco
   Central do Brasil e devem ser citados como fonte.
+
+
+Para o IPCA cheio, os mesmos componentes recebem `--indice ipca`:
+
+```bash
+uv run python -m macroaf.extract.atualizar --indice ipca --verificar
+uv run python -m macroaf.pipeline --indice ipca
+uv run python -m macroaf.transform.ipca15 --indice ipca
+uv run python -m macroaf.validate.ipca15 --indice ipca
+```
+
+O workflow permite selecionar `ipca`, `ipca15` ou `todos`. Os jobs são sequenciais e usam o
+estado mais recente da `main`, evitando gravações simultâneas; falha de um índice não libera sua
+publicação nem impede o outro job. A implantação dessa alteração exige o merge do PR.

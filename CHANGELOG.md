@@ -19,6 +19,14 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- IPCA cheio, Brasil: extração incremental, classificação própria, fato, validações, mapa de
+  harmonização, indicadores, cinco marts e relatórios de julho/2006 a setembro/2026 (#12).
+  Histórico anterior e propostas de harmonização não revisadas permanecem explicitamente separados.
+- Tratamento documentado do zero absoluto SIDRA, indisponibilidades por categoria e exceções
+  contadas do IPCA, com testes de identidade e origens preservadas (A-033 a A-035).
+- Atualização automática selecionável por índice, jobs sequenciais e dicionários/metadados
+  isolados para preservar o IPCA-15.
+
 - Projeto de preparação do IPCA cheio: ficha conferida nas APIs oficiais, entrega principal
   desde julho/2006, extensão histórica separada e dez tarefas preparadas para GitHub Projects
   (#12). A implementação e a publicação dos dados permanecem pendentes.

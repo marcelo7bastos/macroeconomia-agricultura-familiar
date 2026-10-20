@@ -74,3 +74,82 @@ indices:
         fim: null
         classificacao: null # só o índice geral
         variaveis: [1117, 355, 1118, 1119, 356, 1120]
+
+  ipca:
+    nome: IPCA
+    descricao: Índice Nacional de Preços ao Consumidor Amplo
+    fonte: ibge_sidra
+    frequencia: mensal
+    ficha: docs/indices/ipca.md
+    classificacao: 315
+    variaveis:
+      63:
+        nome: variacao_mensal
+        descricao: Variação mensal
+        unidade: '%'
+      69:
+        nome: variacao_acum_ano
+        descricao: Variação acumulada no ano
+        unidade: '%'
+      66:
+        nome: peso
+        descricao: Peso mensal
+        unidade: '%'
+      2266:
+        nome: numero_indice
+        descricao: Número-índice
+        unidade: número-índice
+      2263:
+        nome: variacao_acum_3m
+        descricao: Variação acumulada em 3 meses
+        unidade: '%'
+      2264:
+        nome: variacao_acum_6m
+        descricao: Variação acumulada em 6 meses
+        unidade: '%'
+      2265:
+        nome: variacao_acum_12m
+        descricao: Variação acumulada em 12 meses
+        unidade: '%'
+    tabelas:
+    - tabela: 2938
+      papel: dados
+      inicio: 2006-07
+      fim: 2011-12
+      versao_pof: 2002-03
+      variaveis:
+      - 63
+      - 69
+      - 66
+    - tabela: 1419
+      papel: dados
+      inicio: 2012-01
+      fim: 2019-12
+      versao_pof: 2008-09
+      variaveis:
+      - 63
+      - 69
+      - 2265
+      - 66
+    - tabela: 7060
+      papel: dados
+      inicio: 2020-01
+      fim: null
+      versao_pof: 2017-18
+      variaveis:
+      - 63
+      - 69
+      - 2265
+      - 66
+    - tabela: 1737
+      papel: referencia
+      inicio: 1979-12
+      fim: null
+      classificacao: null
+      variaveis:
+      - 2266
+      - 63
+      - 2263
+      - 2264
+      - 69
+      - 2265

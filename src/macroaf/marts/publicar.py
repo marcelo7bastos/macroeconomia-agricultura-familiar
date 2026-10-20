@@ -349,6 +349,25 @@ def atualizar_historico(
     return pd.DataFrame(linhas, columns=colunas)
 
 
+def _descricao_coluna(indice: Indice, coluna: str, original: str) -> str:
+    """Rótulos por conceito; preserva o documento do piloto e seus exemplos históricos."""
+    if indice.codigo == "ipca15":
+        return original
+    variaveis = {v.nome: v.codigo for v in indice.variaveis.values()}
+    referencia = indice.tabelas_referencia[0].tabela
+    textos = {
+        "variacao_mensal": f"Variação mensal oficial, em % (variável {variaveis['variacao_mensal']}).",
+        "peso": f"Peso mensal oficial, em % (variável {variaveis['peso']}).",
+        "variacao_acum_ano_publicada": f"Acumulado no ano publicado ({variaveis['variacao_acum_ano']}), sem tratamento. Para a série longa, use acumulados.acum_ano.",
+        "variacao_acum_12m_publicada": f"Acumulado em 12 meses publicado ({variaveis['variacao_acum_12m']}); vazio onde não disponível. Referência do geral: tabela {referencia}.",
+        "contribuicao_pp": "Contribuição calculada para a variação mensal do geral, em pontos percentuais.",
+        "cesta_variavel": "1 quando o mês está coberto por exceção estrutural documentada de cesta variável; 0 nos demais.",
+        "sazonalidade_cesta_variavel": "1 quando a janela da sazonalidade contém mês com cesta variável documentada.",
+        "cesta_variavel_janelas": "Janelas que contêm mês com cesta variável documentada, separadas por ponto e vírgula.",
+    }
+    return textos.get(coluna, original)
+
+
 def _readme(indice: Indice, marts: dict[str, pd.DataFrame], ultimo_mes: str) -> str:
     partes = [
         f"# Marts do {indice.nome}",
@@ -379,7 +398,11 @@ def _readme(indice: Indice, marts: dict[str, pd.DataFrame], ultimo_mes: str) -> 
             "",
             f"## `{indice.codigo}_{nome}.csv`",
             "",
-            especificacao["descricao"],
+            (
+                "Contribuições calculadas para o acumulado do geral, em pontos percentuais."
+                if indice.codigo != "ipca15" and nome == "contribuicoes"
+                else especificacao["descricao"]
+            ),
             "",
             f"Chave: `{', '.join(especificacao['chave'])}`. Linhas: {len(tabela):,}.".replace(
                 ",", "."
@@ -388,7 +411,7 @@ def _readme(indice: Indice, marts: dict[str, pd.DataFrame], ultimo_mes: str) -> 
             "| Coluna | Descrição |",
             "|---|---|",
             *[
-                f"| `{c}` | {d}"
+                f"| `{c}` | {_descricao_coluna(indice, c, d)}"
                 + (f" Valores: {', '.join(f'`{v}`' for v in VALORES[c])}." if c in VALORES else "")
                 + " |"
                 for c, d in especificacao["colunas"].items()
@@ -422,6 +445,7 @@ def publicar(indice: Indice, destino: Path = RAIZ) -> list[str]:
     anterior = pd.read_csv(caminho_categorias, dtype=str) if caminho_categorias.exists() else None
     historico_caminho = destino / "reference" / f"historico_series_{indice.codigo}.csv"
     manifesto = pd.DataFrame(armazem.ler_manifesto())
+    manifesto = manifesto[manifesto.tabela.isin({str(t.tabela) for t in indice.tabelas})]
     manifesto = manifesto[manifesto.periodo != METADADOS]
     ultima_coleta = manifesto.data_coleta.max()
     historico = atualizar_historico(anterior, marts["categorias"], mapa, ultima_coleta[:10])
@@ -440,7 +464,8 @@ def publicar(indice: Indice, destino: Path = RAIZ) -> list[str]:
             "colunas": list(tabela.columns),
             "sha256": hashlib.sha256(conteudo).hexdigest(),
         }
-    (pasta / "README.md").write_text(_readme(indice, marts, ultimo_mes), encoding="utf-8")
+    dicionario = "README.md" if indice.codigo == "ipca15" else f"{indice.codigo}_README.md"
+    (pasta / dicionario).write_text(_readme(indice, marts, ultimo_mes), encoding="utf-8")
 
     metadados = {
         "indice": indice.codigo,

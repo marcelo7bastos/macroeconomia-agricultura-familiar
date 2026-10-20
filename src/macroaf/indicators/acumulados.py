@@ -50,7 +50,7 @@ OFICIAL_GERAL = {
 }
 # Validação cujas exceções A-015 apontam erro publicado naquela janela.
 VALIDACAO_GERAL = {j: f"costura_acum_{j}" for j in OFICIAL_GERAL}
-VALIDACAO_CATEGORIA = {"ano": "acumulado_ano"}
+VALIDACAO_CATEGORIA = {"ano": "acumulado_ano", "12m": "acumulado_12m"}
 INICIO_DOS_DADOS = "inicio dos dados"
 COLUNAS = [
     "serie_id",

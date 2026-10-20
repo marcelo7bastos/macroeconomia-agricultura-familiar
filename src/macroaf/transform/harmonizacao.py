@@ -268,7 +268,23 @@ def propor_mapa(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame) -> pd.Dat
         linhas += propor_transicao(
             dim[dim.tabela_sidra == antes], dim[dim.tabela_sidra == depois], pesos
         )
-    return _tipar(pd.DataFrame(linhas, columns=COLUNAS_MAPA))
+    periodos = fato.groupby(["tabela_sidra", "codigo_sidra"]).mes.agg(["min", "max"])
+    sem_lacunas = []
+    for linha in linhas:
+        if linha["tipo_correspondencia"] == "identico" and linha["situacao"] == "automatico":
+            origem = periodos.loc[(linha["tabela_origem"], linha["codigo_sidra_origem"]), "max"]
+            destino = periodos.loc[(linha["tabela_destino"], linha["codigo_sidra_destino"]), "min"]
+            if pd.Period(destino, freq="M") != pd.Period(origem, freq="M") + 1:
+                for lado, tipo in [("destino", "descontinuado"), ("origem", "novo")]:
+                    quebra = {k: None if f"_{lado}" in k else v for k, v in linha.items()}
+                    quebra.update(
+                        tipo_correspondencia=tipo,
+                        criterio=f"ausência de coleta entre {origem} e {destino}; não emendar",
+                    )
+                    sem_lacunas.append(quebra)
+                continue
+        sem_lacunas.append(linha)
+    return _tipar(pd.DataFrame(sem_lacunas, columns=COLUNAS_MAPA))
 
 
 def _tipar(mapa: pd.DataFrame) -> pd.DataFrame:

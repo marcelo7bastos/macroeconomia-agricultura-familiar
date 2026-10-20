@@ -1,7 +1,7 @@
 # Projeto: preparar os dados do IPCA geral
 
 - **Issue de referência:** [#12 — Fonte: IPCA cheio](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12).
-- **Situação:** planejamento da implementação; nenhuma série nova foi ativada no catálogo.
+- **Situação:** entrega principal implementada, em revisão no PR #58; catálogo IPCA ativado.
 - **Data do levantamento:** 20/10/2026.
 - **Plano de tarefas para o GitHub Projects:** [tarefas.json](ipca-geral/tarefas.json).
 - **Fonte técnica:** [ficha do IPCA](../indices/ipca.md) e [IBGE/SIDRA](../fontes/ibge-sidra.md).
@@ -175,12 +175,18 @@ por Status são ajustes de apresentação feitos na interface do GitHub Projects
 com a criação dos itens. No caso de falta de acesso, preservar o plano e os cartões preparados,
 registrar o bloqueio e retomar a publicação sem recriar o que já existe.
 
-## Conclusão e limites desta entrega de planejamento
+## Implementação e limites
 
-Pronto para iniciar quando: a ficha, o recorte principal e os cartões estiverem revisados,
-o quadro estiver acessível e o primeiro trabalho estiver priorizado. A implementação só termina
-quando IPCA-01 a IPCA-09 atenderem aos seus critérios; IPCA-10 tem aceite independente.
+A entrega principal foi extraída, transformada e validada: 805 respostas mensais oficiais,
+243 meses de detalhe e 111.299 observações, de julho/2006 a setembro/2026. Os cinco marts e seu
+dicionário estão em `data/marts/ipca_*`; a explicação auditável está em
+[`../transformacoes/ipca.html`](../transformacoes/ipca.html). As saídas do IPCA-15 foram preservadas.
 
-Este plano não afirma que a base IPCA já foi extraída, transformada, validada ou publicada.
-Não inclui recortes regionais, INPC, IPCA-E, dessazonalização, previsões ou definição de uma cesta
-da agricultura familiar. Esses temas exigem escopo e critérios próprios.
+As 63 propostas de harmonização pendentes continuam marcadas como quebras até revisão humana.
+A atualização automática dos dois índices depende do merge e da primeira execução conferida no
+GitHub Actions. A publicação do quadro no GitHub Projects continua bloqueada pela permissão da
+integração; o plano e os cartões estão preparados para retomada, sem bloquear o pipeline.
+
+A extensão anterior a julho/2006 (IPCA-10) permanece separada. A entrega não inclui recortes
+regionais, INPC, IPCA-E, dessazonalização, previsões, painel ou definição de uma cesta da
+agricultura familiar. Esses temas exigem escopo e critérios próprios.

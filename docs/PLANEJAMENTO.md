@@ -23,7 +23,7 @@ Princípios:
 | Fase | Tema | Situação |
 |---|---|---|
 | **Piloto** | **IPCA-15** completo (mai/2000 → atual), até o nível de subitem | em andamento |
-| Planejamento | IPCA cheio, Brasil | [projeto de preparação dos dados](projetos/ipca-geral.md), issue #12 |
+| Implementação em revisão | IPCA cheio, Brasil | [projeto de preparação dos dados](projetos/ipca-geral.md), issue #12 |
 | Backlog | PIB total e agropecuária, Selic, câmbio, IGPs | issues |
 | Backlog | Agricultura familiar: participação na produção (Censo Agro 2017), crédito Pronaf | issues |
 | Backlog | Indicador de inflação dos alimentos da agricultura familiar | issue |
