@@ -11,6 +11,15 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Revisão da harmonização aplicada: 116 propostas aceitas e 14 não aceitas, com observação e
+  issue de investigação (#32 a #40); 261 subitens com série contínua de mai/2000 a set/2026 (#6).
+- `map_harmonizacao` do IPCA-15 (`reference/map_harmonizacao_ipca15.csv`) e série longa
+  (`python -m macroaf.transform.harmonizacao`): ligações automáticas só com prova, propostas com
+  evidência para revisão humana, quebras marcadas; seção de revisão na página de transformações
+  (decisão 0005, #6).
+- Página de revisão `docs/revisao/harmonizacao_ipca15.html` (`python -m macroaf.relatorios.revisao`):
+  aceitar ou não aceitar cada proposta, com observação; decisões aplicadas ao mapa por
+  `python -m macroaf.transform.harmonizacao --decisoes <json> --revisor <nome>` (#6).
 - Página de transformações `docs/transformacoes/ipca15.html`, gerada dos dados
   (`python -m macroaf.relatorios.transformacoes`), com texto claro, diagramas e etapas
   interativas; teste exige que esteja em dia (decisão 0004, #5).

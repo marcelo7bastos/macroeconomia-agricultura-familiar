@@ -137,22 +137,28 @@ data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 Ligado à `dim_classificacao` por `(tabela_sidra, codigo_sidra)` (METODOLOGIA.md, 2.2).
 `ref_ipca15_geral` guarda a tabela 3065 (número-índice e acumulados do geral) para as validações.
 
-**`map_harmonizacao`**: correspondência entre categorias de POFs consecutivas.
-`codigo_ibge_origem | versao_pof_origem | codigo_ibge_destino | versao_pof_destino | tipo_correspondencia`
-com `tipo_correspondencia ∈ {identico, renomeado, dividido, fundido, descontinuado, novo}`.
+**`map_harmonizacao`** (`reference/map_harmonizacao_ipca15.csv`, versionado): correspondência
+entre categorias de POFs consecutivas, por código IBGE **e** id SIDRA, com
+`tipo_correspondencia ∈ {identico, renomeado, dividido, fundido, descontinuado, novo}`,
+`situacao ∈ {automatico, proposto, revisado}`, critério, pesos nas pontas e revisor.
+
+**`serie_longa_ipca15`**: as linhas do fato com `serie_id`, início, fim, entrada e saída de cada
+série longa (METODOLOGIA.md, seção 7).
 
 ### 4.3 Granularidade e séries longas (decisão 9.2)
 
 A maior granularidade publicada pelo IBGE é o **subitem** (5 níveis: geral, grupo, subgrupo,
 item, subitem). O modelo Power BI anterior já usava o subitem como folha da hierarquia.
 
-- Até **subgrupo**, a estrutura é estável entre POFs e as séries longas saem direto.
+- Até **subgrupo**, a estrutura é quase estável entre POFs; os poucos casos que mudam (subgrupo
+  `72`, itens `1117` e `7203`) passam pela harmonização como os demais (A-020).
 - **Item e subitem** mudam a cada POF. A série longa é montada a partir do `map_harmonizacao`:
   - `identico`/`renomeado` → série contínua;
   - `dividido`/`fundido` → série contínua no nível agregado, com marcação de quebra no detalhe;
   - `descontinuado`/`novo` → série termina/começa, sem emenda.
-- O mapeamento é gerado de forma semiautomática (código + nome) e **revisado manualmente**; o
-  resultado revisado fica em `reference/` e é versionado.
+- O mapeamento é gerado de forma semiautomática (código + id + nome) e **revisado manualmente**;
+  o resultado revisado fica em `reference/` e é versionado. **Na dúvida, quebra**: proposta não
+  revisada não emenda (decisão 0005).
 
 ### 4.4 Validações (bloqueiam a publicação se falharem)
 
@@ -250,3 +256,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.7 | Organização dos agentes | **Por função, não por índice** ([0002](decisoes/0002-agentes-por-funcao.md)) |
 | 9.8 | Atualização dos dados | **Extração incremental, raw compactado e imutável, compilação completa** ([0003](decisoes/0003-extracao-incremental.md)) |
 | 9.9 | Documentação das transformações | **Página HTML por índice, em degraus, gerada dos dados** ([0004](decisoes/0004-explicacao-em-degraus.md)) |
+| 9.10 | Emenda de séries entre POFs | **Na dúvida, quebra**: só emenda com prova ou revisão humana ([0005](decisoes/0005-na-duvida-quebra.md)) |

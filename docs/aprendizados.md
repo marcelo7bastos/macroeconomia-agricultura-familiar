@@ -25,6 +25,53 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-022 · 2026-10-20 · Divisão permite comparar para trás, não seguir para a frente
+- **Contexto:** revisão humana das propostas de harmonização (#6), observação do mantenedor sobre
+  "Peixe" dividido em espécies na POF 2017-18.
+- **O que aconteceu:** 116 propostas aceitas e 14 não aceitas; todas as não aceitas pediram
+  investigação (issues #32 a #40). Para as divisões, o mantenedor observou que a soma das
+  categorias novas ainda se compara com a antiga no passado, mas a antiga não continua no presente.
+- **Lição:** divisão não aceita é quebra na série do subitem; uma comparação retroativa agregada é
+  um produto à parte (a definir nas issues), nunca uma emenda. Decisão humana sempre cita a issue
+  que a investiga.
+- **Promovida para:** mapa (`situacao`, revisor e observação com a issue); `METODOLOGIA.md` 7.4;
+  issues #32 a #40; teste `test_leite_pasteurizado_nao_emenda_no_longa_vida`.
+
+### A-021 · 2026-10-19 · Busca de candidatos que ignora quem mantém o código esconde fusões
+- **Contexto:** revisão do mapa de harmonização (#6) pelo `revisor-metodologico`.
+- **O que aconteceu:** a busca só cruzava códigos que somem com códigos que aparecem. "Refrigerante"
+  → "Refrigerante e água mineral" (mesmo código, id novo) saía como renomeação 1 para 1 e "Água
+  mineral" como descontinuada; o revisor podia aprovar uma emenda que, na verdade, ampliou o
+  escopo. O mesmo com "Frango" → "Frango inteiro" + "Frango em pedaços". Ao ampliar a busca, a
+  ligação entre itens diferentes passou a parear "Refrigerante" em casa com "Refrigerante" fora de
+  casa.
+- **Lição:** categorias com o mesmo código e id novo entram na busca de candidatos; entre itens
+  diferentes, só código extinto → código novo. A grafia igual com id novo também é proposta.
+- **Promovida para:** `macroaf.transform.harmonizacao`; testes
+  `test_fusao_com_categoria_que_mantem_o_codigo_aparece` e
+  `test_mesmo_codigo_com_id_novo_nunca_emenda_sem_revisao`; `METODOLOGIA.md` 7.1; decisão 0005.
+
+### A-020 · 2026-10-19 · Nem os subgrupos são totalmente estáveis entre POFs
+- **Contexto:** mapa de harmonização (#6).
+- **O que aconteceu:** grupos são idênticos em todas as trocas, mas o subgrupo `72` muda de id e
+  de nome duas vezes ("Recreação, fumo e filmes" → "... e fotografia" → "Recreação e fumo"), o
+  item `1117` Alimentos prontos some na 1387 e o item `7203` Fotografia e filmagem some na 7062.
+- **Lição:** o planejamento dizia que até subgrupo a série sai direto; na prática subgrupos e itens
+  passam pela mesma regra dos subitens.
+- **Promovida para:** `macroaf.transform.harmonizacao` (todos os níveis no mapa);
+  `METODOLOGIA.md` 7.3; `PLANEJAMENTO.md` 4.3.
+
+### A-019 · 2026-10-19 · Similaridade de texto pareia nomes sem relação
+- **Contexto:** primeira proposta do mapa de harmonização (#6).
+- **O que aconteceu:** `difflib` com limite de 0,6 propôs "Melão" → "Telha", "Curso supletivo" →
+  "Chuveiro elétrico" e 25 pares entre espécies de peixe diferentes (253 propostas ao todo).
+- **Lição:** comparar palavras, não letras: contar as palavras do nome menor presentes no maior,
+  sem palavras vazias, exigir mais da metade das do maior (ou todas as do menor) e o mesmo item;
+  entre itens diferentes, só nome igual. Resultado: 115 propostas, plausíveis para revisão (algumas
+  fracas, como "Óculos sem grau" → "Óculos de grau", ficam para o revisor rejeitar).
+- **Promovida para:** `parentesco` em `macroaf.transform.harmonizacao`; teste
+  `test_parentesco_de_nomes`; `METODOLOGIA.md` 7.1.
+
 ### A-018 · 2026-10-19 · Exceção estreita, contada e com limite empírico separado
 - **Contexto:** revisão das validações (#5) pelo `revisor-metodologico`, com erros injetados.
 - **O que aconteceu:** (1) exceções da 3065 cobriam o mês inteiro de todos os acumulados, e um

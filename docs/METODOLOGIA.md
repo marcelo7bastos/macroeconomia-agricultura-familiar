@@ -60,9 +60,9 @@ As mudanças com id novo são de naturezas diferentes:
    item ou subitem, cada par de categorias de POFs consecutivas é classificado no
    `map_harmonizacao` (#6): `identico`, `renomeado`, `dividido`, `fundido`, `descontinuado`, `novo`.
    - Mesmo código e mesmo id: candidato a `identico`.
-   - Mesmo código e id novo: **revisão manual obrigatória**. Grafia ou nome atualizado podem virar
-     `renomeado` (série contínua); escopo ampliado ou produto diferente são **quebra de série**
-     (marcada, nunca escondida).
+   - Mesmo código e id novo: **revisão manual obrigatória**, inclusive quando só a grafia muda.
+     Grafia ou nome atualizado podem virar `renomeado` (série contínua); escopo ampliado ou
+     produto diferente são **quebra de série** (marcada, nunca escondida). Ver seção 7.
    - Código que some ou aparece: `descontinuado` ou `novo`, salvo se a revisão encontrar a
      correspondência em outro código (ex.: item `7203` Fotografia e filmagem, que some na 7062).
 3. Até o **subgrupo**, a estrutura é estável entre POFs e as séries longas são publicadas sem
@@ -201,7 +201,97 @@ cobre**. Regras (A-018):
 - As exceções de 2003-03 e 2004-08 na 1646 existem só porque a validação de um passo usa o mês
   anterior (errado na fonte) como âncora.
 
-## 7. Registro de descobertas
+## 7. Harmonização entre POFs e série longa
+
+Gerada por `uv run python -m macroaf.transform.harmonizacao`, que atualiza
+[`reference/map_harmonizacao_ipca15.csv`](../reference/map_harmonizacao_ipca15.csv) (preservando o
+que foi revisado) e grava `serie_longa_ipca15` no staging. Decisão
+[0005](decisoes/0005-na-duvida-quebra.md).
+
+### 7.1 Na dúvida, quebra
+
+Cada categoria de uma tabela é ligada à da tabela seguinte com um tipo: `identico`, `renomeado`,
+`fundido`, `dividido`, `descontinuado` ou `novo`. Só `identico` e `renomeado` emendam a série, e
+só quando a ligação é **automática** (com prova: o mesmo id SIDRA) ou **revisada** por uma pessoa.
+Proposta não revisada ou **rejeitada** conta como quebra. Encerrar uma série nunca esconde nada;
+emendar errado esconde.
+
+| Situação | Quando | Exemplo |
+|---|---|---|
+| `identico`, automático | mesmo código IBGE e mesmo id SIDRA (o id identifica a definição, A-012) | `1101002` Arroz em todas as tabelas |
+| `renomeado`, proposto | mesmo código, id novo (mesmo que só a grafia mude: o id novo é definição nova, A-012) | `1101073` "(rajado))" → "(rajado)"; `1111004` Leite pasteurizado → Leite longa vida |
+| `fundido` ou `dividido`, proposto | nomes aparentados no mesmo item, incluindo categorias que mantêm o código com id novo (A-021); entre itens diferentes, só código extinto → código novo com todas as palavras do nome menor no maior | Refrigerante + Água mineral → Refrigerante e água mineral; peixes regionais → `1108006` Peixe; `8102005` Livro → didático e não didático |
+| `descontinuado` ou `novo`, automático | código some ou aparece e nenhum candidato pelas regras | `1101079` Milho em grão (só na 1646) |
+
+O parentesco de nomes conta as palavras do nome menor que aparecem no maior, sem as palavras
+vazias ("de", "e", "para") e com o plural simples reduzido ("lentes" → "lente"), e exige mais da
+metade das palavras do maior ou todas as do menor. Uma palavra genérica em comum ("Peixe -
+cavalinha" e "Peixe - linguado") não basta (A-019).
+
+**Como a revisão acontece.** As propostas são revisadas na página
+`docs/revisao/harmonizacao_ipca15.html` (gerada por `python -m macroaf.relatorios.revisao`),
+agrupadas: ligações que tocam as mesmas categorias aparecem no mesmo cartão e são revisadas
+juntas. Aceitar grava `situacao = revisado`; não aceitar grava `situacao = rejeitado` com a
+observação. As decisões são aplicadas ao mapa com
+`python -m macroaf.transform.harmonizacao --decisoes <json> --revisor <nome>` e preservadas
+quando o mapa é regerado. Uma ligação que as regras não viram pode ser acrescentada à mão como
+`revisado`; ela substitui o `descontinuado`/`novo` automático das categorias que liga. O mapa é
+conferido a cada execução: toda decisão tem revisor, aponta para categorias que existem com o
+mesmo código e nome, e liga tabelas consecutivas.
+
+### 7.2 Série longa
+
+`serie_longa_ipca15` tem as linhas do fato com: `serie_id` (código IBGE e POF da primeira
+categoria da série, estável quando entra POF nova), `inicio_serie`, `fim_serie`, `entrada` e
+`saida` (início ou fim dos dados, `novo`, `descontinuado`, o tipo que interrompeu a série,
+"proposta não revisada" ou "proposta rejeitada"). Invariantes conferidos a cada execução: cada
+linha do fato aparece uma vez, uma série tem um valor por mês e sem lacuna, e não muda de nível
+hierárquico.
+
+O `serie_id` não muda quando entra uma POF nova, mas **muda com a revisão**: aceitar a emenda de
+duas séries faz a segunda desaparecer dentro da primeira. Por isso o `serie_id` não é chave de
+mart; os marts (#8) precisam de uma chave própria e estável.
+
+### 7.3 Nem os subgrupos são totalmente estáveis (A-020)
+
+Grupos são idênticos em todas as trocas. Mas o subgrupo `72` muda duas vezes ("Recreação, fumo e
+filmes" → "Recreação, fumo e fotografia" → "Recreação e fumo"), o item `7203` Fotografia e
+filmagem some na 7062 e o item `1117` Alimentos prontos some na 1387. Por isso subgrupos e itens
+passam pela mesma regra dos subitens, e a afirmação "até subgrupo a série sai direto" (seção 4.3 do
+planejamento) vale só depois da revisão desses casos.
+
+### 7.4 Resultado da revisão (#6)
+
+Revisão feita pelo mantenedor (marcelo7bastos) em 2026-10-20, na página de revisão: as 130
+propostas foram decididas, **116 aceitas e 14 não aceitas**. Cada decisão está no mapa com
+`situacao` (`revisado` ou `rejeitado`), revisor e observação.
+
+| Efeito | Antes da revisão | Depois |
+|---|---|---|
+| Séries longas | 807 | 731 |
+| Subitens contínuos de mai/2000 a set/2026 | 212 | 261 |
+| Itens contínuos de mai/2000 a set/2026 | 48 | 50 |
+
+As 14 ligações não aceitas formam 9 casos, todos quebra marcada até a investigação:
+
+| Caso | Issue |
+|---|---|
+| Leite pasteurizado → Leite longa vida (prioridade) | #32 |
+| Massa para pão de queijo → Queijo | #33 |
+| Subgrupo 72: Recreação, fumo e fotografia → Recreação e fumo | #34 |
+| Peixe dividido em espécies (4 ligações) | #35 |
+| Conserto de aparelho de som → Conserto de aparelho celular | #36 |
+| Óculos sem grau → Óculos de grau | #37 |
+| Livro → didático e não didático (2 ligações) | #38 |
+| Telefone celular → Plano de telefonia móvel | #39 |
+| TV por assinatura com internet → TV por assinatura e Combo (2 ligações) | #40 |
+
+**Divisões e comparação retroativa (A-022).** Na observação sobre o peixe, o mantenedor registrou
+que, quando uma categoria vira várias, ainda é possível comparar com o passado somando as novas
+no nível da antiga, mas não seguir a série antiga para o presente e o futuro. Por isso uma divisão
+não aceita não é emendada; a comparação retroativa agregada é tema das issues #35, #38 e #40.
+
+## 8. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é
