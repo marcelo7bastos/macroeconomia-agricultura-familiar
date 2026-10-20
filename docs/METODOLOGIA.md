@@ -200,6 +200,9 @@ cobre**. Regras (A-018):
   o dado; mais: há erro novo no escopo. Nos dois casos a validação falha até a exceção ser revista.
 - As exceções de 2003-03 e 2004-08 na 1646 existem só porque a validação de um passo usa o mês
   anterior (errado na fonte) como âncora.
+- **Mês com erro publicado.** A coluna `meses_com_erro_publicado` separa o mês em que o valor
+  publicado está errado (ex.: 2003-02) dos meses que a exceção cobre só por consequência (2003-03).
+  Só ela autoriza os indicadores a trocar o oficial pelo calculado (seção 9).
 
 ## 7. Harmonização entre POFs e série longa
 
@@ -361,10 +364,105 @@ em pedaços, aceita na revisão). São evidência para revisão humana, nunca em
 
 `cesta_variavel` marca os meses da 1646 cobertos pela exceção A-013. Um acumulado cuja janela
 contém mês marcado também não reproduz o IBGE: é o caso da 356 de 2006 dos 34 subitens in natura,
-já na 1387, e dos acumulados de 12 meses até jul/2007. Na #42, a janela que contém mês marcado
+já na 1387, e dos acumulados de 12 meses até jun/2007 (a janela de jul/2007 começa em ago/2006). Na #42, a janela que contém mês marcado
 herda a marca.
 
-## 9. Registro de descobertas
+## 9. Acumulados por janela (#42)
+
+`acumulados_ipca15` (`macroaf.indicators.acumulados`) tem uma linha por série longa, mês e janela
+(3, 6, 12, 24 e 36 meses e no ano), com `acumulado`, `origem` (`oficial` ou `calculado`) e
+`cesta_variavel`.
+
+- **Calculado:** pelo índice encadeado (seção 8), `(I_t / I_(t-k) − 1) × 100`. A janela que sai do
+  início da série fica vazia: o acumulado nunca atravessa uma quebra.
+- **Oficial primeiro, onde mede o mesmo:** 1120 (12 meses) e 356 (no ano) da própria categoria; para
+  o geral, 1118, 1119, 1120 e 356 da 3065. O oficial vale quando:
+  - a janela cabe na série, ou começa antes do início dos dados (mai/2000), o que é falta de dado e
+    não quebra;
+  - no acumulado no ano, o código de janeiro é o mesmo do mês (A-023, seção 8.2). Série que nasce
+    no meio do ano da troca ou que mudou de código no ano fica sem a 356, porque ela atravessaria a
+    quebra pelo código;
+  - não é valor publicado errado (A-015) que diverge do calculado. Erro publicado é só o mês
+    listado em `meses_com_erro_publicado` (6.5): 356 trocada de 2003-02 e de 2004-07 na 1646 e
+    1118/1119 da 3065 em 4 meses. Nesses meses vale o calculado, salvo onde o publicado concorda
+    com ele (7 linhas em 2003-02, 29 em 2004-07). Os meses seguintes, que a exceção cobre só pela
+    âncora (2003-03 e 2004-08), ficam com o oficial em todas as 593 linhas.
+  - no acumulado em 12 meses, a 1120 cobre sempre 12 meses da mesma tabela (ela só é publicada
+    depois do primeiro ano da 1705 e da 7062, A-009), então não há troca de código dentro da janela.
+- **24 e 36 meses** não são publicados: só calculados.
+- **Cesta variável:** a janela que contém mês marcado (seção 8.3) herda a marca, por exemplo a 356
+  de 2006 dos subitens in natura na 1387 e os acumulados de 12 meses até jun/2007.
+
+Teste: onde o oficial é usado e o calculado existe, os dois concordam dentro do limite de
+arredondamento (A-014), fora da cesta variável e da 356 da 1646 e da 1387.
+
+**Ruído da 356 composta desde janeiro (A-024).** Na 1646 e na 1387, a 356 publicada diverge do
+acumulado desde janeiro pelo índice acima do arredondamento em 638 linhas fora da cesta variável
+(329 na 1646, 309 na 1387; até cerca de 0,25 p.p., só subgrupos, itens e subitens). É mais que os
+58 casos da validação (A-016), porque ela compara um passo e esta comparação compõe o ano inteiro.
+Fica o oficial: é o número do IBGE e não há erro identificado; a contagem é sentinela em teste.
+
+## 10. Contribuições (#43)
+
+`contribuicoes_ipca15` (`macroaf.indicators.contribuicoes`) tem uma linha por série longa, mês e
+janela (`mes` e as janelas da seção 9), com `contribuicao` em pontos percentuais e, no mês,
+`participacao_no_grupo` em %.
+
+- **No mês:** `c = peso × v / Σ pesos dos grupos`, peso e variação do mesmo mês e tabela (como na
+  reconciliação). Dividir pela soma dos pesos dos grupos, que é 100 salvo o erro de 2010-07/08 na
+  1387 (100,1, A-015), faz a soma dos grupos reproduzir a média ponderada.
+- **Participação no grupo:** a contribuição dividida pela soma das contribuições do mesmo nível no
+  mesmo grupo. Soma 100% por construção; com variação do grupo perto de zero, as participações
+  ficam grandes e de sinais opostos, e devem ser lidas com cuidado. Fica **vazia** quando falta
+  alguma contribuição no mesmo nível e grupo: é o caso dos subitens do grupo 1 nos 75 meses da 1646,
+  em que os in natura saem da conta e a soma dos restantes deixa de ser a variação do grupo (A-025).
+- **Para o acumulado:** `Σ_m c_m × I_geral(m−1) / I_geral(início − 1)` sobre os meses da janela. A
+  contribuição acumulada do geral é exatamente o seu acumulado calculado (seção 9), e a soma dos
+  grupos difere dele no máximo pela soma, reescalada, dos limites mensais da reconciliação. A janela
+  não sai da série longa da categoria (decisão 0005).
+- **Cesta variável:** subitens in natura da 1646 ficam sem contribuição; o produto entra pelo item
+  (A-013).
+- **Geral:** a contribuição acumulada do geral é o acumulado **calculado** pelo índice. Pode diferir
+  do `acumulados_ipca15`, que usa o oficial da 3065 (seção 9): nos meses de erro publicado da 3065
+  (1118/1119 em 2006-04, 2011-11 e 2012-11) a diferença é grande, e o certo é o calculado.
+- **Erros publicados (A-015):** a contribuição usa peso e variação como publicados. Onde a fonte
+  errou (9101022 da 1705 em 2014-07/09, com contribuição 0; item 1115 da 1387 em 2011-10/11), a
+  contribuição herda o erro; a soma dos grupos continua dentro do limite.
+- **Fórmula:** o PLANEJAMENTO 5.2 escreve `peso × variação / 100`; aqui o denominador é a soma dos
+  pesos dos grupos, que é 100 salvo o erro de 2010 na 1387. Muda só esses dois meses.
+
+Conferência: a soma dos grupos difere do geral em no máximo 0,007 p.p. no mês e 0,014 (3 meses),
+0,026 (12 meses), 0,023 (no ano) e 0,039 p.p. (36 meses) nos acumulados, sempre dentro do limite
+da reconciliação, reescalado como as contribuições.
+
+## 11. Difusão e sazonalidade (#44)
+
+`macroaf.indicators.difusao` grava `difusao_ipca15`, e `macroaf.indicators.sazonalidade` grava
+`sazonalidade_ipca15`.
+
+- **Difusão:** % dos subitens com variação mensal maior que zero, por mês, no geral e em cada grupo.
+  A simples conta subitens; a ponderada soma os pesos deles sobre a soma dos pesos dos subitens. A
+  cesta é a da tabela do mês (POF vigente), sem série longa: a difusão compara a parte da cesta que
+  subiu, não a mesma lista de produtos ao longo do tempo. A troca de cesta (512 → 384 → 365 → 367
+  subitens) aparece em `versao_pof` e em `cesta_nova`, no primeiro mês de cada POF.
+- **Peso 0 fica fora (A-026).** Os 93 subitens com peso 0 da 1646 (in natura fora de safra, A-013)
+  quase sempre publicam variação 0,00, que é "não coletado", não "preço estável". Saem dos dois
+  denominadores e são contados em `subitens_peso_zero`. Contá-los como "não subiu" baixaria a
+  simples em até 0,40 p.p. no geral e 0,90 p.p. no grupo 1.
+- **Erro publicado entra como publicado:** o subitem 9101022 da 1705 com 0,00 em 2014-07/09
+  (A-015) conta como "não subiu" (até cerca de 0,3 p.p. no geral). A difusão não tem valor oficial
+  para comparar, e o erro está registrado.
+- **Sazonalidade:** para cada série longa e mês do ano, média e mediana da variação mensal nos
+  últimos 5 anos, em janela móvel que termina em cada ano. Só anos seguidos da própria série:
+  janela que pularia um ano ou sairia da série fica vazia (decisão 0005). `cesta_variavel` marca a
+  janela com mês de cesta variável.
+
+Testes: difusão entre 0 e 100, um valor por mês no geral e trocas de cesta nos meses certos; soma
+dos pesos dos subitens igual ao peso publicado do geral e de cada grupo (salvo o erro de 2010,
+A-015); sazonalidade igual à conta direta para o geral, dentro da série e com a marca de cesta só
+nas janelas certas.
+
+## 12. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é

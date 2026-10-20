@@ -25,6 +25,43 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-026 · 2026-10-20 · Peso 0 com variação 0,00 é "não coletado"
+- **Contexto:** difusão (#44), revisão do `revisor-metodologico`.
+- **O que aconteceu:** na 1646 há 93 subitens com peso 0 (fora de safra, A-013); em 84 a variação
+  publicada é exatamente 0,00 e em 9 vai de −26,54 a 10,04. Na difusão simples, contavam como "não
+  subiu" e baixavam o geral em até 0,40 p.p.
+- **Lição:** indicador que conta linhas não conta subitem com peso 0: a variação dele não informa
+  preço. Generaliza A-013 e A-025 (linha sem informação mexendo no denominador).
+- **Promovida para:** `montar_difusao` (coluna `subitens_peso_zero`); testes
+  `test_difusao_simples_e_ponderada` e `test_difusao_real_entre_0_e_100_e_um_valor_por_mes`;
+  `METODOLOGIA.md` 11.
+
+### A-025 · 2026-10-20 · Linha excluída muda o denominador de quem fica
+- **Contexto:** contribuições (#43), revisão do `revisor-metodologico`.
+- **O que aconteceu:** os subitens in natura da 1646 saem da contribuição (A-013). A participação
+  no grupo dos outros subitens do grupo 1 passou a ser dividida pela soma dos que sobraram, que não
+  é a variação do grupo (razão de −5,9 a 5,5). O teste "soma 100%" passava por construção.
+- **Lição:** indicador que exclui linhas precisa esvaziar ou marcar tudo o que usa a soma delas
+  como denominador. Teste de "soma 100%" não basta: confira a soma contra o pai.
+- **Promovida para:** `participacao_no_grupo` vazia onde falta contribuição no nível e grupo;
+  testes `test_participacao_vazia_onde_falta_contribuicao_no_grupo` e
+  `test_participacao_presente_soma_a_contribuicao_do_grupo`; `METODOLOGIA.md` 10.
+
+### A-024 · 2026-10-20 · Escopo de exceção não é o mês do erro
+- **Contexto:** acumulados por janela (#42), revisão do `revisor-metodologico`.
+- **O que aconteceu:** para trocar o oficial pelo calculado onde a fonte errou, usei o escopo das
+  exceções A-015. Mas a exceção de 2003-02..2003-03 cobre 2003-03 só porque a validação de um passo
+  ancora no mês anterior; a 356 de 2003-03 está certa. Cerca de 100 valores oficiais corretos (91
+  com cesta variável) viraram calculados. Na mesma conferência, a 356 da 1646 e da 1387, composta
+  desde janeiro, diverge do índice em 638 linhas fora da cesta (até ~0,25 p.p.), mais que os 58
+  casos de um passo da validação.
+- **Lição:** exceção diz o que a validação aceita; erro publicado diz o que está errado. São
+  colunas diferentes (`meses_com_erro_publicado`). Ruído sem erro identificado não autoriza trocar
+  o oficial.
+- **Promovida para:** coluna `meses_com_erro_publicado` (conferida ao carregar as exceções);
+  testes `test_mes_que_so_falha_pela_ancora_fica_oficial` e
+  `test_356_das_tabelas_antigas_fica_oficial_mesmo_com_ruido`; `METODOLOGIA.md` 6.5 e 9.
+
 ### A-023 · 2026-10-20 · O acumulado no ano do IBGE segue o código, não a série longa
 - **Contexto:** índice encadeado por série longa (#41), conferido contra a 356 por categoria;
   revisão do `revisor-metodologico`.

@@ -59,7 +59,14 @@ DUVIDAS = [
 
 
 # Indicadores da seção 5.2 do planejamento já calculados, com a issue que os entregou.
-FEITOS = {"Índice base 100": '<span class="selo sim">feito (#41)</span>'}
+FEITOS = {
+    "Índice base 100": '<span class="selo sim">feito (#41)</span>',
+    "Acumulados em janelas": '<span class="selo sim">feito (#42)</span>',
+    "Contribuição (p.p.)": '<span class="selo sim">feito (#43)</span>',
+    "Contribuição dentro do grupo": '<span class="selo sim">feito (#43)</span>',
+    "Difusão": '<span class="selo sim">feito (#44)</span>',
+    "Sazonalidade": '<span class="selo sim">feito (#44)</span>',
+}
 
 
 def caminho_pagina(codigo_indice: str) -> Path:
@@ -237,6 +244,87 @@ def _etapas(f: dict) -> list[dict]:
             if f.get("indice_encadeado")
             else []
         ),
+        *(
+            [
+                {
+                    "id": "acumulados",
+                    "titulo": "Acumulados por janela",
+                    "executiva": "Variação acumulada em 3, 6, 12, 24 e 36 meses e no ano, para cada série. Onde o IBGE publica o mesmo número, vale o do IBGE.",
+                    "entrada": "indice_"
+                    + f["indice"]["codigo"]
+                    + ", serie_longa (acumulados publicados por categoria), ref_geral e as exceções em reference/.",
+                    "regra": "Calculado pelo índice: índice do mês dividido pelo de k meses antes. A janela que sai do início da série fica vazia. O oficial é preferido quando mede a mesma coisa: a janela cabe na série, e no acumulado no ano a série tem janeiro e o código não mudou (A-023). Em erro publicado pela fonte (A-015) que diverge do calculado, vale o calculado.",
+                    "saida": "acumulados_"
+                    + f["indice"]["codigo"]
+                    + ": uma linha por série, mês e janela, com acumulado, origem (oficial ou calculado) e cesta_variavel (janela que contém mês com cesta variável).",
+                    "comando": "uv run python -m macroaf.indicators.acumulados",
+                    "codigo": "src/macroaf/indicators/acumulados.py",
+                    "numeros": [
+                        (f"Janela {j}", f"{_n(o)} oficiais, {_n(c)} calculados")
+                        for j, o, c in f["acumulados"]["janelas"]
+                    ],
+                }
+            ]
+            if f.get("acumulados")
+            else []
+        ),
+        *(
+            [
+                {
+                    "id": "contribuicoes",
+                    "titulo": "Contribuições",
+                    "executiva": "Quanto cada grupo, item ou subitem pôs na variação do índice geral, em pontos percentuais, no mês e nos acumulados. Somadas, as dos grupos dão o geral.",
+                    "entrada": "indice_" + f["indice"]["codigo"] + " e os pesos da serie_longa.",
+                    "regra": "No mês: peso vezes variação, dividido pela soma dos pesos dos grupos daquele mês. No acumulado: cada mês da janela pesa pelo índice geral até o mês anterior. Participação no grupo: a contribuição dividida pela soma das do mesmo nível no grupo. Subitens in natura da 1646 ficam só pelo item (A-013).",
+                    "saida": "contribuicoes_"
+                    + f["indice"]["codigo"]
+                    + ": uma linha por série, mês e janela (mes, 3m, 6m, 12m, 24m, 36m, ano), com contribuição e, no mês, participação no grupo.",
+                    "comando": "uv run python -m macroaf.indicators.contribuicoes",
+                    "codigo": "src/macroaf/indicators/contribuicoes.py",
+                    "numeros": [
+                        ("Linhas", _n(f["contribuicoes"]["linhas"])),
+                        (
+                            "Maior diferença mensal entre a soma dos grupos e o geral",
+                            f"{f['contribuicoes']['diferenca_max_mes']:.4f} p.p.".replace(
+                                ".", ",", 1
+                            ),
+                        ),
+                    ],
+                }
+            ]
+            if f.get("contribuicoes")
+            else []
+        ),
+        *(
+            [
+                {
+                    "id": "difusao",
+                    "titulo": "Difusão e sazonalidade",
+                    "executiva": "Difusão: quantos subitens subiram de preço no mês, em % (simples e pelo peso). Sazonalidade: como cada mês do ano costuma se comportar, pela média e mediana dos últimos anos.",
+                    "entrada": "serie_longa (difusão) e indice_"
+                    + f["indice"]["codigo"]
+                    + " (sazonalidade).",
+                    "regra": f"Difusão: subitens com variação maior que zero sobre os subitens coletados no mês (peso 0 fica fora, A-026); na ponderada, a soma dos pesos deles sobre a soma dos pesos. No geral e em cada grupo; a troca de cesta fica marcada. Sazonalidade: média e mediana da variação de cada mês do ano nos últimos {f['difusao']['anos']} anos, só com anos seguidos da própria série.",
+                    "saida": "difusao_"
+                    + f["indice"]["codigo"]
+                    + " (mês e recorte) e sazonalidade_"
+                    + f["indice"]["codigo"]
+                    + " (série, mês do ano e ano final).",
+                    "comando": "uv run python -m macroaf.indicators.difusao e macroaf.indicators.sazonalidade",
+                    "codigo": "src/macroaf/indicators/difusao.py e sazonalidade.py",
+                    "numeros": [
+                        ("Meses com difusão", _n(f["difusao"]["meses"])),
+                        (
+                            f"Difusão simples em {_mes(f['difusao']['ultimo_mes'])}",
+                            f"{f['difusao']['ultima_simples']:.1f}%".replace(".", ","),
+                        ),
+                        ("Linhas de sazonalidade", _n(f["difusao"]["linhas_sazonalidade"])),
+                    ],
+                }
+            ]
+            if f.get("difusao")
+            else []
+        ),
         {
             "id": "marts",
             "titulo": "Marts (a fazer)",
@@ -290,7 +378,7 @@ def _svg_fluxo(f: dict) -> str:
         no(
             "validacoes", 670, 121, 140, "validações", f"{sum(v['ok'] for v in f['validacoes'])} ok"
         ),
-        no("marts", 870, 121, 120, "marts", "a fazer", pendente=True),
+        no("marts", 850, 221, 140, "marts", "a fazer", pendente=True),
         no(
             "serie",
             670,
@@ -313,7 +401,41 @@ def _svg_fluxo(f: dict) -> str:
         if f.get("indice_encadeado")
         else "",
         seta(810, 50, 846, 50) if f.get("indice_encadeado") else "",
-        seta(920, 79, 925, 117, "", pendente=True) if f.get("indice_encadeado") else "",
+        no(
+            "acumulados",
+            850,
+            121,
+            140,
+            "acumulados",
+            f"{len(f['acumulados']['janelas'])} janelas",
+        )
+        if f.get("acumulados")
+        else "",
+        seta(920, 79, 920, 117) if f.get("acumulados") else "",
+        no(
+            "contribuicoes",
+            670,
+            221,
+            140,
+            "contribuições",
+            f"{_n(f['contribuicoes']['linhas'])} linhas",
+        )
+        if f.get("contribuicoes")
+        else "",
+        seta(900, 79, 800, 217) if f.get("contribuicoes") else "",
+        seta(810, 250, 846, 250, "", pendente=True) if f.get("contribuicoes") else "",
+        no(
+            "difusao",
+            670,
+            311,
+            140,
+            "difusão",
+            "e sazonalidade",
+        )
+        if f.get("difusao")
+        else "",
+        seta(810, 330, 880, 283, "", pendente=True) if f.get("difusao") else "",
+        seta(920, 179, 920, 217, "", pendente=True) if f.get("acumulados") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
         seta(330, 150, 416, 150, "valores"),
@@ -321,14 +443,16 @@ def _svg_fluxo(f: dict) -> str:
         seta(505, 79, 505, 117, "par tabela+id"),
         seta(590, 150, 666, 150),
         seta(590, 245, 666, 165, "gabarito"),
-        seta(810, 150, 866, 150, "#6 #7 #8", pendente=True),
+        seta(810, 165, 846, 240, "", pendente=True),
     ]
+    altura = 380 if f.get("difusao") else 300
     return (
-        '<svg viewBox="0 0 1000 300" role="img" aria-label="Fluxo dos dados: a API do IBGE alimenta '
+        f'<svg viewBox="0 0 1000 {altura}" role="img" aria-label="Fluxo dos dados: a API do IBGE alimenta '
         "a camada raw; os metadados viram a dim_classificacao, os valores viram o fato (ligado à dim "
         "pelo par tabela e id) e a tabela 3065 vira a referência; as validações conferem fato e "
-        "referência; a série longa, pelo mapa de harmonização, vira o índice base 100; os marts "
-        'ainda não existem.">'
+        "referência; a série longa, pelo mapa de harmonização, vira o índice base 100, e dele saem "
+        "os acumulados por janela e as contribuições em pontos percentuais; difusão e sazonalidade "
+        'saem da série longa; os marts ainda não existem.">'
         '<defs><marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
         'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ponta"/></marker></defs>'
         + "".join(partes)
@@ -413,6 +537,30 @@ def _existe(f: dict) -> str:
                     '<span class="selo nao">não</span>',
                 ]
             )
+    if f.get("difusao"):
+        linhas.append(
+            [
+                "Difusão (simples e ponderada) e sazonalidade por mês do ano",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#44)</span>',
+            ]
+        )
+    if f.get("contribuicoes"):
+        linhas.append(
+            [
+                "Contribuição em p.p. (no mês e nos acumulados) e participação no grupo",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#43)</span>',
+            ]
+        )
+    if f.get("acumulados"):
+        linhas.append(
+            [
+                "Acumulados em 3, 6, 24 e 36 meses por categoria",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#42)</span>',
+            ]
+        )
     if f.get("indice_encadeado"):
         linhas.append(
             [
@@ -612,7 +760,7 @@ def _secao_existe(f: dict) -> str:
   <p>As medidas abaixo estão no fato <b>como o IBGE publica</b>, para todos os níveis (geral, grupo, subgrupo, item e subitem). A porcentagem é a parte das linhas da tabela que tem valor.</p>
   {_existe(f)}
   <ul class="notas">
-    <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Calcular onde falta é tarefa da #7.</li>
+    <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Onde falta, acumulados_{f["indice"]["codigo"]} traz o calculado pelo índice, com origem marcada (#42).</li>
     <li>Agregação: o projeto não agrega nada que guarde. As validações recalculam médias ponderadas, acumulados e o número-índice só para conferir com o IBGE.</li>
     <li>Índice encadeado: calculado por série longa, a partir da variação mensal oficial. O do geral reproduz o número-índice da 3065. Os acumulados por janela (#42) e as contribuições (#43) partem dele.</li>
     <li>Acumulado no ano no ano da troca de POF: o IBGE ancora janeiro pelo código, não pela série longa; para código novo, começa no mês da troca (A-023). A 356 só vale como acumulado da série quando a série tem janeiro e o código não mudou; o índice encadeado só dá o acumulado no ano nesse caso.</li>
