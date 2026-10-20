@@ -22,7 +22,8 @@ lições recentes em `docs/aprendizados.md`.
 ## Fluxo de trabalho
 
 - Uma issue por tarefa, um branch por issue, um PR por branch. O PR cita a issue com
-  `Closes #N (fecha #N)`: o GitHub só fecha a issue com as palavras em inglês (A-027).
+  `Closes #N (fecha #N)`: o GitHub só fecha a issue com as palavras em inglês e se a base do PR
+  for a `main`; em PR empilhado, feche a issue à mão depois do merge (A-027).
 - Antes de abrir o PR, rode `/fechar-etapa` (testes, ruff, validações, revisão metodológica,
   documentação e aprendizados).
 - Subagentes (`.claude/agents/`): `revisor-metodologico` antes de todo PR; `validador-dados` quando

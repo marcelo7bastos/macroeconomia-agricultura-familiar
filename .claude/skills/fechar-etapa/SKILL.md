@@ -48,6 +48,7 @@ aprendido, diga isso no PR.
 ## 5. PR
 
 - Commits em português.
-- Corpo do PR: resumo, `Closes #N (fecha #N)` (A-027), resultado de cada passo acima (testes, validações, parecer do
+- Corpo do PR: resumo, `Closes #N (fecha #N)` (A-027; em PR empilhado, fechar a issue à mão
+  depois do merge), resultado de cada passo acima (testes, validações, parecer do
   revisor), aprendizados registrados (A-NNN) e mudanças em regras ou decisões que pedem atenção do
   mantenedor.

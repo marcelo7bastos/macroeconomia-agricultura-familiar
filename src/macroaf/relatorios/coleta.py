@@ -183,6 +183,8 @@ def _exemplo_ancora(longa: pd.DataFrame, acumulados: pd.DataFrame) -> dict | Non
     junto = mudou.merge(ano[["serie_id", "mes", "acumulado"]], on=["serie_id", "mes"])
     junto["diferenca"] = (junto.acumulado - junto.variacao_acum_ano).abs()
     fim_do_ano = junto[junto.mes.str[5:] == "12"]
+    if fim_do_ano.empty:  # troca de POF no ano corrente, ainda sem dezembro
+        return None
     maior = fim_do_ano.loc[fim_do_ano.diferenca.idxmax()]
     serie_id, ano_da_troca = maior.serie_id, maior.mes[:4]
     escolhida = junto[
@@ -206,7 +208,9 @@ def _exemplo_ancora(longa: pd.DataFrame, acumulados: pd.DataFrame) -> dict | Non
     }
 
 
-def _coletar_resultados(ind: dict, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
+def _coletar_resultados(
+    ind: dict, longa: pd.DataFrame, referencia: pd.DataFrame, excecoes: pd.DataFrame
+) -> dict:
     """Números para os gráficos e as conferências da seção Resultados."""
     acumulados, contribuicoes = ind["acumulados"], ind["contribuicoes"]
     geral = acumulados[acumulados.codigo_ibge == "0"]
@@ -241,6 +245,13 @@ def _coletar_resultados(ind: dict, longa: pd.DataFrame, referencia: pd.DataFrame
     conferencias = {
         "desvio_1117": _desvio_1117(ind["indice"], referencia),
         "geral_valores": len(do_geral),
+        "erros_3065": int(
+            sum(
+                len(e.meses_com_erro_publicado)
+                for e in excecoes.itertuples()
+                if e.validacao.startswith("costura_acum")
+            )
+        ),
         "geral_diferenca": float(do_geral.diferenca.max()),
         "doze_valores": len(doze_categorias),
         "doze_diferenca": float(doze_categorias.diferenca.max()),
@@ -503,7 +514,7 @@ def coletar(indice: Indice) -> dict:
         acumulados = _coletar_acumulados(ind)
         contribuicoes = _coletar_contribuicoes(ind)
         difusao = _coletar_difusao(ind)
-        numeros = _coletar_resultados(ind, longa, referencia)
+        numeros = _coletar_resultados(ind, longa, referencia, carregar_excecoes(indice))
         _completar_rastreios(rastreios, ind)
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")

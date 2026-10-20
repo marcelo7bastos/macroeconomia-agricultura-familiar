@@ -63,10 +63,10 @@ DUVIDAS = [
 # Medidas que o projeto também calcula (onde falta o oficial ou por série longa), por coluna.
 CALCULADA = {
     "variacao_acum_ano": '<span class="selo parcial">onde a 356 não mede a série (#42)</span>',
-    "variacao_acum_12m": '<span class="selo parcial">onde falta (#42)</span>',
+    "variacao_acum_12m": '<span class="selo parcial">onde falta ou não serve (#42)</span>',
     "numero_indice": '<span class="selo sim">por série longa, base 100 (#41)</span>',
-    "variacao_acum_3m": '<span class="selo sim">para todas as categorias (#42)</span>',
-    "variacao_acum_6m": '<span class="selo sim">para todas as categorias (#42)</span>',
+    "variacao_acum_3m": '<span class="selo parcial">nos meses de erro publicado (#42)</span>',
+    "variacao_acum_6m": '<span class="selo parcial">nos meses de erro publicado (#42)</span>',
 }
 
 # Indicadores da seção 5.2 do planejamento já calculados, com a issue que os entregou.
@@ -599,8 +599,8 @@ def _secao_resumo(f: dict) -> str:
     ]
     if f.get("resultados"):
         feito.append(
-            "Calculamos, por série longa, o índice encadeado (base 100), os acumulados de 3 a 36 meses e no ano, as contribuições em pontos percentuais, a difusão e a sazonalidade. "
-            "Onde o IBGE publica o mesmo número, vale o oficial; o calculado entra onde falta, com a origem marcada."
+            "Calculamos, por série longa, o índice encadeado (base 100), os acumulados de 3 a 36 meses e no ano, as contribuições em pontos percentuais e a sazonalidade; e, pela cesta de cada mês, a difusão. "
+            "Onde o IBGE publica o mesmo número, vale o oficial; o calculado entra onde falta ou onde o oficial não serve (erro publicado, ou acumulado que não mede a série), com a origem marcada."
         )
     else:
         feito.append(
@@ -701,7 +701,7 @@ def _secao_resultados(f: dict) -> str:
         [
             "Acumulados do geral em 3, 6 e 12 meses e no ano",
             "1118, 1119, 1120 e 356 da 3065",
-            f"diferença máxima de {_pct(c['geral_diferenca'], 3)} p.p. em {_n(c['geral_valores'])} valores (fora os 4 erros publicados)",
+            f"diferença máxima de {_pct(c['geral_diferenca'], 3)} p.p. em {_n(c['geral_valores'])} valores (fora os {_n(c['erros_3065'])} erros publicados)",
         ],
         [
             "Acumulado em 12 meses por categoria",
@@ -715,7 +715,7 @@ def _secao_resultados(f: dict) -> str:
         ],
         [
             "Soma das contribuições dos grupos nos acumulados",
-            "acumulado do geral",
+            "acumulado calculado do geral",
             f"diferença máxima de {_pct(c['grupos_acumulados'], 3)} p.p.",
         ],
     ]
@@ -737,7 +737,7 @@ def _secao_resultados(f: dict) -> str:
         a = r["ancora"]
         ancora = f"""
   <h3>Por que nem todo número oficial serve: o acumulado no ano na troca de POF</h3>
-  <p>Na troca de POF, o IBGE publica o acumulado no ano (variável 356) seguindo o <b>código</b> da categoria, não a série longa (A-023). Quando o código muda, o acumulado recomeça no mês da troca. Exemplo: <b>{escape(a["nome_antes"] or "")}</b> virou <b>{escape(a["nome_depois"])}</b>; a revisão emendou as duas numa série só ({escape(a["serie_id"])}). O IBGE trata a categoria como nova e acumula só desde a troca; a série longa acumula desde janeiro. Por isso, aqui, o projeto usa o calculado.</p>
+  <p>Na troca de POF, o IBGE publica o acumulado no ano (variável 356) seguindo o <b>código</b> da categoria, não a série longa (A-023). Em geral, quando o código é novo, o acumulado recomeça no mês da troca; há exceções na troca de 2006, em que o IBGE encadeou desde janeiro por um antecessor de outro código (METODOLOGIA 8.2). Exemplo: <b>{escape(a["nome_antes"] or "")}</b> virou <b>{escape(a["nome_depois"])}</b>; a revisão emendou as duas numa série só ({escape(a["serie_id"])}). O IBGE trata a categoria como nova e acumula só desde a troca; a série longa acumula desde janeiro. Por isso, aqui, o projeto usa o calculado.</p>
   {_tabela_html(["Mês", "Variação no mês", "356 publicada (desde a troca)", "Acumulado da série (desde janeiro)"], [[_mes(m), f"{_pct(v)}%", f"{_pct(pub)}%", f"<b>{_pct(acu)}%</b>"] for m, v, pub, acu in a["linhas"]])}"""
     return f"""
 <section id="resultados" class="secao">
@@ -759,7 +759,7 @@ def _secao_resultados(f: dict) -> str:
   <figure data-painel-contrib="12m"><div class="rolagem">{contrib_12m}</div>
     <figcaption>Contribuição de cada grupo, em pontos percentuais: somadas, dão o acumulado do índice geral em 12 meses ({_pct(r["geral_12m"])}%).</figcaption></figure>
   <figure data-painel-contrib="mes" hidden><div class="rolagem">{contrib_mes}</div>
-    <figcaption>Contribuição de cada grupo no mês: peso vezes variação. Somadas, dão a variação do geral ({_pct(r["geral_mes"])}%).</figcaption></figure>
+    <figcaption>Contribuição de cada grupo no mês: peso vezes variação, dividido pela soma dos pesos dos grupos (100, salvo erro da fonte). Somadas, dão a variação do geral ({_pct(r["geral_mes"])}%).</figcaption></figure>
   <details><summary>Tabela dos grupos</summary>{tabela_grupos}</details>
   <h3>Difusão</h3>
   <figure><div class="rolagem">{difusao}</div><div class="dica" hidden></div>
@@ -804,9 +804,10 @@ GLOSSARIO = [
         "Índice encadeado",
         "Número que começa em 100 e acumula as variações mensais da série; dele saem os acumulados.",
     ),
+    ("p.p.", "Pontos percentuais: diferença entre duas porcentagens, ou parte de uma porcentagem."),
     (
-        "p.p.",
-        "Pontos percentuais: a parte da variação do índice geral que vem de cada grupo ou subitem.",
+        "Contribuição",
+        "A parte da variação do índice geral, em p.p., que vem de cada grupo, item ou subitem.",
     ),
     ("Difusão", "Porcentagem dos subitens cujo preço subiu no mês."),
     (
@@ -823,6 +824,26 @@ def _secao_glossario() -> str:
   <h2>Glossário</h2>
   <dl class="glossario">{itens}</dl>
 </section>"""
+
+
+def _texto_series_rastreio(f: dict) -> str:
+    """Quantas séries longas o código rastreado atravessa, a partir dos dados."""
+    series = {}
+    for r in f["rastreios"]:
+        if r.get("indicadores"):
+            i = r["indicadores"]
+            series[i["serie_id"]] = (i["serie_inicio"], i["serie_fim"], r["dim"]["nome"])
+    if len(series) <= 1:
+        return "O código está numa série longa só, sem quebra."
+    partes = "; ".join(
+        f"<code>{escape(s)}</code> ({escape(n)}, {_mes(a)} a {_mes(b)})"
+        for s, (a, b, n) in sorted(series.items(), key=lambda x: x[1][0])
+    )
+    return (
+        f"O código atravessa {len(series)} séries longas: {partes}. Onde a série muda, o IBGE "
+        "reformulou a categoria (id SIDRA novo) e a emenda não foi aceita na revisão; o índice "
+        "recomeça em 100 (veja a decisão na seção Harmonização)."
+    )
 
 
 def _secao_juncao(f: dict) -> str:
@@ -845,7 +866,7 @@ def _secao_juncao(f: dict) -> str:
   <p>Por isso o fato liga cada valor à categoria pelo par <b>(tabela, id SIDRA)</b>. Ligar só pelo código misturaria produtos diferentes, como mostram os exemplos.</p>
   {_tabela_html(["Código IBGE", "Versões ao longo das tabelas"], exemplos)}
   <h3>Rastreie um valor</h3>
-  <p>O mesmo código (<code>1111004</code>) no último mês de cada tabela: o registro como veio da API, a linha da classificação, a linha no fato e, por fim, os indicadores da série longa. O código é o leite pasteurizado até jan/2012 e o leite longa vida depois, com id SIDRA novo. A emenda entre os dois não foi aceita e está em investigação (#32), por isso a série longa muda em 2012 e o índice recomeça em 100.</p>
+  <p>O mesmo código (<code>1111004</code>) no último mês de cada tabela: o registro como veio da API, a linha da classificação, a linha no fato e, por fim, os indicadores da série longa. {_texto_series_rastreio(f)}</p>
   <div class="abas" role="group" aria-label="Escolha a tabela">{botoes}</div>
   <div id="rastreio" class="rastreio" aria-live="polite"></div>
 </section>"""
