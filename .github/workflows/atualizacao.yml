@@ -5,7 +5,10 @@ name: Atualização dos dados
 # O IPCA-15 sai por volta dos dias 20 a 28; a janela diária cobre do dia 15 ao fim do mês.
 # Uma falha aparece no Actions e o GitHub avisa por e-mail quem mantém o agendamento.
 # Agendamentos de repositório público são desligados após 60 dias sem atividade no repositório;
-# os commits mensais desta rotina mantêm o agendamento ativo.
+# os commits mensais desta rotina mantêm o agendamento ativo, mas, se o IBGE ficar sem divulgar ou
+# a rotina falhar por mais de 60 dias, o GitHub desliga o agendamento: reative em Actions.
+# O push usa o GITHUB_TOKEN: exige a main sem proteção que obrigue PR, e não dispara o ci.yml (os
+# testes rodam aqui, antes do commit).
 
 on:
   schedule:
@@ -44,9 +47,9 @@ jobs:
       - name: Ver se algo mudou no repositório
         id: mudancas
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
+          if [ -n "$(git status --porcelain -- data reference docs)" ]; then
             echo "houve=true" >> "$GITHUB_OUTPUT"
-            git status --short
+            git status --short -- data reference docs
           else
             echo "houve=false" >> "$GITHUB_OUTPUT"
           fi
@@ -61,4 +64,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data reference docs
           git commit -m "Atualiza os dados do IPCA-15 até ${ultimo}" -m "Gerado pelo workflow de atualização (#9)."
+          git pull --rebase origin main
           git push

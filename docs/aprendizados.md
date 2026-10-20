@@ -25,6 +25,20 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-029 · 2026-10-20 · No dia da divulgação, um mês de defasagem não é troca de POF
+- **Contexto:** atualização automática (#9), revisão do `revisor-metodologico`.
+- **O que aconteceu:** a extração trata tabela de dados aberta atrás da referência (3065) como
+  sinal de troca de tabela (código 2). No dia da divulgação, as duas podem ser atualizadas em
+  horários diferentes; uma rotina diária às 09:23 daria falso alarme de POF nova, com workflow
+  vermelho e e-mail. Na mesma revisão: metadados podem mudar sem mês novo nem revisão, e o pipeline
+  diria "nada novo" deixando o raw alterado sem republicar.
+- **Lição:** defasagem de exatamente um mês é divulgação em andamento (aguarda, saída 0); maior é
+  troca. Toda mudança no raw, inclusive de metadados, conta como novidade.
+- **Promovida para:** `AguardandoDivulgacao` e `Relatorio.houve_mudanca` em
+  `macroaf.extract.atualizar`; testes `test_referencia_um_mes_a_frente_e_divulgacao_em_andamento`,
+  `test_metadados_alterados_contam_como_mudanca` e `test_ibge_ainda_divulgando_nao_e_falha`;
+  `METODOLOGIA.md` 1.
+
 ### A-028 · 2026-10-20 · Mart publicado do zero esconde estado e marcas
 - **Contexto:** marts (#8), revisão do `revisor-metodologico`.
 - **O que aconteceu:** duas falhas que os testes não pegavam. (1) O teste de "marts em dia"

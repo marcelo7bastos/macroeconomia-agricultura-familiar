@@ -29,12 +29,13 @@ def etapas(monkeypatch, tmp_path):
     return chamadas, saida, monkeypatch
 
 
-def _extracao(monkeypatch, codigo=0, novos=0, revisados=0):
+def _extracao(monkeypatch, codigo=0, novos=0, revisados=0, metadados=()):
     relatorio = None
     if codigo == 0:
         relatorio = Relatorio(
             novos={7062: ["2026-10"] * novos} if novos else {},
             revisados={7062: ["2026-09"] * revisados} if revisados else {},
+            metadados=list(metadados),
         )
     monkeypatch.setattr(pipeline.atualizar, "extrair", lambda *a, **k: (codigo, relatorio))
 
@@ -47,10 +48,12 @@ def test_sem_novidade_nao_publica(etapas):
     assert saida.read_text() == "publicar=false\n"
 
 
-@pytest.mark.parametrize(("novos", "revisados"), [(1, 0), (0, 1)])
-def test_mes_novo_ou_revisado_publica_tudo_em_ordem(etapas, novos, revisados):
+@pytest.mark.parametrize(
+    ("novos", "revisados", "metadados"), [(1, 0, ()), (0, 1, ()), (0, 0, (7062,))]
+)
+def test_mes_novo_revisado_ou_metadados_publica_tudo_em_ordem(etapas, novos, revisados, metadados):
     chamadas, saida, monkeypatch = etapas
-    _extracao(monkeypatch, novos=novos, revisados=revisados)
+    _extracao(monkeypatch, novos=novos, revisados=revisados, metadados=metadados)
     assert pipeline.executar("ipca15") == 0
     assert chamadas == ["harmonizacao", "publicar", "pagina", "revisao"]
     assert saida.read_text() == "publicar=true\n"
@@ -69,6 +72,21 @@ def test_falha_da_extracao_para_tudo(etapas, codigo):
     _extracao(monkeypatch, codigo=codigo)
     assert pipeline.executar("ipca15") == codigo
     assert chamadas == []
+
+
+def test_ibge_ainda_divulgando_nao_e_falha(etapas):
+    chamadas, saida, monkeypatch = etapas
+    _extracao(monkeypatch, codigo=3)
+    assert pipeline.executar("ipca15") == 0
+    assert chamadas == []
+    assert saida.read_text() == "publicar=false\n"
+
+
+def test_pagina_que_falha_para_o_pipeline(etapas):
+    _, _, monkeypatch = etapas
+    _extracao(monkeypatch, novos=1)
+    monkeypatch.setattr(pipeline.transformacoes, "main", lambda *a: 1)
+    assert pipeline.executar("ipca15") == 1
 
 
 def test_publicacao_bloqueada_nao_regera_paginas(etapas):

@@ -366,6 +366,10 @@ def _readme(indice: Indice, marts: dict[str, pd.DataFrame], ultimo_mes: str) -> 
         "índice e nas contribuições; 4 nos acumulados, na participação no grupo e na sazonalidade; 2 na",
         "difusão.",
         "",
+        "Atualização: automática, quando o IBGE divulga um mês novo ou revisa um dos últimos meses",
+        "(workflow `.github/workflows/atualizacao.yml`); `data/metadata.json` diz o último mês e a",
+        "data da coleta.",
+        "",
         "Metodologia: [`docs/METODOLOGIA.md`](../../docs/METODOLOGIA.md). Explicação passo a passo:",
         f"[`docs/transformacoes/{indice.codigo}.html`](../../docs/transformacoes/{indice.codigo}.html).",
     ]

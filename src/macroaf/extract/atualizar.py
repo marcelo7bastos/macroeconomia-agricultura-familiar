@@ -40,6 +40,14 @@ from macroaf.extract.sidra import baixar_mes
 JANELA_REVISAO = 3
 
 
+class AguardandoDivulgacao(RuntimeError):
+    """A tabela de dados está um mês atrás da referência: o IBGE ainda está publicando.
+
+    No dia da divulgação, a 3065 e a tabela de dados podem ser atualizadas em horários diferentes
+    (decisão 0003, item 6). Não é troca de tabela; a execução seguinte completa.
+    """
+
+
 class CatalogoDivergente(RuntimeError):
     """O catálogo não bate com os metadados da fonte."""
 
@@ -71,6 +79,19 @@ def divergencias(
             f"mas o raw já tem {ultimo_salvo}"
         )
     return problemas
+
+
+def defasagem_maxima(publicadas: dict[int, Periodicidade], indice: Indice) -> int:
+    """Quantos meses a tabela de dados aberta mais atrasada está atrás da referência."""
+    abertas = [t for t in indice.tabelas if t.fim is None and t.tabela in publicadas]
+    referencias = [publicadas[t.tabela].fim for t in abertas if t.papel == "referencia"]
+    if not referencias:
+        return 0
+    fim = periodo_em_meses(max(referencias))
+    return max(
+        (fim - periodo_em_meses(publicadas[t.tabela].fim) for t in abertas if t.papel == "dados"),
+        default=0,
+    )
 
 
 def tabelas_paradas(publicadas: dict[int, Periodicidade], indice: Indice) -> list[str]:
@@ -123,6 +144,7 @@ def planejar(
 class Relatorio:
     novos: dict[int, list[str]] = field(default_factory=dict)
     revisados: dict[int, list[str]] = field(default_factory=dict)
+    metadados: list[int] = field(default_factory=list)
     ultimo_publicado: dict[int, str] = field(default_factory=dict)
 
     @property
@@ -132,6 +154,11 @@ class Relatorio:
     @property
     def total_revisados(self) -> int:
         return sum(len(p) for p in self.revisados.values())
+
+    @property
+    def houve_mudanca(self) -> bool:
+        """Algo novo no raw: mês, revisão de mês ou metadados."""
+        return bool(self.total_novos or self.total_revisados or self.metadados)
 
 
 def atualizar_indice(
@@ -159,7 +186,10 @@ def atualizar_indice(
         salvos = armazem.periodos(tabela.tabela)
         problemas += divergencias(tabela, publicada, salvos[-1] if salvos else None)
         planos.append(planejar(tabela, publicada, salvos, janela_revisao, ate))
-    problemas += tabelas_paradas(publicadas, indice)
+    paradas = tabelas_paradas(publicadas, indice)
+    if paradas and not problemas and defasagem_maxima(publicadas, indice) == 1:
+        raise AguardandoDivulgacao("; ".join(paradas))
+    problemas += paradas
     if problemas:
         raise CatalogoDivergente("; ".join(problemas))
 
@@ -177,6 +207,7 @@ def atualizar_indice(
         url, conteudo, lidos = metadados[numero]
         if armazem.salvar_metadados(numero, url, conteudo) is not None:
             log(f"{indice.codigo} {numero}: metadados novos ou alterados gravados")
+            relatorio.metadados.append(numero)
         esperados = len(plano.tabela.variaveis) * numero_categorias(
             lidos, plano.tabela.classificacao
         )
@@ -209,7 +240,11 @@ def extrair(
     ate: str | None = None,
     janela_revisao: int = JANELA_REVISAO,
 ) -> tuple[int, Relatorio | None]:
-    """Atualiza o raw de um índice. Código 0 = ok, 1 = erro da fonte ou do raw, 2 = catálogo."""
+    """Atualiza o raw de um índice.
+
+    Códigos: 0 = ok; 1 = erro da fonte ou do raw; 2 = catálogo diverge dos metadados (provável
+    troca de tabela, #27); 3 = aguardando o IBGE terminar a divulgação do mês (nada gravado).
+    """
     catalogo = carregar_catalogo()
     indice = catalogo.indices[codigo_indice]
     armazem = ArmazemRaw(indice.fonte)
@@ -225,6 +260,9 @@ def extrair(
                 ate=ate,
                 janela_revisao=janela_revisao,
             )
+    except AguardandoDivulgacao as erro:
+        print(f"aguardando a divulgação completar: {erro}")
+        return 3, None
     except CatalogoDivergente as erro:
         print(f"catálogo divergente dos metadados: {erro}", file=sys.stderr)
         return 2, None
@@ -257,7 +295,7 @@ def main(argv: list[str] | None = None) -> int:
         janela_revisao=args.janela_revisao,
     )
     if relatorio is None:
-        return codigo
+        return 0 if codigo == 3 else codigo
     acao = "a baixar" if args.verificar else "baixados"
     print(f"{relatorio.total_novos} mês(es) {acao}; {relatorio.total_revisados} revisado(s)")
     _escrever_saida_github(relatorio)

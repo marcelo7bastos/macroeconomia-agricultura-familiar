@@ -12,6 +12,10 @@ Os valores oficiais passam como publicados. Os calculados são arredondados: 6 c
 índice e nas contribuições; 4 nos acumulados, na participação no grupo e na sazonalidade; 2 na
 difusão.
 
+Atualização: automática, quando o IBGE divulga um mês novo ou revisa um dos últimos meses
+(workflow `.github/workflows/atualizacao.yml`); `data/metadata.json` diz o último mês e a
+data da coleta.
+
 Metodologia: [`docs/METODOLOGIA.md`](../../docs/METODOLOGIA.md). Explicação passo a passo:
 [`docs/transformacoes/ipca15.html`](../../docs/transformacoes/ipca15.html).
 

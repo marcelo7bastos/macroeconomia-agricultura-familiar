@@ -8,8 +8,12 @@ Etapas, em ordem; a primeira que falha interrompe tudo e nada mais é escrito:
 4. publicação dos marts, que valida e confere antes de gravar (#8);
 5. páginas de transformações e de revisão regeradas.
 
-Códigos de saída: 0 = publicado ou nada novo; 1 = falha (fonte, validação ou conferência);
-2 = o catálogo diverge dos metadados do IBGE (provável troca de POF: ver a issue #27).
+Códigos de saída: 0 = publicado, nada novo ou IBGE ainda divulgando (tabela de dados um mês atrás
+da referência, decisão 0003); 1 = falha (fonte, validação, conferência ou página); 2 = o catálogo
+diverge dos metadados do IBGE (provável troca de POF: ver a issue #27).
+
+Depois de uma falha numa execução local, o raw já tem o mês novo e o mapa pode ter mudado; a
+execução seguinte diria "nada novo". Rode de novo com `--forcar`.
 
 No GitHub Actions, escreve `publicar=true|false` em `$GITHUB_OUTPUT`.
 
@@ -41,16 +45,28 @@ def _saida_github(publicado: bool) -> None:
 
 def executar(codigo_indice: str, forcar: bool = False) -> int:
     codigo, relatorio = atualizar.extrair(codigo_indice)
+    if codigo == 3:
+        print("O IBGE ainda está publicando o mês; a próxima execução completa.")
+        _saida_github(False)
+        return 0
     if relatorio is None:
         if codigo == 2:
             print("Provável troca de POF: siga o roteiro da issue #27.", file=sys.stderr)
         return codigo
-    print(f"raw: {relatorio.total_novos} mês(es) novo(s), {relatorio.total_revisados} revisado(s)")
-    if relatorio.total_novos == 0 and relatorio.total_revisados == 0 and not forcar:
+    print(
+        f"raw: {relatorio.total_novos} mês(es) novo(s), {relatorio.total_revisados} revisado(s), "
+        f"metadados alterados: {relatorio.metadados or 'nenhum'}"
+    )
+    if not relatorio.houve_mudanca and not forcar:
         print("Nada novo no IBGE; nada a publicar.")
         _saida_github(False)
         return 0
 
+    return _publicar(codigo_indice)
+
+
+def _publicar(codigo_indice: str) -> int:
+    """Harmonização, marts e páginas, parando na primeira falha."""
     argumentos = ["--indice", codigo_indice]
     if harmonizacao.main(argumentos) != 0:
         print("Mapa de harmonização com problema; publicação interrompida.", file=sys.stderr)
@@ -62,8 +78,9 @@ def executar(codigo_indice: str, forcar: bool = False) -> int:
         for problema in problemas:
             print(f"  - {problema}", file=sys.stderr)
         return 1
-    transformacoes.main(argumentos)
-    revisao.main(argumentos)
+    if transformacoes.main(argumentos) != 0 or revisao.main(argumentos) != 0:
+        print("Falha ao regerar as páginas.", file=sys.stderr)
+        return 1
     print(f"Marts de {codigo_indice} publicados.")
     _saida_github(True)
     return 0
