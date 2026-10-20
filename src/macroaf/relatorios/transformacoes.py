@@ -338,14 +338,17 @@ def _etapas(f: dict) -> list[dict]:
         ),
         {
             "id": "marts",
-            "titulo": "Marts (a fazer)",
-            "executiva": "Tabelas finais para o Power BI e o site. Ainda não existem.",
-            "entrada": "fato, série longa harmonizada (#6) e indicadores (#7).",
-            "regra": "Nomes de arquivo estáveis, porque o Power BI lê pelas URLs do GitHub.",
-            "saida": "data/marts/*.parquet e *.csv, dicionário de dados e metadata.json (#8).",
-            "comando": "ainda não existe",
-            "codigo": "issue #8",
-            "numeros": [("Arquivos hoje", _n(len(f["marts"])))],
+            "titulo": "Marts",
+            "executiva": "As tabelas finais que o Power BI e o site leem, em CSV, com nomes de arquivo e de coluna estáveis.",
+            "entrada": "Tudo montado de novo a partir do raw: classificação, fato, série longa e indicadores.",
+            "regra": "Antes de gravar, roda as validações e confere os indicadores (índice geral contra a 3065, soma das contribuições dos grupos). Qualquer falha bloqueia: nada é gravado. A chave das linhas é o mês e a categoria publicada (tabela e id SIDRA); a série longa é atributo, porque muda com a revisão (decisão 0006). Só CSV, ordenado e arredondado, para o histórico do git crescer pouco a cada mês (decisão 0007).",
+            "saida": "data/marts/"
+            + f["indice"]["codigo"]
+            + "_*.csv, o dicionário data/marts/README.md, data/metadata.json e o histórico de mudanças de série em reference/.",
+            "comando": "uv run python -m macroaf.marts.publicar",
+            "codigo": "src/macroaf/marts/publicar.py",
+            "numeros": [(m["arquivo"], f"{_n(m['linhas'])} linhas") for m in f["marts"]]
+            or [("Arquivos", "nenhum ainda")],
         },
     ]
 
@@ -389,7 +392,15 @@ def _svg_fluxo(f: dict) -> str:
         no(
             "validacoes", 670, 121, 140, "validações", f"{sum(v['ok'] for v in f['validacoes'])} ok"
         ),
-        no("marts", 850, 221, 140, "marts", "a fazer", pendente=True),
+        no(
+            "marts",
+            850,
+            221,
+            140,
+            "marts",
+            f"{len(f['marts'])} arquivos" if f["marts"] else "a fazer",
+            pendente=not f["marts"],
+        ),
         no(
             "serie",
             670,
@@ -434,7 +445,7 @@ def _svg_fluxo(f: dict) -> str:
         if f.get("contribuicoes")
         else "",
         seta(900, 79, 800, 217) if f.get("contribuicoes") else "",
-        seta(810, 250, 846, 250, "", pendente=True) if f.get("contribuicoes") else "",
+        seta(810, 250, 846, 250, "", pendente=not f["marts"]) if f.get("contribuicoes") else "",
         no(
             "difusao",
             670,
@@ -445,8 +456,8 @@ def _svg_fluxo(f: dict) -> str:
         )
         if f.get("difusao")
         else "",
-        seta(810, 330, 880, 283, "", pendente=True) if f.get("difusao") else "",
-        seta(920, 179, 920, 217, "", pendente=True) if f.get("acumulados") else "",
+        seta(810, 330, 880, 283, "", pendente=not f["marts"]) if f.get("difusao") else "",
+        seta(920, 179, 920, 217, "", pendente=not f["marts"]) if f.get("acumulados") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
         seta(330, 150, 416, 150, "valores"),
@@ -454,7 +465,7 @@ def _svg_fluxo(f: dict) -> str:
         seta(505, 79, 505, 117, "par tabela+id"),
         seta(590, 150, 666, 150),
         seta(590, 245, 666, 165, "gabarito"),
-        seta(810, 165, 846, 240, "", pendente=True),
+        seta(810, 165, 846, 240, "", pendente=not f["marts"]),
     ]
     altura = 380 if f.get("difusao") else 300
     return (
@@ -606,6 +617,10 @@ def _secao_resumo(f: dict) -> str:
         feito.append(
             "Ainda não calculamos nenhuma inflação: todos os números do fato são oficiais. Os cálculos feitos até agora servem só para conferir."
         )
+    if f["marts"]:
+        feito.append(
+            f"Publicamos {len(f['marts'])} arquivos CSV em data/marts/, que o Power BI lê pelo GitHub, com dicionário de dados e metadata.json. A publicação só acontece se todas as validações e conferências passam."
+        )
     if f.get("harmonizacao"):
         h = f["harmonizacao"]
         conta = {
@@ -625,6 +640,7 @@ def _secao_resumo(f: dict) -> str:
         ("macroaf.transform", "monta dim, fato e referência"),
         ("macroaf.validate", "confere e bloqueia a publicação se algo não fecha"),
         ("macroaf.indicators", "calcula índice, acumulados, contribuições, difusão e sazonalidade"),
+        ("macroaf.marts", "confere e publica os CSVs que o Power BI lê"),
         *[(a["nome"], a["descricao"].split(". ")[0] + ".") for a in f["agentes"]],
         ("mantenedor", "revisa e aprova cada PR, decisão e regra"),
     ]
@@ -995,7 +1011,7 @@ def _secao_existe(f: dict) -> str:
   </ul>
   <h3>Indicadores planejados</h3>
   {_tabela_html(["Indicador", "Definição", "Teste previsto", "Situação"], planejados)}
-  <p>Marts publicados para o Power BI e o site: <b>{_n(len(f["marts"]))}</b> (#8).</p>
+  <p>Marts publicados para o Power BI e o site: <b>{_n(len(f["marts"]))}</b> arquivos em <code>data/marts/</code>, com o dicionário em <code>data/marts/README.md</code> (#8).</p>
 </section>"""
 
 
@@ -1073,6 +1089,7 @@ uv run python -m macroaf.indicators.acumulados --indice {codigo}
 uv run python -m macroaf.indicators.contribuicoes --indice {codigo}
 uv run python -m macroaf.indicators.difusao --indice {codigo}
 uv run python -m macroaf.indicators.sazonalidade --indice {codigo}
+uv run python -m macroaf.marts.publicar --indice {codigo}
 uv run python -m macroaf.relatorios.transformacoes --indice {codigo}</code></pre>
   <p>Um teste regera a página e falha se o arquivo do repositório estiver diferente. Toda etapa que muda uma transformação regera a página no mesmo PR. Um índice novo ganha a sua página com <code>--indice</code>.</p>
   <p class="tecnico">Degraus de explicação usados aqui: texto claro (resumo), diagramas (fluxo e linha do tempo) e página interativa. O degrau de vídeo ainda não foi feito.</p>
@@ -1328,7 +1345,7 @@ def renderizar(f: dict) -> str:
     <p>Clique numa etapa para ver o que entra, a regra aplicada, o que sai e o comando que a executa. A visão executiva esconde os detalhes técnicos.</p>
     <figure>
       <div class="rolagem">{_svg_fluxo(f)}</div>
-      <figcaption>Os metadados viram a classificação, os valores viram o fato e a tabela 3065 vira o gabarito do índice geral. A caixa tracejada ainda não existe.</figcaption>
+      <figcaption>Os metadados viram a classificação, os valores viram o fato e a tabela 3065 vira o gabarito do índice geral. {"" if f["marts"] else "A caixa tracejada ainda não existe."}</figcaption>
     </figure>
     <div id="detalhe" class="detalhe" aria-live="polite"></div>
   </section>

@@ -32,6 +32,7 @@ from macroaf.indicators.acumulados import JANELAS, tamanho_da_janela
 from macroaf.indicators.indice import caminho_indice
 from macroaf.transform.harmonizacao import caminho_serie_longa
 from macroaf.transform.ipca15 import diretorio_staging
+from macroaf.validate.ipca15 import MEIA_CASA_PESO, MEIA_CASA_VARIACAO
 
 NIVEL_SUBITEM = "subitem"
 COLUNAS = [
@@ -45,6 +46,19 @@ COLUNAS = [
     "contribuicao",
     "participacao_no_grupo",
 ]
+
+
+def limite_reconciliacao(longa: pd.DataFrame) -> pd.Series:
+    """Diferença máxima entre a soma dos grupos e o geral no mês, por mês (A-014).
+
+    O mesmo limite da validação de reconciliação: 0,005 no geral, 0,005 nos grupos e o erro do
+    arredondamento dos pesos.
+    """
+    grupos = longa[longa.nivel_hierarquico == "grupo"]
+    geral = longa[longa.codigo_ibge == "0"].set_index("mes").variacao_mensal
+    desvio = (grupos.variacao_mensal - grupos.mes.map(geral)).abs()
+    erro_peso = (MEIA_CASA_PESO * desvio).groupby(grupos.mes).sum()
+    return 2 * MEIA_CASA_VARIACAO + erro_peso / grupos.groupby("mes").peso.sum()
 
 
 def contribuicao_mensal(dados: pd.DataFrame) -> pd.Series:

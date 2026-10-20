@@ -15,6 +15,7 @@ recebe `Situação: substituída por NNNN`.
 | [0004](0004-explicacao-em-degraus.md) | Explicação em degraus, gerada a partir dos dados | aceita |
 | [0005](0005-na-duvida-quebra.md) | Na dúvida, quebra (emenda de séries entre POFs) | aceita |
 | [0006](0006-chave-estavel-dos-marts.md) | Chave estável dos marts: categoria publicada, não série | aceita |
+| [0007](0007-marts-so-em-csv.md) | Marts versionados só em CSV | aceita |
 
 ## Modelo
 

@@ -47,3 +47,4 @@ ignore = ["PLR2004", "PLR0913", "PLR0917"]
 "src/macroaf/relatorios/transformacoes.py" = ["E501"]
 "src/macroaf/relatorios/revisao.py" = ["E501"]
 "src/macroaf/relatorios/graficos.py" = ["E501"]
+"src/macroaf/marts/publicar.py" = ["E501"]  # dicionário de dados: texto

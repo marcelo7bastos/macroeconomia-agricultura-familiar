@@ -462,7 +462,30 @@ dos pesos dos subitens igual ao peso publicado do geral e de cada grupo (salvo o
 A-015); sazonalidade igual à conta direta para o geral, dentro da série e com a marca de cesta só
 nas janelas certas.
 
-## 12. Registro de descobertas
+## 12. Marts (#8)
+
+`python -m macroaf.marts.publicar --indice ipca15` monta tudo de novo a partir do raw e só grava
+se tudo passa: as validações da seção 6 (sem sentinela alterada), chaves sem repetição, toda
+categoria dos arquivos presente em `categorias`, índice geral contra o número-índice da 3065
+(desvio ≤ 0,01%) e soma das contribuições dos grupos dentro do limite da reconciliação. Com
+qualquer problema, nada é escrito.
+
+- **Chave:** `(mes, chave_categoria)`, com `chave_categoria = <tabela>.<id SIDRA>` (decisão 0006).
+  O `serie_id` é atributo em `ipca15_categorias.csv`; quando a revisão muda uma série,
+  `reference/historico_series_ipca15.csv` registra o `serie_id` antigo, o novo e a ligação do mapa.
+- **Arquivos:** `ipca15_categorias`, `_mensal` (oficiais do mês, índice, contribuição no mês,
+  participação no grupo, sazonalidade), `_acumulados` (com a origem de cada janela),
+  `_contribuicoes` (para os acumulados) e `_difusao`. Só CSV (decisão 0007).
+- **Oficial preservado:** variação, peso e as variáveis 356 e 1120 passam como publicadas
+  (`variacao_acum_ano_publicada`, `variacao_acum_12m_publicada`), mesmo onde o acumulado da série
+  usa o calculado (A-023, A-024).
+- **Arredondamento:** só nos valores calculados (4 casas nos acumulados e na sazonalidade, 6 no
+  índice e nas contribuições), bem abaixo do limite de arredondamento das conferências.
+- `data/marts/README.md` (dicionário) e `data/metadata.json` (último mês, coleta, validações,
+  linhas e hash de cada arquivo) são gerados junto. Um teste exige que os arquivos versionados
+  sejam os que o pipeline produz.
+
+## 13. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é

@@ -1,2 +1,6 @@
 # Raw compactado: binário, sem diff textual nem normalização de fim de linha.
 *.json.gz binary
+
+# Marts: CSV gerados com \n; o teste compara bytes, então o fim de linha não pode mudar.
+data/marts/*.csv text eol=lf
+data/metadata.json text eol=lf

@@ -7,6 +7,7 @@ from macroaf.indicators.acumulados import JANELAS
 from macroaf.indicators.contribuicoes import (
     contribuicao_acumulada,
     contribuicao_mensal,
+    limite_reconciliacao,
     montar_contribuicoes,
 )
 from macroaf.indicators.indice import (
@@ -18,7 +19,7 @@ from macroaf.indicators.indice import (
 from macroaf.transform.classificacao import montar_dim_classificacao
 from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato
-from macroaf.validate.ipca15 import MEIA_CASA_PESO, MEIA_CASA_VARIACAO, carregar_excecoes
+from macroaf.validate.ipca15 import carregar_excecoes
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
 ARMAZEM = ArmazemRaw(IPCA15.fonte)
@@ -48,12 +49,7 @@ def base():
 
 
 def _limite_mensal(longa: pd.DataFrame) -> pd.Series:
-    """Limite da reconciliação dos grupos com o geral, por mês (o mesmo da validação, A-014)."""
-    grupos = longa[longa.nivel_hierarquico == "grupo"]
-    geral = longa[longa.codigo_ibge == "0"].set_index("mes").variacao_mensal
-    desvio = (grupos.variacao_mensal - grupos.mes.map(geral)).abs()
-    erro_peso = (MEIA_CASA_PESO * desvio).groupby(grupos.mes).sum()
-    return 2 * MEIA_CASA_VARIACAO + erro_peso / grupos.groupby("mes").peso.sum()
+    return limite_reconciliacao(longa)
 
 
 def _por_janela(contribuicoes: pd.DataFrame, filtro) -> pd.Series:
