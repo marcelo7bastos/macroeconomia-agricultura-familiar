@@ -5,8 +5,10 @@ registra **o método e as descobertas que o justificam**. Cada descoberta tem um
 [`aprendizados.md`](aprendizados.md) (A-NNN), que conta como ela foi encontrada; aqui fica a regra
 que o projeto segue por causa dela.
 
-Escopo atual: piloto **IPCA-15**. Tabelas, períodos e estruturas de pesos estão na ficha
-[`indices/ipca15.md`](indices/ipca15.md); decisões de arquitetura, em [`decisoes/`](decisoes/).
+Escopo atual: **IPCA-15** e **IPCA**, Brasil. As seções históricas descrevem o piloto IPCA-15;
+a seção 14 registra as particularidades do IPCA. Tabelas, períodos e estruturas de pesos estão
+nas fichas [`indices/ipca15.md`](indices/ipca15.md) e [`indices/ipca.md`](indices/ipca.md);
+decisões de arquitetura, em [`decisoes/`](decisoes/).
 
 ## 1. Obtenção dos dados
 
@@ -17,8 +19,8 @@ Escopo atual: piloto **IPCA-15**. Tabelas, períodos e estruturas de pesos estã
 - Antes de baixar, o catálogo (`config/series.yaml`) é conferido com os metadados: período de cada
   tabela e sinal de troca de tabela (#27).
 - Atualização automática (#9): o workflow `atualizacao.yml` roda `python -m macroaf.pipeline`
-  todo dia do 15 ao fim do mês, às 09:23 de Brasília (a decisão 0003 fala em dias 18 a 31; a
-  janela começa antes por segurança). Só segue além da extração se algo mudou no raw: mês novo,
+  diariamente, às 09:23 de Brasília, para os dois índices. A janela diária também cobre a
+  divulgação do IPCA no início do mês. Só segue além da extração se algo mudou no raw: mês novo,
   revisão de um dos últimos meses ou metadados alterados. Só faz commit se a publicação dos marts
   passou (seção 12) e se os testes passam.
 - **Divulgação em andamento (A-029).** No dia da divulgação, a 3065 pode ganhar o mês antes da
@@ -89,6 +91,7 @@ As mudanças com id novo são de naturezas diferentes:
 ## 4. Valores
 
 - O SIDRA devolve texto com ponto decimal: 2 casas nas variações, 4 no peso.
+- `-` vira **zero absoluto**, conforme a ajuda oficial do SIDRA (A-033). O literal permanece no raw.
 - `...` (dado não disponível) vira **ausente**, nunca zero. Qualquer outro texto não numérico
   interrompe a transformação até ganhar um tratamento documentado aqui (A-009).
 - A API devolve só 2 casas nas variações, mesmo pedindo mais (`/d/m`); não há precisão maior.
@@ -517,3 +520,46 @@ qualquer problema, nada é escrito.
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):
 entra como A-NNN, é promovida para teste ou validação quando possível e, se muda o método, é
 registrada neste documento com a regra que dela decorre.
+
+
+## 14. Preparação do IPCA cheio (A-033 a A-035)
+
+O detalhe do IPCA cobre julho/2006 até o último mês divulgado, por 2938,1419 e 7060. A1737
+é a referência do geral: sua cobertura original desde 1979-12 fica no catálogo e no raw;
+`ref_ipca_geral` recorta o intervalo do detalhe para as validações. Os índices coexistem,
+com referências e metadados separados. O IPCA-15 não fornece observações ao IPCA.
+
+Na 1419 há 952 linhas com mensal, anual e peso simultaneamente indisponíveis: elas permanecem
+no raw, mas não representam observações no fato. São 18 categorias com prefixos sem coleta
+(24 meses para oito;76 meses para dez). A cobertura esperada é aferida no raw independentemente
+do fato transformado: perda de observação ativa e zero fabricado são falhas. Ausência parcial
+continua inválida. A classificação preserva as categorias publicadas, mesmo quando ainda não
+há observação. Quatro categorias que reaparecem em outra POF têm quebra explícita no mapa;
+identidade de código/id não autoriza atravessar uma lacuna temporal.
+
+As exceções específicas estão em `reference/excecoes_validacao_ipca.csv`:
+
+- Peso dos grupos da 2938 emjulho/2010:100,0999, uma exceção contada. Não normalizar os pesos
+  nem substituir o peso oficial silenciosamente.
+- Acumulado no ano da 2938:550 passos entre variáveis oficiais fora do limite analítico, em
+  135 categorias. As exceções cobrem a união de 137 categorias com os casos de composição anual.
+  `meses_com_erro_publicado` contém apenas os 239 valores em 53 categorias cuja composição desde
+  janeiro diverge além do limite. Os meses do passo inconsistente não são automaticamente
+  tratados como valores anuais errados. Duas categorias têm contagem de passo zero; a lista
+  independente 239 é conferida por teste contra a identidade contábil.
+- Depilação,1419,dezembro/2012–dezembro/2013:13 zeros absolutos em 2265 incompatíveis com as
+  variações mensais. O fato preserva o zero oficial; os acumulados usam o calculado com origem
+  marcada quando a divergência é confirmada.
+- Geral da 1737 emjaneiro/2010:2264 publica 2,46%; composição mensal 2,219154%; diferença
+  0,240846 p.p., acima do limite analítico 0,035554. Uma exceção contada e origem calculada.
+
+Cada registro tem escopo, justificativa, aprendizado e contagem. Limites metodológicos não
+foram ampliados e os arquivos do IPCA-15 não foram copiados como exceções do IPCA. A lista dos
+239 anuais está em `reference/diagnostico_acumulado_ano_ipca.csv`; os demais exemplos podem ser
+reproduzidos pelas URLs oficiais da ficha. Alteração da fonte muda sentinelas e exige revisão.
+Propostas de harmonização não revisadas continuam sendo quebras, não continuidades aprovadas.
+
+As publicações preservam os oficiais e a precisão declarada dos CSVs. Na comparação entre CPUs,
+aplica-se a regra A-031 (até 0,001 p.p. absolutos apenas nos acumulados calculados e contribuições).
+Cada hash confere com o próprio arquivo. O dicionário do IPCA fica em `data/marts/ipca_README.md`;
+`data/marts/README.md` continua sendo o dicionário do IPCA-15, preservando os links existentes.

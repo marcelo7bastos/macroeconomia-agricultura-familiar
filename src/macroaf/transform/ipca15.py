@@ -57,6 +57,8 @@ class ErroTransformacao(ValueError):
 
 def converter_valor(texto: str, contexto: str) -> float:
     """Valor do SIDRA (texto com ponto decimal) em número; `...` vira NaN."""
+    if texto == "-":
+        return 0.0  # SIDRA: zero absoluto (https://apisidra.ibge.gov.br/home/ajuda).
     if texto == AUSENTE:
         return math.nan
     try:
@@ -89,7 +91,11 @@ def _nomes_variaveis(indice: Indice) -> dict[int, str]:
 
 
 def montar_fato(
-    indice: Indice, armazem: ArmazemRaw, dim: pd.DataFrame | None = None
+    indice: Indice,
+    armazem: ArmazemRaw,
+    dim: pd.DataFrame | None = None,
+    *,
+    incluir_indisponiveis: bool = False,
 ) -> pd.DataFrame:
     """Valores das tabelas de dados, uma linha por mês e categoria."""
     dim = montar_dim_classificacao(indice, armazem) if dim is None else dim
@@ -116,6 +122,11 @@ def montar_fato(
     if not sem_classificacao.empty:
         exemplos = sem_classificacao[["tabela_sidra", "codigo_sidra"]].drop_duplicates().head()
         raise ErroTransformacao(f"valores sem categoria na dim_classificacao: {exemplos.values}")
+    # Categorias sem coleta têm todas as medidas fundamentais ausentes no raw.
+    # Preservar essas respostas na auditoria, sem fabricar observações no fato.
+    if not incluir_indisponiveis:
+        sem_coleta = fato[["variacao_mensal", "variacao_acum_ano", "peso"]].isna().all(axis=1)
+        fato = fato[~sem_coleta]
     # Tabelas sem a variável 1120 (1646, 1387) aparecem com a coluna ausente: fica NaN.
     return (
         fato[COLUNAS_FATO]
@@ -134,7 +145,14 @@ def montar_referencia(indice: Indice, armazem: ArmazemRaw) -> pd.DataFrame:
     ]
     largo = pd.DataFrame(linhas).pivot(index="mes", columns="variavel", values="valor")
     largo.columns.name = None
-    return largo.reset_index()[COLUNAS_REFERENCIA]
+    referencia = largo.reset_index()[COLUNAS_REFERENCIA]
+    # O raw preserva toda a referência; o staging acompanha a cobertura do detalhe.
+    inicio = min(t.inicio for t in indice.tabelas_dados)
+    fim = indice.tabelas_dados[-1].fim
+    recorte = referencia.mes >= inicio
+    if fim is not None:
+        recorte &= referencia.mes <= fim
+    return referencia[recorte].reset_index(drop=True)
 
 
 def diretorio_staging(indice: Indice) -> Path:

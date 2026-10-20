@@ -31,7 +31,7 @@ from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.atualizar import meses_entre
 from macroaf.extract.raw import ArmazemRaw
 from macroaf.transform.classificacao import NIVEIS
-from macroaf.transform.ipca15 import diretorio_staging
+from macroaf.transform.ipca15 import diretorio_staging, montar_fato
 
 # Arredondamento da fonte: variações e número-índice com 2 casas (±0,005) e pesos com 4 casas
 # (±0,00005). Os limites analíticos são o erro máximo que esse arredondamento pode produzir
@@ -100,6 +100,7 @@ class Configuracao:
     tabela_referencia: int
     meses_esperados: dict[int, list[str]]
     categorias_esperadas: dict[int, set[int]]
+    indisponiveis: frozenset[tuple[int, str, int]] = frozenset()
 
 
 def _ler_csv_documentado(caminho, obrigatorias: list[str]) -> pd.DataFrame:
@@ -148,7 +149,12 @@ def carregar_configuracao(indice: Indice, armazem: ArmazemRaw, dim: pd.DataFrame
     ultimo = max(max(armazem.periodos(t.tabela), default=t.inicio) for t in indice.tabelas)
     meses = {t.tabela: meses_entre(t.inicio, t.fim or ultimo) for t in indice.tabelas_dados}
     categorias = {tabela: set(grupo.codigo_sidra) for tabela, grupo in dim.groupby("tabela_sidra")}
+    bruto = montar_fato(indice, armazem, dim, incluir_indisponiveis=True)
+    ausentes = bruto[bruto[["variacao_mensal", "variacao_acum_ano", "peso"]].isna().all(axis=1)]
     return Configuracao(
+        indisponiveis=frozenset(
+            zip(ausentes.tabela_sidra, ausentes.mes, ausentes.codigo_sidra, strict=True)
+        ),
         excecoes=carregar_excecoes(indice),
         limites=carregar_limites(indice),
         tabela_referencia=indice.tabelas_referencia[0].tabela,
@@ -311,6 +317,11 @@ def validar_continuidade(fato: pd.DataFrame, configuracao: Configuracao) -> Resu
             [meses, sorted(configuracao.categorias_esperadas.get(tabela, set()))],
             names=["mes", "codigo_sidra"],
         )
+        indisponiveis = [(m, c) for t, m, c in configuracao.indisponiveis if t == tabela]
+        if indisponiveis:
+            esperado = esperado.difference(
+                pd.MultiIndex.from_tuples(indisponiveis, names=esperado.names)
+            )
         obtido = pd.MultiIndex.from_frame(
             fato.loc[fato.tabela_sidra == tabela, ["mes", "codigo_sidra"]]
         )

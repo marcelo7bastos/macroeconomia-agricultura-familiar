@@ -1301,7 +1301,92 @@ definirVisao(inicial);
 """
 
 
+def _renderizar_indice(f: dict) -> str:
+    """Relatório por configuração, sem exemplos ou referências exclusivos do piloto."""
+    nome = escape(f["indice"]["nome"])
+    codigo = escape(f["indice"]["codigo"])
+    referencia = next(t for t in f["tabelas"] if t["papel"] == "referencia")
+    tabelas = _tabela_html(
+        ["Tabela", "Papel", "POF", "Início", "Fim", "Meses no raw"],
+        [
+            [
+                str(t["tabela"]),
+                t["papel"],
+                t["versao_pof"] or "—",
+                t["inicio"],
+                t["fim"],
+                str(t["meses_raw"]),
+            ]
+            for t in f["tabelas"]
+        ],
+    )
+    validacoes = _tabela_html(
+        ["Verificação", "Situação", "Verificados", "Falhas", "Exceções"],
+        [
+            [
+                v["validacao"],
+                "ok" if v["ok"] else "FALHA",
+                str(v["verificados"]),
+                str(v["falhas"]),
+                str(v["excecoes_aplicadas"]),
+            ]
+            for v in f["validacoes"]
+        ],
+    )
+    resultados = f["resultados"]
+    grupos = _tabela_html(
+        ["Grupo", "Peso (%)", "Variação mensal (%)", "Contribuição mensal (p.p.)"],
+        [
+            [g["nome"], _pct(g["peso"]), _pct(g["variacao"]), _pct(g["contribuicao_mes"], 3)]
+            for g in resultados["grupos"]
+        ],
+    )
+    harmonizacao = f["harmonizacao"]
+    propostas = sum(c["n"] for c in harmonizacao["contagem"] if c["situacao"] == "proposto")
+    fontes = _tabela_html(
+        ["Janela", "Oficiais", "Calculados"],
+        [[j, str(o), str(c)] for j, o, c in f["acumulados"]["janelas"]],
+    )
+    return f"""<!doctype html><html lang="pt-BR"><meta charset="utf-8">
+<title>Transformações do {nome}</title><meta name="viewport" content="width=device-width">
+<style>{CSS}</style><main class="pagina">
+<header class="topo"><p class="olho">Brasil · dados oficiais do IBGE</p>
+<h1>Transformações do {nome}</h1><p>{escape(f["indice"]["descricao"])}.
+Detalhe de {f["periodo"]["inicio"]} a {f["periodo"]["fim"]}.</p></header>
+<section class="secao"><h2>Da fonte à publicação</h2>
+<p>APIs oficiais → raw auditável → classificação e fato → validações → harmonização → indicadores
+→ CSV e metadados. O raw preserva a resposta original, a URL, o SHA-256 e a data de coleta.</p>
+<p>{f["fato"]["linhas"]:,} observações; {f["dim"]["linhas"]} categorias por versão;
+{f["raw"]["arquivos"]} arquivos raw deste índice.</p>{tabelas}</section>
+<section class="secao"><h2>Como os dados são tratados</h2>
+<p>A hierarquia vem do código IBGE: grupo, subgrupo, item e subitem. A chave combina tabela e
+id SIDRA. Ausentes permanecem ausentes, nunca zero. A tabela {referencia["tabela"]} é a referência
+oficial do geral; o raw mantém sua cobertura original e o staging recorta o intervalo do detalhe.</p>
+<p>Valores oficiais têm preferência. Calculados são identificados pela origem. As mudanças entre
+POFs usam um mapa próprio; propostas não revisadas preservam a quebra. Há {propostas} ligações
+propostas pendentes; elas não são apresentadas como continuidades aprovadas.</p>
+<a href="../revisao/harmonizacao_{codigo}.html">Examinar a harmonização</a></section>
+<section class="secao"><h2>Validações</h2>{validacoes}
+<p>Sentinelas divergentes: {f["sentinelas"]}. Falhas sem explicação bloqueiam a publicação.
+A tolerância de comparação entre ambientes não substitui as validações contra o IBGE.</p></section>
+<section class="secao"><h2>Resultados em {resultados["ultimo_mes"]}</h2>
+<p>Índice geral no mês: {_pct(resultados["geral_mes"])}%; em 12 meses:
+{_pct(resultados["geral_12m"])}%. Referência oficial: tabela {referencia["tabela"]}.</p>{grupos}
+<h3>Acumulados: oficial ou calculado</h3>{fontes}</section>
+<section class="secao"><h2>Saídas e reprodução</h2>
+<p><a href="../../data/marts/{codigo}_README.md">Dicionário dos CSVs</a> ·
+<a href="../../data/metadata.json">Metadados e hashes</a> ·
+<a href="../indices/{codigo}.md">Ficha da fonte</a> ·
+<a href="../METODOLOGIA.md">Metodologia</a></p>
+<pre>uv run python -m macroaf.pipeline --indice {codigo}
+uv run python -m macroaf.validate.ipca15 --indice {codigo}</pre>
+<p>O índice não inclui projeções. O período anterior ao detalhe disponível não é preenchido
+com categorias artificiais nem com observações de outro índice.</p></section></main></html>"""
+
+
 def renderizar(f: dict) -> str:
+    if f["indice"]["codigo"] != "ipca15":
+        return _renderizar_indice(f)
     etapas = _etapas(f)
     nome = f["indice"]["nome"]
     dados_js = json.dumps(

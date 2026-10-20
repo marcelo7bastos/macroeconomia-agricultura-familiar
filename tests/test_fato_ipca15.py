@@ -27,12 +27,13 @@ def fato(dim, dados_fato):
 
 
 def test_converter_valor():
+    assert converter_valor("-", "x") == 0.0
     assert converter_valor("0.70", "x") == 0.70
     assert converter_valor("-1.5", "x") == -1.5
     assert math.isnan(converter_valor("...", "x"))
 
 
-@pytest.mark.parametrize("texto", ["-", "..", "X", ""])
+@pytest.mark.parametrize("texto", ["..", "X", ""])
 def test_outros_sinais_do_ibge_interrompem_ate_ganhar_tratamento(texto):
     with pytest.raises(ErroTransformacao, match="não numérico"):
         converter_valor(texto, "contexto")

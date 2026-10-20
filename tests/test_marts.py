@@ -162,7 +162,11 @@ def test_publicacao_e_deterministica_e_o_repositorio_esta_em_dia(publicado):
     pasta_obtida = publicado / "data" / "marts"
     nomes = sorted(p.name for p in pasta_obtida.iterdir())
     comparar_exatos(
-        sorted(p.name for p in pasta_esperada.iterdir() if p.name != ".gitkeep"),
+        sorted(
+            p.name
+            for p in pasta_esperada.iterdir()
+            if p.name == "README.md" or p.name.startswith(f"{IPCA15.codigo}_")
+        ),
         nomes,
         "data/marts: arquivos",
     )

@@ -421,9 +421,15 @@ def coletar(indice: Indice) -> dict:
     configuracao = carregar_configuracao(indice, armazem, dim)
     resultados, sentinelas = validar(fato, referencia, configuracao)
     manifesto = pd.DataFrame(armazem.ler_manifesto())
+    tabelas_indice = {str(t.tabela) for t in indice.tabelas}
+    manifesto = manifesto[manifesto.tabela.isin(tabelas_indice)]
     manifesto["n_registros"] = manifesto.n_registros.astype(int)
     manifesto["bytes"] = manifesto.bytes.astype(int)
-    tamanho_raw = sum(p.stat().st_size for p in armazem.diretorio.glob("*/*.json.gz"))
+    tamanho_raw = sum(
+        p.stat().st_size
+        for tabela in tabelas_indice
+        for p in (armazem.diretorio / tabela).glob("*.json.gz")
+    )
 
     tabelas = []
     for tabela in indice.tabelas:
