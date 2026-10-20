@@ -256,7 +256,8 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
   `CLAUDE.md`. Duas cópias das regras divergiriam.
 - **Lição:** as regras ficam só em `AGENTS.md`; cada `CLAUDE.md` contém apenas `@AGENTS.md`. Uma regra
   por pasta exige os dois arquivos na pasta: `AGENTS.md` com o conteúdo e `CLAUDE.md` com o import.
-- **Promovida para:** `AGENTS.md` (seção "Aprendizado contínuo"); verificação no CI prevista na #1.
+- **Promovida para:** `AGENTS.md` (seção "Aprendizado contínuo"); teste
+  `test_todo_claude_md_so_importa_o_agents_md_ao_lado`, que roda no CI (#45).
 
 ### A-005 · 2026-10-19 · `gh` sem GraphQL nas sessões na nuvem
 - **Contexto:** levantamento das issues para a etapa 0 (#20).
