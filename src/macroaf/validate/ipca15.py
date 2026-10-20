@@ -123,6 +123,16 @@ def carregar_excecoes(indice: Indice) -> pd.DataFrame:
     excecoes["falhas_cobertas"] = excecoes.falhas_cobertas.astype(int)
     if not set(excecoes.tipo) <= {"estrutural", "fonte"}:
         raise ValueError(f"{caminho.name}: tipo deve ser estrutural ou fonte")
+    # Meses em que o valor publicado está errado (A-015), separados dos que a exceção cobre só por
+    # consequência (ex.: o mês seguinte, que falha pela âncora). Os indicadores usam esta coluna.
+    excecoes["meses_com_erro_publicado"] = (
+        excecoes.get("meses_com_erro_publicado", pd.Series(dtype=str)).fillna("").str.split(";")
+    ).apply(lambda meses: [m for m in meses if m])
+    for e in excecoes.itertuples():
+        if any(not e.mes_inicio <= m <= e.mes_fim for m in e.meses_com_erro_publicado):
+            raise ValueError(f"{caminho.name}: mês com erro publicado fora do escopo da exceção")
+        if e.meses_com_erro_publicado and e.tipo != "fonte":
+            raise ValueError(f"{caminho.name}: só exceção de tipo fonte tem erro publicado")
     return excecoes
 
 

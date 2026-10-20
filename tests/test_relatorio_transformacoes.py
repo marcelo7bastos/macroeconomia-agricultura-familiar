@@ -1,4 +1,5 @@
-from macroaf.relatorios.transformacoes import caminho_pagina, gerar
+from macroaf.relatorios.coleta import coletar_indicadores_planejados
+from macroaf.relatorios.transformacoes import FEITOS, caminho_pagina, gerar
 
 
 def test_pagina_de_transformacoes_esta_em_dia():
@@ -18,3 +19,9 @@ def test_pagina_traz_os_fatos_principais():
         "A-012",
     ]:
         assert trecho in html
+
+
+def test_indicadores_feitos_existem_no_planejamento():
+    # FEITOS usa o nome do indicador na seção 5.2; renomear lá sem mudar aqui perderia a marca.
+    planejados = {i["indicador"] for i in coletar_indicadores_planejados()}
+    assert set(FEITOS) <= planejados

@@ -11,6 +11,21 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Difusão (simples e ponderada, no geral e por grupo) e sazonalidade (média e mediana por mês do
+  ano em 5 anos, por série longa) (`python -m macroaf.indicators.difusao` e
+  `macroaf.indicators.sazonalidade`); subitem com peso 0 fora da conta (A-026); `METODOLOGIA.md` 11
+  (#44).
+- Contribuições em pontos percentuais para o geral, no mês e nos acumulados, e participação no
+  grupo (`python -m macroaf.indicators.contribuicoes`); a soma dos grupos reproduz o geral dentro do
+  limite da reconciliação; `METODOLOGIA.md` 10 (#43).
+- Acumulados por janela (3, 6, 12, 24 e 36 meses e no ano) por série longa
+  (`python -m macroaf.indicators.acumulados`): oficial onde mede o mesmo que a série (A-023), calculado
+  pelo índice onde falta ou onde a fonte publicou erro, com `origem` e `cesta_variavel`;
+  `METODOLOGIA.md` 9 (#42).
+- Índice encadeado por série longa, base 100 (`python -m macroaf.indicators.indice`), com rebase
+  por divisão, acumulado em janela e no ano, e marca de cesta variável; o geral reproduz o
+  número-índice da 3065 e os acumulados batem com a 3065, a 356 e a 1120 (#41).
+- `METODOLOGIA.md` 8: índice encadeado e a âncora do acumulado no ano na troca de POF (A-023).
 - Revisão da harmonização aplicada: 116 propostas aceitas e 14 não aceitas, com observação e
   issue de investigação (#32 a #40); 261 subitens com série contínua de mai/2000 a set/2026 (#6).
 - `map_harmonizacao` do IPCA-15 (`reference/map_harmonizacao_ipca15.csv`) e série longa

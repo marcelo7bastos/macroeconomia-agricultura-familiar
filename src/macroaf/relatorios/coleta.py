@@ -17,10 +17,15 @@ import pandas as pd
 
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
+from macroaf.indicators.acumulados import JANELAS, montar_acumulados
+from macroaf.indicators.contribuicoes import montar_contribuicoes
+from macroaf.indicators.difusao import montar_difusao
+from macroaf.indicators.indice import marcar_cesta_variavel, montar_indice
+from macroaf.indicators.sazonalidade import ANOS, montar_sazonalidade
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
-from macroaf.validate.ipca15 import carregar_configuracao, validar
+from macroaf.validate.ipca15 import carregar_configuracao, carregar_excecoes, validar
 
 COLUNAS_MEDIDA = ["variacao_mensal", "variacao_acum_ano", "variacao_acum_12m", "peso"]
 
@@ -89,9 +94,60 @@ def _texto(valor) -> str | None:
     return None if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
 
 
-def _coletar_harmonizacao(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame) -> dict:
+def _coletar_indice(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
+    marcas = marcar_cesta_variavel(longa, carregar_excecoes(indice))
+    encadeado = montar_indice(longa, marcas)
+    geral = encadeado[encadeado.codigo_ibge == "0"].set_index("mes").indice
+    oficial = referencia.set_index("mes").numero_indice
+    desvio = (geral / geral.iloc[0] * oficial.iloc[0] / oficial - 1).abs()
+    return {
+        "series": int(encadeado.serie_id.nunique()),
+        "linhas": len(encadeado),
+        "cesta_variavel": int(encadeado.cesta_variavel.sum()),
+        "desvio_max_1117": float(desvio.max() * 100),
+    }
+
+
+def _coletar_acumulados(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
+    excecoes = carregar_excecoes(indice)
+    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, excecoes))
+    tabela_referencia = next(t.tabela for t in indice.tabelas if t.papel == "referencia")
+    acumulados = montar_acumulados(encadeado, longa, referencia, excecoes, tabela_referencia)
+    contagem = acumulados.groupby(["janela", "origem"]).size().unstack(fill_value=0)
+    contagem = contagem.reindex(index=list(JANELAS), columns=["oficial", "calculado"], fill_value=0)
+    return {
+        "linhas": len(acumulados),
+        "janelas": [[j, int(r.oficial), int(r.calculado)] for j, r in contagem.iterrows()],
+    }
+
+
+def _coletar_contribuicoes(indice: Indice, longa: pd.DataFrame) -> dict:
+    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, carregar_excecoes(indice)))
+    contribuicoes = montar_contribuicoes(encadeado, longa)
+    mensais = contribuicoes[contribuicoes.janela == "mes"]
+    grupos = mensais[mensais.nivel_hierarquico == "grupo"].groupby("mes").contribuicao.sum()
+    geral = mensais[mensais.codigo_ibge == "0"].set_index("mes").contribuicao
+    return {
+        "linhas": len(contribuicoes),
+        "diferenca_max_mes": float((grupos - geral).abs().max()),
+    }
+
+
+def _coletar_difusao(indice: Indice, longa: pd.DataFrame) -> dict:
+    difusao = montar_difusao(longa)
+    geral = difusao[difusao.codigo_ibge == "0"].sort_values("mes")
+    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, carregar_excecoes(indice)))
+    return {
+        "anos": ANOS,
+        "meses": int(geral.mes.nunique()),
+        "ultimo_mes": geral.mes.iloc[-1],
+        "ultima_simples": float(geral.difusao_simples.iloc[-1]),
+        "linhas_sazonalidade": len(montar_sazonalidade(encadeado)),
+    }
+
+
+def _coletar_harmonizacao(indice: Indice, fato: pd.DataFrame, longa: pd.DataFrame) -> dict:
     mapa = ler_mapa(indice)
-    longa = montar_serie_longa(fato, dim, mapa)
     pofs = {t.tabela: t.versao_pof for t in indice.tabelas_dados}
     mapa = mapa.assign(
         transicao=[
@@ -259,9 +315,14 @@ def coletar(indice: Indice) -> dict:
             }
         )
 
-    harmonizacao = (
-        _coletar_harmonizacao(indice, dim, fato) if caminho_mapa(indice).exists() else None
-    )
+    harmonizacao = encadeado = acumulados = contribuicoes = difusao = None
+    if caminho_mapa(indice).exists():
+        longa = montar_serie_longa(fato, dim, ler_mapa(indice))
+        harmonizacao = _coletar_harmonizacao(indice, fato, longa)
+        encadeado = _coletar_indice(indice, longa, referencia)
+        acumulados = _coletar_acumulados(indice, longa, referencia)
+        contribuicoes = _coletar_contribuicoes(indice, longa)
+        difusao = _coletar_difusao(indice, longa)
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")
     limites = configuracao.limites.to_dict("records")
@@ -314,5 +375,9 @@ def coletar(indice: Indice) -> dict:
         "indicadores_planejados": coletar_indicadores_planejados(),
         "agentes": coletar_agentes(),
         "harmonizacao": harmonizacao,
+        "indice_encadeado": encadeado,
+        "acumulados": acumulados,
+        "contribuicoes": contribuicoes,
+        "difusao": difusao,
         "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
     }
