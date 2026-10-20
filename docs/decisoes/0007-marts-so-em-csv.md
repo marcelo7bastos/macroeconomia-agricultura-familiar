@@ -15,8 +15,9 @@ ou revistas, e o histórico cresce pouco; um parquet é binário e entra inteiro
 ## Decisão
 
 - Os marts ficam versionados **só em CSV**: UTF-8, separador vírgula, ponto decimal, linhas em
-  ordem fixa e valores calculados arredondados (4 casas nos acumulados e na sazonalidade, 6 no
-  índice e nas contribuições). Os valores oficiais passam como publicados.
+  ordem fixa e valores calculados arredondados (6 casas no índice e nas contribuições; 4 nos
+  acumulados, na participação no grupo e na sazonalidade; 2 na difusão). Os valores oficiais
+  passam como publicados.
 - O parquet continua existindo só no staging, para uso local.
 - O dicionário de dados (`data/marts/README.md`) é gerado do código; um teste exige que os
   arquivos versionados sejam os que o pipeline produz.

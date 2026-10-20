@@ -200,7 +200,8 @@ Variação mensal, acumulada no ano, acumulada em 12 meses e peso, para todos os
   arquivo estáveis** (URLs do raw do GitHub não mudam; o Power BI lê direto delas). Chave das
   linhas: mês e categoria publicada ([decisão 0006](decisoes/0006-chave-estavel-dos-marts.md)).
 - `data/marts/README.md` gerado automaticamente: dicionário de dados.
-- `data/metadata.json`: último mês por série, data da coleta, resultado das validações.
+- `data/metadata.json`: último mês dos dados, data da coleta, resultado das validações e linhas e
+  hash de cada arquivo (o fim de cada série longa está em `<indice>_categorias.csv`).
 
 ## 7. Stack
 

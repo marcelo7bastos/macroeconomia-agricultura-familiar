@@ -1,4 +1,5 @@
 import json
+import shutil
 
 import pandas as pd
 import pytest
@@ -6,8 +7,10 @@ import pytest
 from macroaf.catalogo import RAIZ, carregar_catalogo
 from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.calcular import calcular_indicadores
+from macroaf.marts import publicar as publicar_mod
 from macroaf.marts.publicar import (
     DICIONARIO,
+    VALORES,
     atualizar_historico,
     conferir,
     montar_marts,
@@ -33,8 +36,16 @@ def base():
 
 @pytest.fixture(scope="module")
 def publicado(tmp_path_factory):
+    # Parte do estado versionado: o histórico de séries depende da publicação anterior (0006).
     destino = tmp_path_factory.mktemp("publicacao")
     (destino / "reference").mkdir()
+    (destino / "data" / "marts").mkdir(parents=True)
+    for relativo in [
+        "data/marts/ipca15_categorias.csv",
+        "reference/historico_series_ipca15.csv",
+        "data/metadata.json",
+    ]:
+        shutil.copy(RAIZ / relativo, destino / relativo)
     assert publicar(IPCA15, destino) == []
     return destino
 
@@ -90,34 +101,65 @@ def test_conferencia_bloqueia_chave_repetida(base):
     assert any("repetida" in p for p in conferir(estragado, longa, ind, referencia))
 
 
-def test_historico_registra_mudanca_de_serie():
-    atual = pd.DataFrame({"chave_categoria": ["1.10", "2.20"], "serie_id": ["a@x", "a@x"]})
-    anterior = pd.DataFrame(
-        {
-            "chave_categoria": ["1.10", "2.20"],
-            "serie_id": ["a@x", "b@y"],
-            "serie_inicio": ["2000-01", "2010-01"],
-        }
-    )
+def test_historico_registra_fusao_e_divisao():
     mapa = pd.DataFrame(
         {
             "tabela_origem": [1.0],
             "codigo_sidra_origem": [10.0],
             "tabela_destino": [2.0],
             "codigo_sidra_destino": [20.0],
+            "situacao": ["revisado"],
         }
     )
-    historico = atualizar_historico(anterior, atual, mapa, "2026-10")
-    assert historico.to_dict("records") == [
+    separadas = pd.DataFrame(
         {
-            "registrado_em": "2026-10",
+            "chave_categoria": ["1.10", "2.20"],
+            "serie_id": ["a@x", "b@y"],
+            "versao_pof": ["1995-96", "2002-03"],
+        }
+    )
+    juntas = separadas.assign(serie_id="a@x")
+    fusao = atualizar_historico(separadas, juntas, mapa, "2026-10-20")
+    assert fusao.to_dict("records") == [
+        {
+            "registrado_em": "2026-10-20",
             "serie_id_antigo": "b@y",
             "serie_id_novo": "a@x",
             "categorias": 1,
             "ligacao": "L-1.10-2.20",
+            "situacao": "revisado",
         }
     ]
-    assert atualizar_historico(None, atual, mapa, "2026-10").empty
+    divisao = atualizar_historico(
+        juntas, separadas, mapa.assign(situacao="rejeitado"), "2026-11-20"
+    )
+    assert divisao[["serie_id_antigo", "serie_id_novo", "ligacao", "situacao"]].values.tolist() == [
+        ["a@x", "b@y", "L-1.10-2.20", "rejeitado"]
+    ]
+    assert atualizar_historico(None, juntas, mapa, "2026-10-20").empty
+    assert atualizar_historico(juntas, juntas, mapa, "2026-10-20").empty
+
+
+def test_publicacao_bloqueada_nao_grava_nada(tmp_path, monkeypatch):
+    monkeypatch.setattr(publicar_mod, "conferir", lambda *args: ["problema simulado"])
+    assert publicar_mod.publicar(IPCA15, tmp_path) == ["problema simulado"]
+    assert list(tmp_path.rglob("*")) == []
+
+
+def test_valores_das_colunas_categoricas_estao_no_dicionario(base):
+    marts, _, _, _ = base
+    for nome, tabela in marts.items():
+        for coluna in tabela.columns:
+            if coluna in VALORES:
+                assert set(tabela[coluna].dropna()) <= set(VALORES[coluna]), (nome, coluna)
+
+
+def test_marca_de_cesta_variavel_da_sazonalidade_chega_ao_mart(base):
+    marts, _, ind, _ = base
+    mensal = marts["mensal"]
+    assert mensal.sazonalidade_cesta_variavel.sum() == ind["sazonalidade"].cesta_variavel.sum()
+    # A janela de 5 anos pode ter cesta variável mesmo num mês sem ela.
+    assert ((mensal.sazonalidade_cesta_variavel == 1) & (mensal.cesta_variavel == 0)).any()
 
 
 def test_publicacao_e_deterministica_e_o_repositorio_esta_em_dia(publicado, tmp_path):

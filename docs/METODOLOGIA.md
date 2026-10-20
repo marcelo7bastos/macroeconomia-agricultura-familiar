@@ -472,15 +472,22 @@ qualquer problema, nada é escrito.
 
 - **Chave:** `(mes, chave_categoria)`, com `chave_categoria = <tabela>.<id SIDRA>` (decisão 0006).
   O `serie_id` é atributo em `ipca15_categorias.csv`; quando a revisão muda uma série,
-  `reference/historico_series_ipca15.csv` registra o `serie_id` antigo, o novo e a ligação do mapa.
+  `reference/historico_series_ipca15.csv` registra a data da coleta, o `serie_id` antigo e o novo,
+  quantas categorias mudaram e a ligação do mapa que chega à categoria de fronteira, com a situação
+  dela (aceita numa fusão, rejeitada numa divisão). O histórico depende da publicação anterior, por
+  isso o teste de "marts em dia" parte do estado versionado (A-028).
 - **Arquivos:** `ipca15_categorias`, `_mensal` (oficiais do mês, índice, contribuição no mês,
   participação no grupo, sazonalidade), `_acumulados` (com a origem de cada janela),
   `_contribuicoes` (para os acumulados) e `_difusao`. Só CSV (decisão 0007).
 - **Oficial preservado:** variação, peso e as variáveis 356 e 1120 passam como publicadas
   (`variacao_acum_ano_publicada`, `variacao_acum_12m_publicada`), mesmo onde o acumulado da série
   usa o calculado (A-023, A-024).
-- **Arredondamento:** só nos valores calculados (4 casas nos acumulados e na sazonalidade, 6 no
-  índice e nas contribuições), bem abaixo do limite de arredondamento das conferências.
+- **Marcas de qualidade chegam ao mart:** `cesta_variavel` (do mês), `sazonalidade_cesta_variavel`
+  (da janela de 5 anos) e `cesta_variavel_janelas` (de cada acumulado). Uma janela pode ter cesta
+  variável num mês que não tem (A-028).
+- **Arredondamento:** só nos valores calculados (6 casas no índice e nas contribuições; 4 nos
+  acumulados, na participação no grupo e na sazonalidade; 2 na difusão), bem abaixo do limite de
+  arredondamento das conferências.
 - `data/marts/README.md` (dicionário) e `data/metadata.json` (último mês, coleta, validações,
   linhas e hash de cada arquivo) são gerados junto. Um teste exige que os arquivos versionados
   sejam os que o pipeline produz.

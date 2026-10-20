@@ -25,6 +25,19 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-028 · 2026-10-20 · Mart publicado do zero esconde estado e marcas
+- **Contexto:** marts (#8), revisão do `revisor-metodologico`.
+- **O que aconteceu:** duas falhas que os testes não pegavam. (1) O teste de "marts em dia"
+  publicava num diretório vazio; o histórico de mudanças de série (decisão 0006) depende da
+  publicação anterior, então na primeira mudança real o teste falharia para sempre. (2) A
+  sazonalidade marca a janela de 5 anos que contém mês de cesta variável, mas o mart levava só a
+  marca do mês: 1.632 linhas de sazonalidade contaminada saíam com `cesta_variavel = 0`.
+- **Lição:** artefato com estado acumulado se confere a partir do estado versionado, não do zero.
+  Toda marca de qualidade de um indicador (cesta variável por janela, origem) tem coluna no mart.
+- **Promovida para:** fixture `publicado` de `tests/test_marts.py` (copia o estado versionado);
+  coluna `sazonalidade_cesta_variavel` e teste
+  `test_marca_de_cesta_variavel_da_sazonalidade_chega_ao_mart`; `METODOLOGIA.md` 12.
+
 ### A-027 · 2026-10-20 · "Fecha #N" não fecha a issue
 - **Contexto:** depois do merge dos PRs #49 a #52, as issues #41 a #44 continuaram abertas; o mesmo
   com #1 a #7, #20 e #22.

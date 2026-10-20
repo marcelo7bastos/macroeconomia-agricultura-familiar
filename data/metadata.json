@@ -88,10 +88,11 @@
           "participacao_no_grupo",
           "sazonalidade_media",
           "sazonalidade_mediana",
-          "cesta_variavel"
+          "cesta_variavel",
+          "sazonalidade_cesta_variavel"
         ],
         "linhas": 153741,
-        "sha256": "a84bc22112268463c52740af5a6915792ada7b4f8cd2e48246bb5f1eea31f04a"
+        "sha256": "0d33ed90b467a83768b37c234ef918485d760c591bbe0c164a1fd459d4b0ee74"
       }
     },
     "indice": "ipca15",
