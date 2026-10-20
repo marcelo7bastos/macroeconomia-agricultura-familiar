@@ -208,3 +208,37 @@ def test_aplicar_decisoes_da_pagina(base):
     assert por_id[rejeitada].situacao == "rejeitado" and por_id[rejeitada].observacao == "quebra"
     with pytest.raises(ValueError, match="não existem"):
         aplicar_decisoes(mapa, [{"id": "L-x-x", "decisao": "aceita"}], "teste")
+
+
+def test_decisao_do_revisor_tem_o_efeito_certo_na_serie_longa(base):
+    # Decisão 0005 como identidade: rejeitada e fundido/dividido nunca emendam;
+    # renomeado aceito emenda.
+    dim, fato, mapa = base
+    longa = montar_serie_longa(fato, dim, mapa)
+    serie_de = dict(
+        zip(zip(longa.tabela_sidra, longa.codigo_sidra, strict=True), longa.serie_id, strict=True)
+    )
+    ligadas = mapa.dropna(subset=["codigo_sidra_origem", "codigo_sidra_destino"])
+    for r in ligadas[ligadas.situacao.isin(["revisado", "rejeitado"])].itertuples():
+        mesma = (
+            serie_de[(r.tabela_origem, r.codigo_sidra_origem)]
+            == serie_de[(r.tabela_destino, r.codigo_sidra_destino)]
+        )
+        emenda = r.situacao == "revisado" and r.tipo_correspondencia == "renomeado"
+        assert mesma == emenda, id_ligacao(r)
+
+
+def test_resultado_da_revisao_documentado_bate_com_o_mapa(base):
+    # Se o mapa mudar, atualize METODOLOGIA.md 7.4 (116 aceitas, 14 não aceitas, issues #32 a #40).
+    _, _, mapa = base
+    assert (mapa.situacao == "revisado").sum() == 116
+    assert (mapa.situacao == "rejeitado").sum() == 14
+    rejeitadas = mapa[mapa.situacao == "rejeitado"]
+    assert rejeitadas.observacao.str.contains(r"issue #(?:3[2-9]|40)\)").all()
+
+
+def test_pagina_de_revisao_mostra_a_observacao_literal():
+    # A observação do revisor vai para a página sem processamento de texto (revisão do PR #31).
+    html = caminho_pagina(IPCA15).read_text(encoding="utf-8")
+    assert ".replace(/: [^:]*$/" not in html
+    assert "(investigação: issue #32)" in html

@@ -270,11 +270,15 @@ function atualizar() {
     el.querySelector('.rejeitar:not(.salvar)').setAttribute('aria-pressed', String(d?.decisao === 'rejeitada'));
     el.querySelector('.desfazer').hidden = !naPagina;
     el.querySelectorAll('button').forEach((b) => { b.disabled = !db; });
-    let texto = d ? (d.decisao === 'aceita' ? 'Aceita' : 'Não aceita: ' + d.observacao) : '';
-    if (registrada) {
-      const igual = !naPagina || (naPagina.decisao === registrada.decisao);
-      texto = (igual ? 'Registrada no mapa por ' + registrada.revisor + ': ' : 'Alterada na página, aguardando aplicação ao mapa: ') + texto;
-      if (igual && registrada.observacao) texto = texto.replace(/: [^:]*$/, ': ' + (registrada.decisao === 'aceita' ? 'Aceita' : 'Não aceita') + ' (' + registrada.observacao + ')');
+    // Texto montado de campos estruturados; a observação aparece exatamente como foi escrita.
+    const descrever = (x) => (x.decisao === 'aceita' ? 'Aceita' : 'Não aceita') + (x.observacao ? ' (' + x.observacao + ')' : '');
+    let texto = '';
+    if (naPagina && registrada && (naPagina.decisao !== registrada.decisao || (naPagina.observacao || '') !== (registrada.observacao || ''))) {
+      texto = 'Alterada na página, aguardando aplicação ao mapa: ' + descrever(naPagina);
+    } else if (registrada) {
+      texto = 'Registrada no mapa por ' + registrada.revisor + ': ' + descrever(registrada);
+    } else if (naPagina) {
+      texto = descrever(naPagina);
     }
     el.querySelector('.estado').textContent = texto;
     if (d?.decisao === 'rejeitada' || d?.decisao === 'aceita') el.querySelector('.observacao').hidden = true;
