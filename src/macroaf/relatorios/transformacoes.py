@@ -46,9 +46,10 @@ DUVIDAS = [
         "METODOLOGIA.md 6.4 · A-015",
     ),
     (
-        "No ano da troca para a 1387 (2006), 12 categorias de código novo, entre elas o item 8104, "
-        "têm acumulado no ano sem âncora identificada: nem desde janeiro, nem desde a troca.",
-        "METODOLOGIA.md 8.2 · A-023",
+        "O IBGE ancorou o acumulado no ano de 12 categorias novas da 1387 num antecessor de outro "
+        "código (ex.: Cursos diversos, Peito de frango → Frango em pedaços). Se essas ligações devem "
+        "mudar o mapa de harmonização depende de revisão humana.",
+        "METODOLOGIA.md 8.2 · A-023 · issue #48",
     ),
     (
         "Como o projeto absorve a próxima troca de POF (tabela nova no lugar da 7062).",
@@ -614,7 +615,7 @@ def _secao_existe(f: dict) -> str:
     <li>O acumulado em 12 meses não existe nas tabelas 1646 e 1387 e vem vazio em parte da 1705 e da 7062 (A-009). Calcular onde falta é tarefa da #7.</li>
     <li>Agregação: o projeto não agrega nada que guarde. As validações recalculam médias ponderadas, acumulados e o número-índice só para conferir com o IBGE.</li>
     <li>Índice encadeado: calculado por série longa, a partir da variação mensal oficial. O do geral reproduz o número-índice da 3065. Os acumulados por janela (#42) e as contribuições (#43) partem dele.</li>
-    <li>Acumulado no ano no ano da troca de POF: para código que já existia, o IBGE encadeia desde janeiro; para código novo, começa no mês da troca (A-023). O índice encadeado só dá o acumulado no ano onde a série tem janeiro.</li>
+    <li>Acumulado no ano no ano da troca de POF: o IBGE ancora janeiro pelo código, não pela série longa; para código novo, começa no mês da troca (A-023). A 356 só vale como acumulado da série quando a série tem janeiro e o código não mudou; o índice encadeado só dá o acumulado no ano nesse caso.</li>
     <li>Série longa: emenda as tabelas só onde há prova de que a categoria é a mesma; o resto fica como quebra marcada até a revisão humana (seção Harmonização).</li>
   </ul>
   <h3>Indicadores planejados</h3>

@@ -309,7 +309,7 @@ a partir da variação mensal oficial (variável 355):
   encadeamento e as janelas por deslocamento supõem séries contínuas.
 - **Cesta variável marcada.** As linhas cobertas pela exceção estrutural de `acumulado_ano` da 1646
   (subitens in natura da POF 1995-96, A-013) recebem `cesta_variavel = True`: o índice é calculável,
-  mas não reproduz os acumulados do IBGE.
+  mas os acumulados cuja janela inclui esses meses não reproduzem os do IBGE (8.3).
 
 ### 8.1 Conferência contra o IBGE
 
@@ -326,20 +326,43 @@ de um acumulado de k meses é `0,005 × (1 + A/100) × Σ 1/(1 + v_j/100) + 0,00
 
 ### 8.2 Acumulado no ano no ano da troca de POF (A-023)
 
-A 356 publicada no ano em que entra uma tabela nova revela a âncora que o IBGE usou:
+A 356 publicada no ano em que entra uma tabela nova revela a âncora que o **IBGE** usou para
+janeiro. Ela segue o código e as escolhas do IBGE, não a série longa do projeto:
 
-- **Código que já existia na tabela anterior** (mesmo com outro id SIDRA): o IBGE encadeia desde
-  janeiro pelo código. O índice encadeado reproduz a 356 sempre que a série longa continua no mesmo
-  código, salvo os 34 subitens in natura que vêm da cesta variável da 1646 (2006, na 1387).
-- **Código novo:** a 356 do ano da troca começa no **primeiro mês da tabela nova**; não é um
-  acumulado no ano. Isso vale também para as 8 séries emendadas pela revisão humana em que o código
-  muda (por exemplo, Cinema → Cinema, teatro e concertos em 2020). Para essas séries, a 356 do ano
-  da troca e o acumulado no ano da série longa medem coisas diferentes.
-- **Sem âncora identificada:** 12 categorias de código novo na 1387 (2006), entre elas o item 8104
-  e os seus subitens, não seguem nenhuma das duas regras.
+| Situação da categoria na tabela nova | Âncora da 356 no ano da troca | Casos |
+|---|---|---|
+| Código que já existia na tabela anterior (mesmo com id SIDRA novo) | encadeia desde janeiro pelo código | quase todos |
+| Código novo | começa no primeiro mês da tabela nova (não é acumulado no ano) | 1705 e 7062: todos; 1387: a maioria |
+| Código novo na 1387 (2006) com antecessor escolhido pelo IBGE | encadeia desde janeiro pelo antecessor, de outro código | 12: o item 8104 Cursos diversos e os seus 9 subitens ← 8101014 Cursos diversos; 1110010 Frango em pedaços ← 1110011 Peito de frango; 1111011 Queijo ← 1111024 Queijo prato |
 
-Regra que decorre: no ano da troca, a 356 de código novo não é usada como acumulado no ano da série
-longa; o acumulado oficial só é preferido onde mede a mesma coisa (#42).
+Isso aparece de três formas quando se compara com a série longa:
+
+- **Série que continua no mesmo código:** o índice encadeado reproduz a 356, salvo os 34 subitens
+  in natura que vêm da cesta variável da 1646 (2006, na 1387; ver abaixo).
+- **Série emendada pela revisão em que o código muda** (8 séries, por exemplo Cinema → Cinema,
+  teatro e concertos em 2020): a 356 começa na troca. Em 7 delas isso diverge do acumulado da série;
+  na oitava (8104002, 2020) o código antigo ficou parado de janeiro à troca e os dois coincidem.
+- **Série quebrada pelo projeto no meio do ano da troca com código que já existia** (12 séries,
+  por proposta não aceita ou não revisada, por exemplo 1111004 Leite pasteurizado em 2012): a 356
+  encadeia pelo código através da quebra. Ela emenda exatamente o que o projeto decidiu não emendar.
+
+**Regra que decorre:** a 356 só vale como acumulado no ano da série longa quando a série tem
+janeiro naquele ano e o código de janeiro é o mesmo do mês. Fora disso (série que começa no meio do
+ano, ou código que mudou no ano), a 356 não é usada como acumulado da série: usá-la importaria uma
+emenda silenciosa (decisão 0005). O índice encadeado já respeita isso, porque só dá o acumulado no
+ano quando a série tem janeiro (#42 aplica a regra ao "oficial primeiro").
+
+**Âncoras do IBGE como evidência de harmonização.** As 12 âncoras de outro código mostram ligações
+que o próprio IBGE fez: 8101014 → 8104 (subitem que vira item, hoje `descontinuado` + `novo` no
+mapa) e Peito de frango → Frango em pedaços (o mapa tem a divisão Frango → Frango inteiro + Frango
+em pedaços, aceita na revisão). São evidência para revisão humana, nunca emenda automática (#48).
+
+### 8.3 Marca de cesta variável nas janelas
+
+`cesta_variavel` marca os meses da 1646 cobertos pela exceção A-013. Um acumulado cuja janela
+contém mês marcado também não reproduz o IBGE: é o caso da 356 de 2006 dos 34 subitens in natura,
+já na 1387, e dos acumulados de 12 meses até jul/2007. Na #42, a janela que contém mês marcado
+herda a marca.
 
 ## 9. Registro de descobertas
 

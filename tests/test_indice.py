@@ -1,3 +1,5 @@
+from itertools import pairwise
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -19,6 +21,7 @@ from macroaf.validate.ipca15 import MEIA_CASA_VARIACAO, carregar_excecoes
 IPCA15 = carregar_catalogo().indices["ipca15"]
 ARMAZEM = ArmazemRaw(IPCA15.fonte)
 INICIO_TABELA = {t.tabela: t.inicio for t in IPCA15.tabelas_dados}
+ANTERIOR = {nova: antiga for antiga, nova in pairwise(t.tabela for t in IPCA15.tabelas_dados)}
 
 
 def _longa_de_brinquedo(series: dict[str, list[float]], inicio="2020-01") -> pd.DataFrame:
@@ -181,6 +184,70 @@ def test_codigo_novo_no_ano_da_troca_acumula_desde_a_troca(no_ano):
     chave = [novos.serie_id, novos.tabela_sidra]
     calculado = (fator.groupby(chave).cumprod() - 1) * 100
     assert ((calculado - novos.variacao_acum_ano).abs() <= novos.limite).all()
+
+
+def _janeiro_ate_a_troca(indice: pd.DataFrame, tabela: int, codigo: str) -> float:
+    """Fator de janeiro até a véspera da troca, pelo código na tabela anterior (NaN se não há)."""
+    inicio = INICIO_TABELA[tabela]
+    antes = indice[
+        (indice.tabela_sidra == ANTERIOR[tabela])
+        & (indice.codigo_ibge == codigo)
+        & (indice.mes >= inicio[:4] + "-01")
+        & (indice.mes < inicio)
+    ]
+    return float((1 + antes.variacao_mensal / 100).prod()) if len(antes) else np.nan
+
+
+def _desde_a_troca(linhas: pd.DataFrame) -> pd.Series:
+    fator = 1 + linhas.variacao_mensal / 100
+    return fator.groupby(linhas.serie_id).cumprod()
+
+
+def test_serie_quebrada_no_ano_da_troca_tem_356_que_atravessa_a_quebra(base):
+    # A 356 encadeia pelo código mesmo onde o projeto marcou quebra (A-023): não é da série.
+    indice, _ = base
+    inicio = indice.groupby("serie_id").mes.transform("min")
+    ano_da_troca = indice.tabela_sidra.map(INICIO_TABELA)
+    nascem = indice[
+        (inicio == ano_da_troca)
+        & (inicio.str[5:] != "01")
+        & (indice.mes.str[:4] == inicio.str[:4])
+        & indice.tabela_sidra.isin(ANTERIOR)
+    ].copy()
+    nascem["janeiro"] = [
+        _janeiro_ate_a_troca(indice, t, c)
+        for t, c in zip(nascem.tabela_sidra, nascem.codigo_ibge, strict=True)
+    ]
+    quebradas = nascem[nascem.janeiro.notna()]  # código que já existia na tabela anterior
+    # 12 séries; em 9101008 (2020) o código ficou parado de janeiro à troca: as regras coincidem.
+    assert quebradas.serie_id.nunique() == 12
+    assert acumulado_no_ano(indice).loc[quebradas.index].isna().all()
+    pelo_codigo = (quebradas.janeiro * _desde_a_troca(quebradas) - 1) * 100
+    assert ((pelo_codigo - quebradas.variacao_acum_ano).abs() <= 0.05).all()  # ruído A-016
+
+
+# Código novo na 1387 cuja 356 de 2006 o IBGE ancorou num antecessor de outro código (A-023).
+ANCORAS_1387 = {
+    "8104": "8101014",  # Cursos diversos: item novo ← subitem Cursos diversos
+    **{f"8104{n:03d}": "8101014" for n in range(1, 10)},
+    "1110010": "1110011",  # Frango em pedaços ← Peito de frango
+    "1111011": "1111024",  # Queijo ← Queijo prato
+}
+
+
+def test_ancora_escolhida_pelo_ibge_na_troca_para_a_1387(base):
+    indice, _ = base
+    linhas = indice[
+        (indice.tabela_sidra == 1387)
+        & (indice.mes.str[:4] == "2006")
+        & indice.codigo_ibge.isin(ANCORAS_1387)
+    ].copy()
+    assert linhas.codigo_ibge.nunique() == 12
+    janeiro = linhas.codigo_ibge.map(
+        {c: _janeiro_ate_a_troca(indice, 1387, a) for c, a in ANCORAS_1387.items()}
+    )
+    pelo_antecessor = (janeiro * _desde_a_troca(linhas) - 1) * 100
+    assert ((pelo_antecessor - linhas.variacao_acum_ano).abs() <= 0.05).all()
 
 
 def test_acumulado_12m_bate_com_a_1120(base):

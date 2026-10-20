@@ -25,19 +25,24 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
-### A-023 · 2026-10-20 · O acumulado no ano do IBGE recomeça na troca para código novo
-- **Contexto:** índice encadeado por série longa (#41), conferido contra a 356 por categoria.
-- **O que aconteceu:** o índice reproduziu a 356 em 98% das linhas dos anos de troca de POF, mas
-  falhou em 7 séries emendadas pela revisão (ex.: Cinema → Cinema, teatro e concertos, 2020). O
-  janeiro implícito na 356 dessas séries é exatamente 0,000: para código novo, o IBGE começa o
-  "acumulado no ano" no primeiro mês da tabela nova. Para código que já existia (mesmo com id
-  SIDRA novo), encadeia desde janeiro pelo código. Doze categorias da 1387 (item 8104 e outras)
-  não seguem nenhuma das duas regras.
-- **Lição:** no ano da troca, a 356 de código novo é acumulado desde a troca, não no ano. Não serve
-  como acumulado no ano da série longa nem como "oficial primeiro" nesse ano (#42).
-- **Promovida para:** testes `test_acumulado_no_ano_atravessa_a_troca_quando_o_codigo_continua` e
-  `test_codigo_novo_no_ano_da_troca_acumula_desde_a_troca`; `METODOLOGIA.md` 8.2; dúvida na
-  página de transformações.
+### A-023 · 2026-10-20 · O acumulado no ano do IBGE segue o código, não a série longa
+- **Contexto:** índice encadeado por série longa (#41), conferido contra a 356 por categoria;
+  revisão do `revisor-metodologico`.
+- **O que aconteceu:** no ano da troca de POF, a 356 ancora janeiro pelo código (mesmo com id SIDRA
+  novo); para código novo, começa no mês da troca, salvo 12 categorias da 1387 que o IBGE ancorou
+  num antecessor de outro código (8101014 → 8104 e subitens; Peito de frango → Frango em pedaços;
+  Queijo prato → Queijo), identificadas pelo janeiro implícito (2,88%, −12,47% e −3,65%, iguais ao
+  acumulado de julho do antecessor). Com isso, 8 séries emendadas pela revisão com troca de código
+  têm 356 "desde a troca", e 12 séries quebradas pelo projeto no meio do ano têm 356 que atravessa
+  a quebra pelo código. Refina a A-017.
+- **Lição:** a 356 só é acumulado no ano da série longa quando a série tem janeiro naquele ano e o
+  código não mudou. Usá-la fora disso como "oficial primeiro" seria emenda silenciosa. As âncoras do
+  IBGE são evidência de harmonização, para revisão humana.
+- **Promovida para:** testes `test_acumulado_no_ano_atravessa_a_troca_quando_o_codigo_continua`,
+  `test_codigo_novo_no_ano_da_troca_acumula_desde_a_troca`,
+  `test_serie_quebrada_no_ano_da_troca_tem_356_que_atravessa_a_quebra` e
+  `test_ancora_escolhida_pelo_ibge_na_troca_para_a_1387`; `METODOLOGIA.md` 8.2 e 8.3; regra a
+  aplicar na #42; issue #48.
 
 ### A-022 · 2026-10-20 · Divisão permite comparar para trás, não seguir para a frente
 - **Contexto:** revisão humana das propostas de harmonização (#6), observação do mantenedor sobre

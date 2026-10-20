@@ -140,6 +140,9 @@ Campo `nivel` por tabela (só para registro; não use):
   Alimentos prontos some na 1387 e o `7203` Fotografia e filmagem some na 7062 (A-020). Há
   códigos que somem numa POF e reaparecem na seguinte (ex.: `7189` Amido de milho existe na 1646
   e na 1705, não na 1387): viram `descontinuado` + `novo`, porque há lacuna.
+- Índice encadeado (#41): `indice_ipca15` no staging, base 100 por série longa; o geral reproduz o
+  número-índice da 3065. No ano da troca de POF, a 356 segue o código (e, em 12 casos da 1387, um
+  antecessor escolhido pelo IBGE), não a série longa (A-023, `METODOLOGIA.md` 8.2).
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
   jan/2012 → fev/2012, jan/2020 → fev/2020). Importa para o IPCA cheio (#12) (A-007).
 - Itens e subitens mudam a cada troca de POF; séries longas abaixo de subgrupo dependem de
