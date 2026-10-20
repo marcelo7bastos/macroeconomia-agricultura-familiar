@@ -55,7 +55,8 @@ jobs:
           fi
       - name: Testes (marts e páginas em dia, indicadores contra o IBGE)
         if: steps.mudancas.outputs.houve == 'true'
-        run: uv run pytest -q
+        timeout-minutes: 20
+        run: uv run pytest -v --durations=15
       - name: Commit e push na main
         if: steps.mudancas.outputs.houve == 'true'
         run: |
