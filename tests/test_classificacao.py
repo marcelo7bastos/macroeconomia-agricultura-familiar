@@ -3,12 +3,10 @@ import pandera.errors
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.transform.classificacao import (
     ESQUEMA,
     ErroClassificacao,
     classificacao_da_tabela,
-    montar_dim_classificacao,
     separar_codigo,
 )
 
@@ -43,8 +41,8 @@ ARVORE = (
 
 
 @pytest.fixture(scope="module")
-def dim():
-    return montar_dim_classificacao(IPCA15, ArmazemRaw(IPCA15.fonte))
+def dim(dados_dim):
+    return dados_dim
 
 
 # --- regras de derivação --------------------------------------------------------------------

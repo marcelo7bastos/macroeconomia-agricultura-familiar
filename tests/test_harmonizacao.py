@@ -2,9 +2,7 @@ import pandas as pd
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.relatorios.revisao import caminho_pagina, coletar, renderizar
-from macroaf.transform.classificacao import montar_dim_classificacao
 from macroaf.transform.harmonizacao import (
     aplicar_decisoes,
     atualizar_mapa,
@@ -16,17 +14,15 @@ from macroaf.transform.harmonizacao import (
     parentesco,
     propor_mapa,
 )
-from macroaf.transform.ipca15 import montar_fato
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 CHAVE = ["tabela_origem", "codigo_sidra_origem", "tabela_destino", "codigo_sidra_destino"]
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
+def base(dados_dim, dados_fato):
+    dim = dados_dim
+    fato = dados_fato
     return dim, fato, ler_mapa(IPCA15)
 
 

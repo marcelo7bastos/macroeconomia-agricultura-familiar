@@ -7,6 +7,7 @@ import pytest
 from macroaf.catalogo import carregar_catalogo
 from macroaf.extract import atualizar
 from macroaf.extract.atualizar import (
+    AguardandoDivulgacao,
     CatalogoDivergente,
     atualizar_indice,
     divergencias,
@@ -346,7 +347,8 @@ def test_segunda_execucao_so_baixa_a_janela_de_revisao(tmp_path):
 
 
 def test_tabela_aberta_parada_em_relacao_a_referencia_e_divergencia(tmp_path):
-    rotas = _rotas_ipca15() | {"/agregados/3065/metadados": metadados("200005", "202005")}
+    # Dois meses atrás da referência já não é divulgação em andamento: sinal de troca (#27).
+    rotas = _rotas_ipca15() | {"/agregados/3065/metadados": metadados("200005", "202006")}
     with pytest.raises(CatalogoDivergente, match="troca de tabela"):
         atualizar_indice(
             CATALOGO,
@@ -357,6 +359,44 @@ def test_tabela_aberta_parada_em_relacao_a_referencia_e_divergencia(tmp_path):
             tabelas={7062, 3065},
             log=lambda _m: None,
         )
+
+
+def test_referencia_um_mes_a_frente_e_divulgacao_em_andamento(tmp_path):
+    # Dia da divulgação: a 3065 já tem o mês novo e a 7062 ainda não (decisão 0003, item 6).
+    rotas = _rotas_ipca15() | {"/agregados/3065/metadados": metadados("200005", "202005")}
+    with pytest.raises(AguardandoDivulgacao):
+        atualizar_indice(
+            CATALOGO,
+            IPCA15,
+            cliente_falso(rotas),
+            ArmazemRaw("x", raiz=tmp_path),
+            verificar=True,
+            tabelas={7062, 3065},
+            log=lambda _m: None,
+        )
+
+
+def test_metadados_alterados_contam_como_mudanca(tmp_path):
+    armazem = ArmazemRaw("ibge_sidra", raiz=tmp_path)
+    primeira = atualizar_indice(
+        CATALOGO,
+        IPCA15,
+        cliente_falso(_rotas_ipca15()),
+        armazem,
+        tabelas={7062},
+        log=lambda _m: None,
+    )
+    assert primeira.metadados == [7062]
+    segunda = atualizar_indice(
+        CATALOGO,
+        IPCA15,
+        cliente_falso(_rotas_ipca15()),
+        armazem,
+        tabelas={7062},
+        log=lambda _m: None,
+    )
+    assert segunda.metadados == []
+    assert not segunda.houve_mudanca
 
 
 def test_metadados_que_recuam_em_relacao_ao_raw_sao_divergencia(tmp_path):

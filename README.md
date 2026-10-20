@@ -4,7 +4,7 @@ Pipeline aberto de indicadores macroeconômicos ligados à agricultura e à agri
 Brasil, a partir de dados públicos (IBGE, Banco Central).
 
 > **Situação:** piloto **IPCA-15** publicado em [`data/marts/`](data/marts/README.md) (extração,
-> harmonização entre POFs, indicadores e marts); falta a atualização automática (#9).
+> harmonização entre POFs, indicadores e marts), com atualização automática mensal.
 
 ## Como o projeto funciona
 
@@ -14,8 +14,8 @@ APIs oficiais (IBGE/SIDRA) → extração (raw) → transformação (staging) �
                                          site estático · Power BI · CSV
 ```
 
-- Os dados serão atualizados automaticamente pelo GitHub Actions quando o IBGE divulgar um mês
-  novo (#9).
+- Os dados são atualizados automaticamente pelo GitHub Actions quando o IBGE divulga um mês novo
+  ([`atualizacao.yml`](.github/workflows/atualizacao.yml)): só há commit se tudo passa.
 - Todo indicador calculado é testado contra uma referência oficial antes de ser publicado.
 
 ## Desenvolvimento
@@ -31,8 +31,14 @@ uv run ruff format .      # formatação
 
 O CI roda lint, formatação e testes em todo push na `main` e em todo PR.
 
-Para atualizar a camada raw com os meses que faltam (decisão
-[0003](docs/decisoes/0003-extracao-incremental.md)):
+Para atualizar tudo de uma vez, como o GitHub Actions faz:
+
+```bash
+uv run python -m macroaf.pipeline --indice ipca15            # do IBGE aos marts, se houver novidade
+uv run python -m macroaf.pipeline --indice ipca15 --forcar   # republica mesmo sem novidade
+```
+
+Ou etapa por etapa (decisão [0003](docs/decisoes/0003-extracao-incremental.md)):
 
 ```bash
 uv run python -m macroaf.extract.atualizar --verificar   # só confere o que falta

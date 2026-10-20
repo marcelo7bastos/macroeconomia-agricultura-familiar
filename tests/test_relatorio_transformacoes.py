@@ -1,19 +1,26 @@
+import pytest
+
 from macroaf.catalogo import carregar_catalogo
 from macroaf.relatorios import graficos
 from macroaf.relatorios.coleta import coletar, coletar_indicadores_planejados
 from macroaf.relatorios.transformacoes import FEITOS, caminho_pagina, gerar, renderizar
 
 
-def test_pagina_de_transformacoes_esta_em_dia():
+@pytest.fixture(scope="module")
+def pagina_gerada():
+    return gerar("ipca15")
+
+
+def test_pagina_de_transformacoes_esta_em_dia(pagina_gerada):
     # A página é gerada dos dados; se uma transformação mudou, regere no mesmo PR:
     #   uv run python -m macroaf.relatorios.transformacoes --indice ipca15
-    gerada = gerar("ipca15")
+    gerada = pagina_gerada
     atual = caminho_pagina("ipca15").read_text(encoding="utf-8")
     assert atual == gerada, "docs/transformacoes/ipca15.html desatualizada; regere a página"
 
 
-def test_pagina_traz_os_fatos_principais():
-    html = gerar("ipca15")
+def test_pagina_traz_os_fatos_principais(pagina_gerada):
+    html = pagina_gerada
     for trecho in [
         "<title>Transformações do IPCA-15</title>",
         "fato_ipca15",

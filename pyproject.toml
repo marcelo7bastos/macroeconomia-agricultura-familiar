@@ -30,6 +30,8 @@ packages = ["src/macroaf"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+# Teste parado por mais de 5 minutos imprime a pilha de chamadas no log (o mais lento leva ~40 s).
+faulthandler_timeout = 300
 
 [tool.ruff]
 line-length = 100

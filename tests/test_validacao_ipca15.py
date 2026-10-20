@@ -4,8 +4,6 @@ import pytest
 
 from macroaf.catalogo import carregar_catalogo
 from macroaf.extract.raw import ArmazemRaw
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.ipca15 import montar_fato, montar_referencia
 from macroaf.validate.ipca15 import carregar_configuracao, carregar_excecoes, validar
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
@@ -13,10 +11,10 @@ ARMAZEM = ArmazemRaw(IPCA15.fonte)
 
 
 @pytest.fixture(scope="module")
-def staging():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    referencia = montar_referencia(IPCA15, ARMAZEM)
+def staging(dados_dim, dados_fato, dados_referencia):
+    dim = dados_dim
+    fato = dados_fato
+    referencia = dados_referencia
     return fato, referencia, carregar_configuracao(IPCA15, ARMAZEM, dim)
 
 

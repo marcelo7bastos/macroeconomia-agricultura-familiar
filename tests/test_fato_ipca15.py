@@ -5,12 +5,10 @@ import pytest
 
 from macroaf.catalogo import carregar_catalogo
 from macroaf.extract.raw import ArmazemRaw
-from macroaf.transform.classificacao import montar_dim_classificacao
 from macroaf.transform.ipca15 import (
     COLUNAS_FATO,
     ErroTransformacao,
     converter_valor,
-    montar_fato,
     montar_referencia,
 )
 
@@ -19,13 +17,13 @@ ARMAZEM = ArmazemRaw(IPCA15.fonte)
 
 
 @pytest.fixture(scope="module")
-def dim():
-    return montar_dim_classificacao(IPCA15, ARMAZEM)
+def dim(dados_dim):
+    return dados_dim
 
 
 @pytest.fixture(scope="module")
-def fato(dim):
-    return montar_fato(IPCA15, ARMAZEM, dim)
+def fato(dim, dados_fato):
+    return dados_fato
 
 
 def test_converter_valor():

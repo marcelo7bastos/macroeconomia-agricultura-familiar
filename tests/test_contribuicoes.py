@@ -2,7 +2,6 @@ import pandas as pd
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.acumulados import JANELAS
 from macroaf.indicators.contribuicoes import (
     contribuicao_acumulada,
@@ -16,13 +15,9 @@ from macroaf.indicators.indice import (
     marcar_cesta_variavel,
     montar_indice,
 )
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
-from macroaf.transform.ipca15 import montar_fato
 from macroaf.validate.ipca15 import carregar_excecoes
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 
 
 def test_contribuicao_divide_pela_soma_dos_pesos_dos_grupos():
@@ -40,10 +35,8 @@ def test_contribuicao_divide_pela_soma_dos_pesos_dos_grupos():
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    longa = montar_serie_longa(fato, dim, ler_mapa(IPCA15))
+def base(dados_longa):
+    longa = dados_longa
     indice = montar_indice(longa, marcar_cesta_variavel(longa, carregar_excecoes(IPCA15)))
     return indice, longa, montar_contribuicoes(indice, longa)
 

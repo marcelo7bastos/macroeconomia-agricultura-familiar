@@ -1,11 +1,10 @@
-import json
 import shutil
 
 import pandas as pd
 import pytest
+from comparar_publicacao import comparar_csvs, comparar_exatos, comparar_metadados
 
 from macroaf.catalogo import RAIZ, carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.calcular import calcular_indicadores
 from macroaf.marts import publicar as publicar_mod
 from macroaf.marts.publicar import (
@@ -16,20 +15,15 @@ from macroaf.marts.publicar import (
     montar_marts,
     publicar,
 )
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
-from macroaf.transform.ipca15 import montar_fato, montar_referencia
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    referencia = montar_referencia(IPCA15, ARMAZEM)
-    longa = montar_serie_longa(fato, dim, ler_mapa(IPCA15))
+def base(dados_dim, dados_referencia, dados_longa):
+    dim = dados_dim
+    referencia = dados_referencia
+    longa = dados_longa
     ind = calcular_indicadores(IPCA15, longa, referencia)
     return montar_marts(dim, longa, ind), longa, ind, referencia
 
@@ -162,18 +156,25 @@ def test_marca_de_cesta_variavel_da_sazonalidade_chega_ao_mart(base):
     assert ((mensal.sazonalidade_cesta_variavel == 1) & (mensal.cesta_variavel == 0)).any()
 
 
-def test_publicacao_e_deterministica_e_o_repositorio_esta_em_dia(publicado, tmp_path):
-    # Os marts versionados saem do raw; se o pipeline mudou, publique no mesmo PR:
-    #   uv run python -m macroaf.marts.publicar --indice ipca15
-    for arquivo in sorted((publicado / "data" / "marts").iterdir()):
-        no_repositorio = RAIZ / "data" / "marts" / arquivo.name
-        assert no_repositorio.read_bytes() == arquivo.read_bytes(), arquivo.name
-    gerado = json.loads((publicado / "data" / "metadata.json").read_text())
-    versionado = json.loads((RAIZ / "data" / "metadata.json").read_text())
-    assert gerado["ipca15"] == versionado["ipca15"]
-    assert (publicado / "reference" / "historico_series_ipca15.csv").read_text() == (
-        RAIZ / "reference" / "historico_series_ipca15.csv"
-    ).read_text()
+def test_publicacao_e_deterministica_e_o_repositorio_esta_em_dia(publicado):
+    # O que é oficial e a estrutura continuam exatos; calculados seguem a regra A-031.
+    pasta_esperada = RAIZ / "data" / "marts"
+    pasta_obtida = publicado / "data" / "marts"
+    nomes = sorted(p.name for p in pasta_obtida.iterdir())
+    comparar_exatos(
+        sorted(p.name for p in pasta_esperada.iterdir() if p.name != ".gitkeep"),
+        nomes,
+        "data/marts: arquivos",
+    )
+    for nome in nomes:
+        esperado, obtido = pasta_esperada / nome, pasta_obtida / nome
+        if esperado.suffix == ".csv":
+            comparar_csvs(esperado, obtido, IPCA15.codigo)
+        else:
+            comparar_exatos(esperado.read_bytes(), obtido.read_bytes(), nome)
+    comparar_metadados(RAIZ / "data/metadata.json", publicado / "data/metadata.json", IPCA15.codigo)
+    relativo = "reference/historico_series_ipca15.csv"
+    comparar_exatos((RAIZ / relativo).read_bytes(), (publicado / relativo).read_bytes(), relativo)
 
 
 def test_readme_documenta_todas_as_colunas(publicado):

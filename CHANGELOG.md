@@ -6,11 +6,23 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Alterado
 
+- Teste de publicação compara acumulados calculados e contribuições com diferença absoluta
+  máxima de 0,001 p.p., preservando igualdade exata dos oficiais e demais campos. As falhas
+  mostram a primeira diferença sem gerar diffs gigantes; hashes continuam conferidos contra
+  seus próprios CSVs (A-031, #57).
+
+- Fixtures dos testes compartilham a preparação dos dados reais por sessão, com cópias por
+  módulo; dois testes da página reutilizam o mesmo HTML, preservando as verificações (#57).
+
 - Instruções dos agentes movidas de `CLAUDE.md` para `AGENTS.md`; o `CLAUDE.md` só importa o
   `AGENTS.md` (#22).
 
 ### Adicionado
 
+- Atualização automática (#9): `python -m macroaf.pipeline` (extração → harmonização → marts →
+  páginas, parando na primeira falha) e o workflow `atualizacao.yml`, diário do dia 15 ao fim do
+  mês, com commit na `main` só se houve mudança e os testes passaram; execução manual com opção de
+  republicar.
 - Marts do IPCA-15 em `data/marts/` (`python -m macroaf.marts.publicar`): categorias, mensal,
   acumulados, contribuições e difusão em CSV, dicionário de dados gerado, `data/metadata.json` e
   histórico de mudanças de série; a publicação é bloqueada se uma validação ou conferência falha

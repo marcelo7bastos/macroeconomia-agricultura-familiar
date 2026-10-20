@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.acumulados import (
     JANELAS,
     limite_acumulado,
@@ -16,13 +15,9 @@ from macroaf.indicators.indice import (
     marcar_cesta_variavel,
     montar_indice,
 )
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
-from macroaf.transform.ipca15 import montar_fato, montar_referencia
 from macroaf.validate.ipca15 import carregar_excecoes
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 REFERENCIA = next(t.tabela for t in IPCA15.tabelas if t.papel == "referencia")
 SEM_EXCECOES = carregar_excecoes(IPCA15).iloc[0:0]
 CONTAGEM_RUIDO_356 = {1387: 309, 1646: 329}  # A-024: sentinela; mudou, investigar
@@ -92,13 +87,11 @@ def test_oficial_antes_do_inicio_dos_dados_vale():
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    longa = montar_serie_longa(fato, dim, ler_mapa(IPCA15))
+def base(dados_longa, dados_referencia):
+    longa = dados_longa
     excecoes = carregar_excecoes(IPCA15)
     indice = montar_indice(longa, marcar_cesta_variavel(longa, excecoes))
-    referencia = montar_referencia(IPCA15, ARMAZEM)
+    referencia = dados_referencia
     acumulados = montar_acumulados(indice, longa, referencia, excecoes, REFERENCIA)
     return indice, longa, acumulados
 

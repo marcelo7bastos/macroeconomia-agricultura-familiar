@@ -25,6 +25,45 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-031 · 2026-10-20 · Diferença numérica entre CPUs e diff gigante ocultavam a falha
+- **Contexto:** CI do PR #57 parado por 20 minutos no teste de publicação (#9).
+- **O que aconteceu:** a pilha apontou `difflib` ao explicar uma igualdade de CSVs de vários MB.
+  Desativando as otimizações de CPU do NumPy, reproduzimos diferenças em 13 linhas de acumulados
+  e 38 de contribuições, nas últimas casas arredondadas; com `--assert=plain`, a falha apareceu
+  em 9,94 s. O processamento terminava: a explicação da diferença é que consumia o tempo.
+- **Lição:** por regra do mantenedor, comparar acumulados de origem `calculado` e contribuições
+  calculadas com diferença absoluta máxima inclusiva de 0,001 p.p., sem tolerância relativa.
+  Preservar igualdade exata nos oficiais, códigos, datas, textos, estrutura e valores ausentes.
+  Informar apenas a primeira diferença, com arquivo, linha e coluna; não gerar diff integral.
+- **Promovida para:** `tests/comparar_publicacao.py`, `tests/test_comparar_publicacao.py`, teste
+  de publicação em `tests/test_marts.py` e `METODOLOGIA.md` 12. A regra não muda as fórmulas,
+  casas publicadas nem as validações contra o IBGE da seção 6.
+
+### A-030 · 2026-10-20 · Fixtures de módulo repetem a preparação entre arquivos
+- **Contexto:** investigação do CI intermitente no PR #57 (#9).
+- **O que aconteceu:** no commit 644b959, a suíte chamou `montar_fato` 13 vezes. Um experimento
+  local compartilhando a preparação das fixtures e o HTML reduziu as chamadas para 4 e o tempo
+  de 99,34 s para 77,67 s. Isso mede trabalho repetido, sem comprovar a causa do travamento no CI.
+- **Lição:** compartilhar os dados básicos por sessão e entregar cópias por módulo; manter
+  independentes a publicação completa e as validações de dados alterados. O ganho de tempo não
+  implica redução de memória, pois os dados compartilhados permanecem vivos durante a sessão.
+- **Promovida para:** `tests/conftest.py` e fixture `pagina_gerada` em
+  `tests/test_relatorio_transformacoes.py`.
+
+### A-029 · 2026-10-20 · No dia da divulgação, um mês de defasagem não é troca de POF
+- **Contexto:** atualização automática (#9), revisão do `revisor-metodologico`.
+- **O que aconteceu:** a extração trata tabela de dados aberta atrás da referência (3065) como
+  sinal de troca de tabela (código 2). No dia da divulgação, as duas podem ser atualizadas em
+  horários diferentes; uma rotina diária às 09:23 daria falso alarme de POF nova, com workflow
+  vermelho e e-mail. Na mesma revisão: metadados podem mudar sem mês novo nem revisão, e o pipeline
+  diria "nada novo" deixando o raw alterado sem republicar.
+- **Lição:** defasagem de exatamente um mês é divulgação em andamento (aguarda, saída 0); maior é
+  troca. Toda mudança no raw, inclusive de metadados, conta como novidade.
+- **Promovida para:** `AguardandoDivulgacao` e `Relatorio.houve_mudanca` em
+  `macroaf.extract.atualizar`; testes `test_referencia_um_mes_a_frente_e_divulgacao_em_andamento`,
+  `test_metadados_alterados_contam_como_mudanca` e `test_ibge_ainda_divulgando_nao_e_falha`;
+  `METODOLOGIA.md` 1.
+
 ### A-028 · 2026-10-20 · Mart publicado do zero esconde estado e marcas
 - **Contexto:** marts (#8), revisão do `revisor-metodologico`.
 - **O que aconteceu:** duas falhas que os testes não pegavam. (1) O teste de "marts em dia"
