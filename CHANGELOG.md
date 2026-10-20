@@ -6,6 +6,11 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Alterado
 
+- Teste de publicação compara acumulados calculados e contribuições com diferença absoluta
+  máxima de 0,001 p.p., preservando igualdade exata dos oficiais e demais campos. As falhas
+  mostram a primeira diferença sem gerar diffs gigantes; hashes continuam conferidos contra
+  seus próprios CSVs (A-031, #57).
+
 - Fixtures dos testes compartilham a preparação dos dados reais por sessão, com cópias por
   módulo; dois testes da página reutilizam o mesmo HTML, preservando as verificações (#57).
 

@@ -25,6 +25,20 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-031 · 2026-10-20 · Diferença numérica entre CPUs e diff gigante ocultavam a falha
+- **Contexto:** CI do PR #57 parado por 20 minutos no teste de publicação (#9).
+- **O que aconteceu:** a pilha apontou `difflib` ao explicar uma igualdade de CSVs de vários MB.
+  Desativando as otimizações de CPU do NumPy, reproduzimos diferenças em 13 linhas de acumulados
+  e 38 de contribuições, nas últimas casas arredondadas; com `--assert=plain`, a falha apareceu
+  em 9,94 s. O processamento terminava: a explicação da diferença é que consumia o tempo.
+- **Lição:** por regra do mantenedor, comparar acumulados de origem `calculado` e contribuições
+  calculadas com diferença absoluta máxima inclusiva de 0,001 p.p., sem tolerância relativa.
+  Preservar igualdade exata nos oficiais, códigos, datas, textos, estrutura e valores ausentes.
+  Informar apenas a primeira diferença, com arquivo, linha e coluna; não gerar diff integral.
+- **Promovida para:** `tests/comparar_publicacao.py`, `tests/test_comparar_publicacao.py`, teste
+  de publicação em `tests/test_marts.py` e `METODOLOGIA.md` 12. A regra não muda as fórmulas,
+  casas publicadas nem as validações contra o IBGE da seção 6.
+
 ### A-030 · 2026-10-20 · Fixtures de módulo repetem a preparação entre arquivos
 - **Contexto:** investigação do CI intermitente no PR #57 (#9).
 - **O que aconteceu:** no commit 644b959, a suíte chamou `montar_fato` 13 vezes. Um experimento

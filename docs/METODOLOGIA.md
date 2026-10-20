@@ -499,7 +499,18 @@ qualquer problema, nada é escrito.
   arredondamento das conferências.
 - `data/marts/README.md` (dicionário) e `data/metadata.json` (último mês, coleta, validações,
   linhas e hash de cada arquivo) são gerados junto. Um teste exige que os arquivos versionados
-  sejam os que o pipeline produz.
+  sejam os que o pipeline produz, segundo a comparação abaixo.
+- **Comparação entre ambientes (A-031):** no teste de publicação, acumulados com origem
+  `calculado` e contribuições calculadas (mensais e por janela) admitem diferença absoluta
+  **máxima de 0,001 ponto percentual**, inclusive, sem tolerância relativa e sem arredondar
+  novamente antes da comparação. Valores oficiais, demais campos calculados, códigos, datas,
+  textos, ordem e quantidade de linhas e colunas e posições dos valores ausentes continuam
+  exatos. A precisão dos CSVs e as validações metodológicas da seção 6 não mudam. O diagnóstico
+  informa a primeira diferença, sem construir um diff de arquivos inteiros.
+- **Integridade dos arquivos comparados:** como valores calculados aceitos podem produzir bytes
+  diferentes entre CPUs, cada hash de `metadata.json` é conferido contra o seu próprio CSV
+  (versionado ou recém-gerado). Os demais metadados são comparados exatamente; os hashes não
+  são descartados sem verificação.
 
 ## 13. Registro de descobertas
 
