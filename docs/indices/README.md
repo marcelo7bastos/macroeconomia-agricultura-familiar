@@ -8,6 +8,7 @@ revisadas no PR.
 | Índice | Ficha | Situação |
 |---|---|---|
 | IPCA-15 | [ipca15.md](ipca15.md) | piloto |
+| IPCA cheio | [ipca.md](ipca.md) | planejamento [#12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12) |
 
 ## Modelo
 

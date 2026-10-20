@@ -19,6 +19,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Projeto de preparação do IPCA cheio: ficha conferida nas APIs oficiais, entrega principal
+  desde julho/2006, extensão histórica separada e dez tarefas preparadas para GitHub Projects
+  (#12). A implementação e a publicação dos dados permanecem pendentes.
+
 - Atualização automática (#9): `python -m macroaf.pipeline` (extração → harmonização → marts →
   páginas, parando na primeira falha) e o workflow `atualizacao.yml`, diário do dia 15 ao fim do
   mês, com commit na `main` só se houve mudança e os testes passaram; execução manual com opção de

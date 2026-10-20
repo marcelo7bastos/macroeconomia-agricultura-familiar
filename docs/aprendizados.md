@@ -25,6 +25,19 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-032 · 2026-10-20 · IPCA exige composição no histórico anterior a julho/2006
+- **Contexto:** planejamento da fonte IPCA cheio (#12), levantamento nas APIs oficiais.
+- **O que aconteceu:** 655, 656 e 657 cobrem os mesmos 83 meses (ago/1999–jun/2006) e categorias,
+  publicando respectivamente variação, peso e acumulado no ano. O catálogo atual admite apenas
+  tabelas sucessivas sem sobreposição e uma POF por tabela. A referência 1737 começa em 1979-12,
+  antes do detalhe; os intervalos ausentes de 12 meses também diferem dos do IPCA-15.
+- **Lição:** preparar primeiro 2938/1419/7060 desde julho/2006 e separar a extensão histórica.
+  Projetar a composição das tabelas complementares antes de ativá-las, preservar a cobertura
+  original da referência e validar no intervalo pertinente. Trocar apenas os IDs do IPCA-15
+  não implementa essas diferenças.
+- **Promovida para:** ficha `docs/indices/ipca.md` e plano `docs/projetos/ipca-geral.md`, com
+  tarefas específicas de composição, cobertura, perfil de ausentes e regressão.
+
 ### A-031 · 2026-10-20 · Diferença numérica entre CPUs e diff gigante ocultavam a falha
 - **Contexto:** CI do PR #57 parado por 20 minutos no teste de publicação (#9).
 - **O que aconteceu:** a pilha apontou `difflib` ao explicar uma igualdade de CSVs de vários MB.
