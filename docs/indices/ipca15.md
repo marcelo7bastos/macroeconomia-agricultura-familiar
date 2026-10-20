@@ -133,6 +133,8 @@ Campo `nivel` por tabela (só para registro; não use):
   1646, 1387, 1705 e 3065 estão listados em `METODOLOGIA.md` 6.4 (A-015).
 - Categorias novas na 1387 já vêm com acumulado no ano herdado; na 1705 e na 7062 começam com
   acumulado = variação do mês (A-017).
+- Revisão da harmonização (2026-10-20): 116 propostas aceitas e 14 não aceitas (9 casos em
+  investigação, issues #32 a #40, o do leite com prioridade); ver `METODOLOGIA.md` 7.4.
 - Harmonização (#6): mapa em `reference/map_harmonizacao_ipca15.csv`, série longa em
   `serie_longa_ipca15` no staging. O subgrupo `72` muda de nome duas vezes, o item `1117`
   Alimentos prontos some na 1387 e o `7203` Fotografia e filmagem some na 7062 (A-020). Há

@@ -260,6 +260,37 @@ filmagem some na 7062 e o item `1117` Alimentos prontos some na 1387. Por isso s
 passam pela mesma regra dos subitens, e a afirmação "até subgrupo a série sai direto" (seção 4.3 do
 planejamento) vale só depois da revisão desses casos.
 
+### 7.4 Resultado da revisão (#6)
+
+Revisão feita pelo mantenedor (marcelo7bastos) em 2026-10-20, na página de revisão: as 130
+propostas foram decididas, **116 aceitas e 14 não aceitas**. Cada decisão está no mapa com
+`situacao` (`revisado` ou `rejeitado`), revisor e observação.
+
+| Efeito | Antes da revisão | Depois |
+|---|---|---|
+| Séries longas | 807 | 731 |
+| Subitens contínuos de mai/2000 a set/2026 | 212 | 261 |
+| Itens contínuos de mai/2000 a set/2026 | 48 | 50 |
+
+As 14 ligações não aceitas formam 9 casos, todos quebra marcada até a investigação:
+
+| Caso | Issue |
+|---|---|
+| Leite pasteurizado → Leite longa vida (prioridade) | #32 |
+| Massa para pão de queijo → Queijo | #33 |
+| Subgrupo 72: Recreação, fumo e fotografia → Recreação e fumo | #34 |
+| Peixe dividido em espécies (4 ligações) | #35 |
+| Conserto de aparelho de som → Conserto de aparelho celular | #36 |
+| Óculos sem grau → Óculos de grau | #37 |
+| Livro → didático e não didático (2 ligações) | #38 |
+| Telefone celular → Plano de telefonia móvel | #39 |
+| TV por assinatura com internet → TV por assinatura e Combo (2 ligações) | #40 |
+
+**Divisões e comparação retroativa (A-022).** Na observação sobre o peixe, o mantenedor registrou
+que, quando uma categoria vira várias, ainda é possível comparar com o passado somando as novas
+no nível da antiga, mas não seguir a série antiga para o presente e o futuro. Por isso uma divisão
+não aceita não é emendada; a comparação retroativa agregada é tema das issues #35, #38 e #40.
+
 ## 8. Registro de descobertas
 
 Toda descoberta sobre os dados ou o método segue o ciclo de [`aprendizados.md`](aprendizados.md):

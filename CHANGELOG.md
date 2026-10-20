@@ -11,6 +11,8 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Revisão da harmonização aplicada: 116 propostas aceitas e 14 não aceitas, com observação e
+  issue de investigação (#32 a #40); 261 subitens com série contínua de mai/2000 a set/2026 (#6).
 - `map_harmonizacao` do IPCA-15 (`reference/map_harmonizacao_ipca15.csv`) e série longa
   (`python -m macroaf.transform.harmonizacao`): ligações automáticas só com prova, propostas com
   evidência para revisão humana, quebras marcadas; seção de revisão na página de transformações

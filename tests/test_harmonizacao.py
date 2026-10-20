@@ -65,7 +65,9 @@ def test_mesmo_codigo_com_id_novo_nunca_emenda_sem_revisao(base):
         & (mapa.codigo_sidra_origem != mapa.codigo_sidra_destino)
     ]
     assert (mesmo_codigo.situacao == "automatico").sum() == 0
-    assert (mesmo_codigo.situacao == "proposto").sum() == 80
+    assert len(mesmo_codigo) == 80
+    decididas = mesmo_codigo[mesmo_codigo.situacao.isin(["revisado", "rejeitado"])]
+    assert decididas.revisor.notna().all()
 
 
 def test_fusao_com_categoria_que_mantem_o_codigo_aparece(base):
@@ -85,7 +87,8 @@ def test_leite_pasteurizado_nao_emenda_no_longa_vida(base):
         "1111004@2008-09": ["Leite longa vida"],
     }
     antiga = longa[longa.serie_id == "1111004@1995-96"].iloc[0]
-    assert antiga.saida == "renomeado (proposta não revisada)"
+    # Rejeitada pelo mantenedor na revisão da #6; investigação na issue #32.
+    assert antiga.saida == "renomeado (proposta rejeitada)"
 
 
 def test_revisao_humana_e_preservada_e_emenda_a_serie(base):
@@ -188,8 +191,10 @@ def test_pagina_de_revisao_esta_em_dia():
 
 def test_aplicar_decisoes_da_pagina(base):
     _, _, mapa = base
-    propostas = mapa[mapa.situacao == "proposto"]
-    aceita, rejeitada = (id_ligacao(r) for r in propostas.head(2).itertuples())
+    mapa = mapa.copy()
+    candidatas = mapa.index[mapa.situacao == "revisado"][:2]
+    mapa.loc[candidatas, ["situacao", "revisor"]] = ["proposto", None]
+    aceita, rejeitada = (id_ligacao(r) for r in mapa.loc[candidatas].itertuples())
     decidido = aplicar_decisoes(
         mapa,
         [

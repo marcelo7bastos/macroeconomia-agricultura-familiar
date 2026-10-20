@@ -37,9 +37,9 @@ DUVIDAS = [
         "METODOLOGIA.md 6.2 · A-013",
     ),
     (
-        "Quais propostas de harmonização (mesmo código com id novo, fusões e divisões) emendam a "
-        "série e quais são quebra: aguardam revisão do mantenedor.",
-        "issue #6 · A-012 · seção Harmonização",
+        "Nove casos de harmonização não aceitos pelo mantenedor aguardam investigação; até lá, são "
+        "quebra marcada. O do leite (pasteurizado → longa vida) é prioridade.",
+        "issues #32 a #40 · METODOLOGIA.md 7.4",
     ),
     (
         "Se o projeto reporta ao IBGE os erros publicados que encontrou, em especial os da 3065.",
@@ -383,11 +383,17 @@ def _secao_resumo(f: dict) -> str:
     ]
     if f.get("harmonizacao"):
         h = f["harmonizacao"]
-        a_revisar = sum(1 for p in h["propostas"] if p["situacao"] == "proposto")
+        conta = {
+            s: sum(1 for p in h["propostas"] if p["situacao"] == s)
+            for s in ["proposto", "revisado", "rejeitado"]
+        }
+        revisao = f"o mantenedor aceitou {_n(conta['revisado'])} propostas e não aceitou {_n(conta['rejeitado'])}"
+        if conta["proposto"]:
+            revisao += f"; {_n(conta['proposto'])} aguardam revisão"
         feito.insert(
             3,
             f"Ligamos as categorias entre POFs ({_n(h['linhas'])} ligações) e montamos {_n(h['series']['total'])} séries longas; "
-            f"{_n(a_revisar)} ligações aguardam revisão e, até lá, contam como quebra.",
+            f"{revisao}. O que não foi aceito ou não foi revisado conta como quebra.",
         )
     quem = [
         ("macroaf.extract", "baixa e guarda o raw"),
@@ -445,24 +451,27 @@ def _secao_harmonizacao(f: dict) -> str:
     for tr in transicoes:
         celulas = []
         for tipo in tipos:
-            auto = sum(
-                c["n"]
-                for c in h["contagem"]
-                if c["transicao"] == tr
-                and c["tipo_correspondencia"] == tipo
-                and c["situacao"] != "proposto"
-            )
-            prop = sum(
-                c["n"]
-                for c in h["contagem"]
-                if c["transicao"] == tr
-                and c["tipo_correspondencia"] == tipo
-                and c["situacao"] == "proposto"
-            )
-            texto = _n(auto) if auto else "·"
-            if prop:
-                texto += f' <span class="selo parcial">+{_n(prop)} a revisar</span>'
-            celulas.append(texto)
+
+            def conta(situacao, tr=tr, tipo=tipo):
+                return sum(
+                    c["n"]
+                    for c in h["contagem"]
+                    if c["transicao"] == tr
+                    and c["tipo_correspondencia"] == tipo
+                    and c["situacao"] == situacao
+                )
+
+            partes = [_n(conta("automatico"))] if conta("automatico") else []
+            for situacao, classe, rotulo in [
+                ("revisado", "sim", "aceitas"),
+                ("rejeitado", "falha", "não aceitas"),
+                ("proposto", "parcial", "a revisar"),
+            ]:
+                if conta(situacao):
+                    partes.append(
+                        f'<span class="selo {classe}">{_n(conta(situacao))} {rotulo}</span>'
+                    )
+            celulas.append(" ".join(partes) or "·")
         linhas_contagem.append([f"POF {tr}", *celulas])
     s = h["series"]
     niveis = ["geral", "grupo", "subgrupo", "item", "subitem"]
@@ -470,13 +479,13 @@ def _secao_harmonizacao(f: dict) -> str:
 
     def linha(p: dict) -> list[str]:
         peso = lambda v: "·" if v is None else str(v).replace(".", ",")  # noqa: E731
-        situacao = (
-            f'<span class="selo sim">revisado ({escape(p["revisor"] or "")})</span>'
-            if p["situacao"] == "revisado"
-            else '<span class="selo parcial">a revisar</span>'
-            if p["situacao"] == "proposto"
-            else '<span class="selo nao">automático</span>'
-        )
+        situacao = {
+            "revisado": f'<span class="selo sim">aceita ({escape(p["revisor"] or "")})</span>',
+            "rejeitado": f'<span class="selo falha">não aceita ({escape(p["revisor"] or "")})</span>',
+            "proposto": '<span class="selo parcial">a revisar</span>',
+        }.get(p["situacao"], '<span class="selo nao">automático</span>')
+        if p.get("observacao"):
+            situacao += f"<br><small>{escape(p['observacao'])}</small>"
         return [
             f"<code>{escape(p['id'])}</code>",
             escape(p["transicao"]),
@@ -511,8 +520,8 @@ def _secao_harmonizacao(f: dict) -> str:
   <h3>Séries longas hoje</h3>
   <p>{_n(s["linhas"])} linhas em {_n(s["total"])} séries. "Completas" vão do primeiro ao último mês dos dados sem quebra.</p>
   {_tabela_html(["Nível", "Séries", "Completas"], linhas_series)}
-  <h3>Propostas para revisão</h3>
-  <p>Cada linha é uma ligação sugerida pelas regras, com a evidência: nomes, ids, critério e o peso da categoria no último mês da tabela antiga e no primeiro da nova. Para revisar, responda com os ids: os que aprova e os que são quebra.</p>
+  <h3>Propostas e decisões da revisão</h3>
+  <p>Cada linha é uma ligação sugerida pelas regras, com a evidência (nomes, ids, critério, peso no último mês da tabela antiga e no primeiro da nova) e a decisão do revisor. Aceita emenda a série (renomeado) ou confirma a fusão ou divisão; não aceita mantém a quebra e cita a issue de investigação. A revisão é feita na página <code>docs/revisao/harmonizacao_{escape(f["indice"]["codigo"])}.html</code>.</p>
   <div class="controles">
     <label for="busca-propostas">Buscar:</label>
     <input type="search" id="busca-propostas" placeholder="nome ou código">

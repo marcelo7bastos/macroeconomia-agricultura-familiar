@@ -138,9 +138,10 @@ def _coletar_harmonizacao(indice: Indice, dim: pd.DataFrame, fato: pd.DataFrame)
             if pd.isna(r.peso_destino_inicio)
             else round(float(r.peso_destino_inicio), 4),
             "revisor": _texto(r.revisor),
+            "observacao": _texto(r.observacao),
         }
 
-    revisar = mapa[mapa.situacao.isin(["proposto", "revisado"])].sort_values(
+    revisar = mapa[mapa.situacao.isin(["proposto", "revisado", "rejeitado"])].sort_values(
         ["transicao", "codigo_ibge_origem"]
     )
     entram_saem = mapa[mapa.tipo_correspondencia.isin(["descontinuado", "novo"])].sort_values(

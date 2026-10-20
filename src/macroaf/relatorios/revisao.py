@@ -39,7 +39,8 @@ def caminho_pagina(indice: Indice) -> Path:
 
 def _grupos(mapa: pd.DataFrame) -> list[list[int]]:
     """Propostas ligadas por uma categoria em comum formam um grupo (revisado junto)."""
-    propostas = mapa[mapa.situacao == "proposto"]
+    # Propostas pendentes e as já decididas (a página é também o registro da revisão).
+    propostas = mapa[mapa.situacao.isin(["proposto", "revisado", "rejeitado"])]
     pai = {i: i for i in propostas.index}
 
     def raiz(i):
@@ -140,6 +141,13 @@ def coletar(indice: Indice) -> dict:
                         "criterio": r.criterio,
                         "origem": lado(r, "origem"),
                         "destino": lado(r, "destino"),
+                        "registrada": None
+                        if r.situacao == "proposto"
+                        else {
+                            "decisao": "aceita" if r.situacao == "revisado" else "rejeitada",
+                            "revisor": r.revisor,
+                            "observacao": r.observacao or "",
+                        },
                     }
                     for _, r in linhas.iterrows()
                 ],
@@ -187,6 +195,7 @@ button.acao:disabled { opacity: 0.5; cursor: not-allowed; }
 JS_REVISAO = """
 const dados = JSON.parse(document.getElementById('dados').textContent);
 const ligacoes = dados.grupos.flatMap((g) => g.ligacoes.map((l) => ({...l, grupo: g})));
+const porId = Object.fromEntries(ligacoes.map((l) => [l.id, l]));
 const decisoes = {};
 const rascunhos = {};
 let db = null;
@@ -252,14 +261,22 @@ function montar() {
 function atualizar() {
   let aceitas = 0, rejeitadas = 0;
   document.querySelectorAll('.ligacao').forEach((el) => {
-    const d = decisoes[el.dataset.id];
+    const registrada = porId[el.dataset.id].registrada;
+    const naPagina = decisoes[el.dataset.id];
+    const d = naPagina || registrada;
     el.classList.toggle('aceita', d?.decisao === 'aceita');
     el.classList.toggle('rejeitada', d?.decisao === 'rejeitada');
     el.querySelector('.aceitar').setAttribute('aria-pressed', String(d?.decisao === 'aceita'));
     el.querySelector('.rejeitar:not(.salvar)').setAttribute('aria-pressed', String(d?.decisao === 'rejeitada'));
-    el.querySelector('.desfazer').hidden = !d;
+    el.querySelector('.desfazer').hidden = !naPagina;
     el.querySelectorAll('button').forEach((b) => { b.disabled = !db; });
-    el.querySelector('.estado').textContent = d ? (d.decisao === 'aceita' ? 'Aceita' : 'Não aceita: ' + d.observacao) : '';
+    let texto = d ? (d.decisao === 'aceita' ? 'Aceita' : 'Não aceita: ' + d.observacao) : '';
+    if (registrada) {
+      const igual = !naPagina || (naPagina.decisao === registrada.decisao);
+      texto = (igual ? 'Registrada no mapa por ' + registrada.revisor + ': ' : 'Alterada na página, aguardando aplicação ao mapa: ') + texto;
+      if (igual && registrada.observacao) texto = texto.replace(/: [^:]*$/, ': ' + (registrada.decisao === 'aceita' ? 'Aceita' : 'Não aceita') + ' (' + registrada.observacao + ')');
+    }
+    el.querySelector('.estado').textContent = texto;
     if (d?.decisao === 'rejeitada' || d?.decisao === 'aceita') el.querySelector('.observacao').hidden = true;
     if (d?.decisao === 'aceita') aceitas++; else if (d?.decisao === 'rejeitada') rejeitadas++;
   });
@@ -338,6 +355,7 @@ def renderizar(dados: dict) -> str:
     json_dados = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
     transicoes = sorted({g["transicao"] for g in dados["grupos"]})
     n_ligacoes = sum(len(g["ligacoes"]) for g in dados["grupos"])
+    n_registradas = sum(1 for g in dados["grupos"] for lig in g["ligacoes"] if lig["registrada"])
     botoes = "".join(
         f'<button type="button" class="aba" data-filtro-transicao="{escape(t)}" id="tr-{i}">{escape(t)}</button>'
         for i, t in enumerate(transicoes)
@@ -353,7 +371,7 @@ def renderizar(dados: dict) -> str:
     <span class="olho">Macroeconomia da Agricultura Familiar · {escape(dados["codigo"])} · issue #6</span>
     <h1>Revisão da harmonização do {escape(dados["indice"])}</h1>
     <p>Cada cartão liga categorias de uma tabela do IBGE às da tabela seguinte, depois de uma troca de POF. As regras não tinham prova suficiente para ligar sozinhas; por isso, até você decidir, cada ligação conta como <b>quebra</b> na série longa. <b>Aceitar</b> confirma a ligação. <b>Não aceitar</b> mantém a quebra e pede uma observação. As ligações que tocam as mesmas categorias aparecem juntas no mesmo cartão: revise o cartão inteiro.</p>
-    <p class="situacao-texto">{n_ligacoes} ligações em {len(dados["grupos"])} cartões. As decisões ficam salvas nesta página; o Claude as lê e grava no mapa do repositório.</p>
+    <p class="situacao-texto">{n_ligacoes} ligações em {len(dados["grupos"])} cartões; {n_registradas} já registradas no mapa do repositório. As decisões ficam salvas nesta página; o Claude as lê e grava no mapa. Uma decisão registrada pode ser mudada aqui e aplicada de novo.</p>
   </header>
   <div class="painel">
     <div class="contadores" aria-live="polite">

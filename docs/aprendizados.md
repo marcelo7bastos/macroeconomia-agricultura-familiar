@@ -25,6 +25,18 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-022 · 2026-10-20 · Divisão permite comparar para trás, não seguir para a frente
+- **Contexto:** revisão humana das propostas de harmonização (#6), observação do mantenedor sobre
+  "Peixe" dividido em espécies na POF 2017-18.
+- **O que aconteceu:** 116 propostas aceitas e 14 não aceitas; todas as não aceitas pediram
+  investigação (issues #32 a #40). Para as divisões, o mantenedor observou que a soma das
+  categorias novas ainda se compara com a antiga no passado, mas a antiga não continua no presente.
+- **Lição:** divisão não aceita é quebra na série do subitem; uma comparação retroativa agregada é
+  um produto à parte (a definir nas issues), nunca uma emenda. Decisão humana sempre cita a issue
+  que a investiga.
+- **Promovida para:** mapa (`situacao`, revisor e observação com a issue); `METODOLOGIA.md` 7.4;
+  issues #32 a #40; teste `test_leite_pasteurizado_nao_emenda_no_longa_vida`.
+
 ### A-021 · 2026-10-19 · Busca de candidatos que ignora quem mantém o código esconde fusões
 - **Contexto:** revisão do mapa de harmonização (#6) pelo `revisor-metodologico`.
 - **O que aconteceu:** a busca só cruzava códigos que somem com códigos que aparecem. "Refrigerante"
