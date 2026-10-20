@@ -283,7 +283,7 @@ dl.glossario dt { font-weight: 600; } dl.glossario dd { margin: 0; color: var(--
   
 <section id="manter" class="secao">
   <h2>Como manter esta página certa</h2>
-  <p>Esta página é gerada pelo código a partir dos dados do repositório. Ninguém a edita à mão. Para atualizar:</p>
+  <p>Esta página é gerada pelo código a partir dos dados do repositório. Ninguém a edita à mão. Todo mês, o GitHub Actions roda <code>uv run python -m macroaf.pipeline --indice ipca15</code>, que faz tudo abaixo e só publica se nada falhar (#9). Etapa por etapa:</p>
   <pre><code>uv run python -m macroaf.extract.atualizar
 uv run python -m macroaf.transform.ipca15
 uv run python -m macroaf.validate.ipca15

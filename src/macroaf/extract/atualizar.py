@@ -201,6 +201,42 @@ def _escrever_saida_github(relatorio: Relatorio) -> None:
         arquivo.write(f"revisados={relatorio.total_revisados}\n")
 
 
+def extrair(
+    codigo_indice: str,
+    *,
+    verificar: bool = False,
+    tabelas: set[int] | None = None,
+    ate: str | None = None,
+    janela_revisao: int = JANELA_REVISAO,
+) -> tuple[int, Relatorio | None]:
+    """Atualiza o raw de um índice. Código 0 = ok, 1 = erro da fonte ou do raw, 2 = catálogo."""
+    catalogo = carregar_catalogo()
+    indice = catalogo.indices[codigo_indice]
+    armazem = ArmazemRaw(indice.fonte)
+    try:
+        with Cliente() as cliente:
+            relatorio = atualizar_indice(
+                catalogo,
+                indice,
+                cliente,
+                armazem,
+                verificar=verificar,
+                tabelas=tabelas,
+                ate=ate,
+                janela_revisao=janela_revisao,
+            )
+    except CatalogoDivergente as erro:
+        print(f"catálogo divergente dos metadados: {erro}", file=sys.stderr)
+        return 2, None
+    except (ErroFonte, httpx.HTTPError) as erro:
+        print(f"erro da fonte: {erro}", file=sys.stderr)
+        return 1, None
+    except (OSError, EOFError) as erro:
+        print(f"erro ao ler ou gravar o raw: {erro}", file=sys.stderr)
+        return 1, None
+    return 0, relatorio
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--indice", default="ipca15", help="código do índice no catálogo")
@@ -213,30 +249,15 @@ def main(argv: list[str] | None = None) -> int:
     catalogo = carregar_catalogo()
     if args.indice not in catalogo.indices:
         parser.error(f"índice desconhecido: {args.indice} (catálogo: {sorted(catalogo.indices)})")
-    indice = catalogo.indices[args.indice]
-    armazem = ArmazemRaw(indice.fonte)
-    try:
-        with Cliente() as cliente:
-            relatorio = atualizar_indice(
-                catalogo,
-                indice,
-                cliente,
-                armazem,
-                verificar=args.verificar,
-                tabelas=set(args.tabela) if args.tabela else None,
-                ate=args.ate,
-                janela_revisao=args.janela_revisao,
-            )
-    except CatalogoDivergente as erro:
-        print(f"catálogo divergente dos metadados: {erro}", file=sys.stderr)
-        return 2
-    except (ErroFonte, httpx.HTTPError) as erro:
-        print(f"erro da fonte: {erro}", file=sys.stderr)
-        return 1
-    except (OSError, EOFError) as erro:
-        print(f"erro ao ler ou gravar o raw: {erro}", file=sys.stderr)
-        return 1
-
+    codigo, relatorio = extrair(
+        args.indice,
+        verificar=args.verificar,
+        tabelas=set(args.tabela) if args.tabela else None,
+        ate=args.ate,
+        janela_revisao=args.janela_revisao,
+    )
+    if relatorio is None:
+        return codigo
     acao = "a baixar" if args.verificar else "baixados"
     print(f"{relatorio.total_novos} mês(es) {acao}; {relatorio.total_revisados} revisado(s)")
     _escrever_saida_github(relatorio)

@@ -1,0 +1,64 @@
+name: Atualização dos dados
+
+# Baixa do IBGE o que mudou, refaz a série longa, os indicadores e os marts e faz commit na main
+# só se algo mudou e tudo passou: validações, conferências e testes (#9, decisão 0003).
+# O IPCA-15 sai por volta dos dias 20 a 28; a janela diária cobre do dia 15 ao fim do mês.
+# Uma falha aparece no Actions e o GitHub avisa por e-mail quem mantém o agendamento.
+# Agendamentos de repositório público são desligados após 60 dias sem atividade no repositório;
+# os commits mensais desta rotina mantêm o agendamento ativo.
+
+on:
+  schedule:
+    - cron: "23 12 15-31 * *" # 09:23 em Brasília, depois da divulgação das 9h
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Republicar mesmo sem mês novo ou revisado"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizacao-dos-dados
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependências
+        run: uv sync --all-groups --locked
+      - name: Atualizar do IBGE até os marts
+        id: pipeline
+        run: |
+          if [ "${{ inputs.forcar }}" = "true" ]; then
+            uv run python -m macroaf.pipeline --indice ipca15 --forcar
+          else
+            uv run python -m macroaf.pipeline --indice ipca15
+          fi
+      - name: Ver se algo mudou no repositório
+        id: mudancas
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "houve=true" >> "$GITHUB_OUTPUT"
+            git status --short
+          else
+            echo "houve=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Testes (marts e páginas em dia, indicadores contra o IBGE)
+        if: steps.mudancas.outputs.houve == 'true'
+        run: uv run pytest -q
+      - name: Commit e push na main
+        if: steps.mudancas.outputs.houve == 'true'
+        run: |
+          ultimo=$(python3 -c "import json; print(json.load(open('data/metadata.json'))['ipca15']['ultimo_mes'])")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data reference docs
+          git commit -m "Atualiza os dados do IPCA-15 até ${ultimo}" -m "Gerado pelo workflow de atualização (#9)."
+          git push

@@ -11,6 +11,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Atualização automática (#9): `python -m macroaf.pipeline` (extração → harmonização → marts →
+  páginas, parando na primeira falha) e o workflow `atualizacao.yml`, diário do dia 15 ao fim do
+  mês, com commit na `main` só se houve mudança e os testes passaram; execução manual com opção de
+  republicar.
 - Marts do IPCA-15 em `data/marts/` (`python -m macroaf.marts.publicar`): categorias, mensal,
   acumulados, contribuições e difusão em CSV, dicionário de dados gerado, `data/metadata.json` e
   histórico de mudanças de série; a publicação é bloqueada se uma validação ou conferência falha

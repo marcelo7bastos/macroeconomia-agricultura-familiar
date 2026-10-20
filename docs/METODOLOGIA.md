@@ -16,6 +16,11 @@ Escopo atual: piloto **IPCA-15**. Tabelas, períodos e estruturas de pesos estã
   ([decisão 0003](decisoes/0003-extracao-incremental.md), A-008, A-011).
 - Antes de baixar, o catálogo (`config/series.yaml`) é conferido com os metadados: período de cada
   tabela e sinal de troca de tabela (#27).
+- Atualização automática (#9): o workflow `atualizacao.yml` roda `python -m macroaf.pipeline`
+  todo dia do 15 ao fim do mês, às 09:23 de Brasília. Só segue além da extração se o IBGE
+  publicou mês novo ou revisou um dos últimos meses; só faz commit se a publicação dos marts
+  passou (seção 12) e se os testes passam. Catálogo divergente dos metadados para tudo com
+  código 2: é o sinal de POF nova, que pede revisão humana (#27).
 
 ## 2. Identificação das categorias
 
