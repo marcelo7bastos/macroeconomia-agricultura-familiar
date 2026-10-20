@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from macroaf.catalogo import RAIZ, carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.calcular import calcular_indicadores
 from macroaf.marts import publicar as publicar_mod
 from macroaf.marts.publicar import (
@@ -16,20 +15,15 @@ from macroaf.marts.publicar import (
     montar_marts,
     publicar,
 )
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
-from macroaf.transform.ipca15 import montar_fato, montar_referencia
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    referencia = montar_referencia(IPCA15, ARMAZEM)
-    longa = montar_serie_longa(fato, dim, ler_mapa(IPCA15))
+def base(dados_dim, dados_referencia, dados_longa):
+    dim = dados_dim
+    referencia = dados_referencia
+    longa = dados_longa
     ind = calcular_indicadores(IPCA15, longa, referencia)
     return montar_marts(dim, longa, ind), longa, ind, referencia
 

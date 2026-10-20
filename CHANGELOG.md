@@ -6,6 +6,9 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Alterado
 
+- Fixtures dos testes compartilham a preparação dos dados reais por sessão, com cópias por
+  módulo; dois testes da página reutilizam o mesmo HTML, preservando as verificações (#57).
+
 - Instruções dos agentes movidas de `CLAUDE.md` para `AGENTS.md`; o `CLAUDE.md` só importa o
   `AGENTS.md` (#22).
 

@@ -25,6 +25,17 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-030 · 2026-10-20 · Fixtures de módulo repetem a preparação entre arquivos
+- **Contexto:** investigação do CI intermitente no PR #57 (#9).
+- **O que aconteceu:** no commit 644b959, a suíte chamou `montar_fato` 13 vezes. Um experimento
+  local compartilhando a preparação das fixtures e o HTML reduziu as chamadas para 4 e o tempo
+  de 99,34 s para 77,67 s. Isso mede trabalho repetido, sem comprovar a causa do travamento no CI.
+- **Lição:** compartilhar os dados básicos por sessão e entregar cópias por módulo; manter
+  independentes a publicação completa e as validações de dados alterados. O ganho de tempo não
+  implica redução de memória, pois os dados compartilhados permanecem vivos durante a sessão.
+- **Promovida para:** `tests/conftest.py` e fixture `pagina_gerada` em
+  `tests/test_relatorio_transformacoes.py`.
+
 ### A-029 · 2026-10-20 · No dia da divulgação, um mês de defasagem não é troca de POF
 - **Contexto:** atualização automática (#9), revisão do `revisor-metodologico`.
 - **O que aconteceu:** a extração trata tabela de dados aberta atrás da referência (3065) como

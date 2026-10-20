@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from macroaf.catalogo import carregar_catalogo
-from macroaf.extract.raw import ArmazemRaw
 from macroaf.indicators.indice import (
     acumulado,
     acumulado_no_ano,
@@ -13,13 +12,9 @@ from macroaf.indicators.indice import (
     montar_indice,
     rebasear,
 )
-from macroaf.transform.classificacao import montar_dim_classificacao
-from macroaf.transform.harmonizacao import ler_mapa, montar_serie_longa
-from macroaf.transform.ipca15 import montar_fato, montar_referencia
 from macroaf.validate.ipca15 import MEIA_CASA_VARIACAO, carregar_excecoes
 
 IPCA15 = carregar_catalogo().indices["ipca15"]
-ARMAZEM = ArmazemRaw(IPCA15.fonte)
 INICIO_TABELA = {t.tabela: t.inicio for t in IPCA15.tabelas_dados}
 ANTERIOR = {nova: antiga for antiga, nova in pairwise(t.tabela for t in IPCA15.tabelas_dados)}
 
@@ -87,14 +82,12 @@ def test_mes_faltando_e_erro():
 
 
 @pytest.fixture(scope="module")
-def base():
-    dim = montar_dim_classificacao(IPCA15, ARMAZEM)
-    fato = montar_fato(IPCA15, ARMAZEM, dim)
-    longa = montar_serie_longa(fato, dim, ler_mapa(IPCA15))
+def base(dados_longa, dados_referencia):
+    longa = dados_longa
     indice = montar_indice(longa, marcar_cesta_variavel(longa, carregar_excecoes(IPCA15)))
     publicados = longa[["serie_id", "mes", "variacao_acum_ano", "variacao_acum_12m"]]
     indice = indice.merge(publicados, on=["serie_id", "mes"], validate="one_to_one")
-    return indice, montar_referencia(IPCA15, ARMAZEM).set_index("mes")
+    return indice, dados_referencia.set_index("mes")
 
 
 def _limite(indice: pd.DataFrame, calculado: pd.Series, meses: pd.Series) -> pd.Series:
