@@ -1,0 +1,277 @@
+{
+  "ipca15": {
+    "arquivos": {
+      "ipca15_acumulados.csv": {
+        "colunas": [
+          "mes",
+          "chave_categoria",
+          "acum_3m",
+          "acum_6m",
+          "acum_12m",
+          "acum_24m",
+          "acum_36m",
+          "acum_ano",
+          "origem_3m",
+          "origem_6m",
+          "origem_12m",
+          "origem_24m",
+          "origem_36m",
+          "origem_ano",
+          "cesta_variavel_janelas"
+        ],
+        "linhas": 153465,
+        "sha256": "40c3c6b7999202d89dda983ce388bfd0314295860a7365798948c6be388692b7"
+      },
+      "ipca15_categorias.csv": {
+        "colunas": [
+          "chave_categoria",
+          "tabela_sidra",
+          "codigo_sidra",
+          "versao_pof",
+          "codigo_ibge",
+          "nome",
+          "nivel_hierarquico",
+          "codigo_pai",
+          "grupo",
+          "subgrupo",
+          "item",
+          "serie_id",
+          "serie_nome",
+          "serie_inicio",
+          "serie_fim",
+          "serie_entrada",
+          "serie_saida"
+        ],
+        "linhas": 1951,
+        "sha256": "f128b1ade66e06f1d6ce46bfe408538b7af3fd374678b639b5c9c47647f21b34"
+      },
+      "ipca15_contribuicoes.csv": {
+        "colunas": [
+          "mes",
+          "chave_categoria",
+          "contrib_3m",
+          "contrib_6m",
+          "contrib_12m",
+          "contrib_24m",
+          "contrib_36m",
+          "contrib_ano"
+        ],
+        "linhas": 148337,
+        "sha256": "1a539c16afc2438b73bef45582fc996e88eaa62b4033d070a2f920c0af5c31c4"
+      },
+      "ipca15_difusao.csv": {
+        "colunas": [
+          "mes",
+          "codigo_ibge",
+          "tabela_sidra",
+          "versao_pof",
+          "cesta_nova",
+          "subitens",
+          "subitens_peso_zero",
+          "positivos",
+          "difusao_simples",
+          "difusao_ponderada"
+        ],
+        "linhas": 3170,
+        "sha256": "2cd45295d718fd53b06248554481a58349ce0edac8bf1a89916228c5596089b4"
+      },
+      "ipca15_mensal.csv": {
+        "colunas": [
+          "mes",
+          "chave_categoria",
+          "variacao_mensal",
+          "peso",
+          "variacao_acum_ano_publicada",
+          "variacao_acum_12m_publicada",
+          "indice_base_100",
+          "contribuicao_pp",
+          "participacao_no_grupo",
+          "sazonalidade_media",
+          "sazonalidade_mediana",
+          "cesta_variavel",
+          "sazonalidade_cesta_variavel"
+        ],
+        "linhas": 153741,
+        "sha256": "0d33ed90b467a83768b37c234ef918485d760c591bbe0c164a1fd459d4b0ee74"
+      }
+    },
+    "indice": "ipca15",
+    "nome": "IPCA-15",
+    "tabelas": {
+      "1387": {
+        "fim": "2012-01",
+        "inicio": "2006-08"
+      },
+      "1646": {
+        "fim": "2006-07",
+        "inicio": "2000-05"
+      },
+      "1705": {
+        "fim": "2020-01",
+        "inicio": "2012-02"
+      },
+      "3065": {
+        "fim": "2026-09",
+        "inicio": "2000-05"
+      },
+      "7062": {
+        "fim": "2026-09",
+        "inicio": "2020-02"
+      }
+    },
+    "ultima_coleta": "2026-10-19T20:36:41Z",
+    "ultimo_mes": "2026-09",
+    "validacoes": [
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "contrato",
+        "maior_diferenca": null,
+        "ok": true,
+        "validacao": "esquema",
+        "verificados": 153741
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 2,
+        "falhas": 0,
+        "limite": "0,00005 x (grupos + 1)",
+        "maior_diferenca": 0.1,
+        "ok": true,
+        "validacao": "pesos_grupos",
+        "verificados": 317
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 3,
+        "falhas": 0,
+        "limite": "0,00005 x (filhos + 1)",
+        "maior_diferenca": 0.0042,
+        "ok": true,
+        "validacao": "pesos_filhos",
+        "verificados": 25280
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 93,
+        "falhas": 0,
+        "limite": "nenhum peso zero",
+        "maior_diferenca": 1.0,
+        "ok": true,
+        "validacao": "pesos_zero",
+        "verificados": 153741
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 228,
+        "falhas": 0,
+        "limite": "0,005 (pai) + 0,005 (filhos) + soma(0,00005 x |v_i - v|) / soma(w)",
+        "maior_diferenca": 6.629345,
+        "ok": true,
+        "validacao": "reconciliacao",
+        "verificados": 25597
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "catálogo x dim_classificacao",
+        "maior_diferenca": null,
+        "ok": true,
+        "validacao": "continuidade",
+        "verificados": 153741
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 5006,
+        "falhas": 0,
+        "limite": "janeiro: igualdade; demais: arredondamento de um passo ou limite por nível",
+        "maior_diferenca": 96.417121,
+        "ok": true,
+        "validacao": "acumulado_ano",
+        "verificados": 151790
+      },
+      {
+        "ausentes": 107288,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "arredondamento da composição de 12 meses",
+        "maior_diferenca": 0.050206,
+        "ok": true,
+        "validacao": "acumulado_12m",
+        "verificados": 46453
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "igualdade exata",
+        "maior_diferenca": 0.0,
+        "ok": true,
+        "validacao": "costura_mensal",
+        "verificados": 317
+      },
+      {
+        "ausentes": 2,
+        "excecoes_aplicadas": 1,
+        "falhas": 0,
+        "limite": "arredondamento da composição de 3 meses",
+        "maior_diferenca": 0.489239,
+        "ok": true,
+        "validacao": "costura_acum_3m",
+        "verificados": 315
+      },
+      {
+        "ausentes": 5,
+        "excecoes_aplicadas": 3,
+        "falhas": 0,
+        "limite": "arredondamento da composição de 6 meses",
+        "maior_diferenca": 2.220189,
+        "ok": true,
+        "validacao": "costura_acum_6m",
+        "verificados": 312
+      },
+      {
+        "ausentes": 11,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "arredondamento da composição de 12 meses",
+        "maior_diferenca": 0.016659,
+        "ok": true,
+        "validacao": "costura_acum_12m",
+        "verificados": 306
+      },
+      {
+        "ausentes": 8,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "arredondamento da composição desde janeiro",
+        "maior_diferenca": 0.006807,
+        "ok": true,
+        "validacao": "costura_acum_ano",
+        "verificados": 309
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "0,00005 x I + 0,01 por passo",
+        "maior_diferenca": 0.06218,
+        "ok": true,
+        "validacao": "costura_numero_indice",
+        "verificados": 316
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "desvio relativo de 0,01%",
+        "maior_diferenca": 2.9e-05,
+        "ok": true,
+        "validacao": "costura_numero_indice_encadeado",
+        "verificados": 317
+      }
+    ]
+  }
+}

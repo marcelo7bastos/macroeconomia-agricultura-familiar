@@ -11,6 +11,10 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Marts do IPCA-15 em `data/marts/` (`python -m macroaf.marts.publicar`): categorias, mensal,
+  acumulados, contribuições e difusão em CSV, dicionário de dados gerado, `data/metadata.json` e
+  histórico de mudanças de série; a publicação é bloqueada se uma validação ou conferência falha
+  (decisões 0006 e 0007, #8).
 - Página de transformações com a seção Resultados (gráficos do acumulado em 12 meses, contribuições
   dos grupos, difusão e sazonalidade, conferência dos indicadores com o IBGE e exemplo da âncora do
   acumulado no ano, A-023), rastreio do leite até os indicadores e glossário; fatos atualizados

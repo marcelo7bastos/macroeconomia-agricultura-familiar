@@ -17,16 +17,13 @@ import pandas as pd
 
 from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
-from macroaf.indicators.acumulados import JANELAS, montar_acumulados
-from macroaf.indicators.contribuicoes import montar_contribuicoes
-from macroaf.indicators.difusao import montar_difusao
+from macroaf.indicators.acumulados import JANELAS
+from macroaf.indicators.calcular import calcular_indicadores
 from macroaf.indicators.indice import (
     acumulado,
     acumulado_no_ano,
-    marcar_cesta_variavel,
-    montar_indice,
 )
-from macroaf.indicators.sazonalidade import ANOS, montar_sazonalidade
+from macroaf.indicators.sazonalidade import ANOS
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
@@ -99,18 +96,14 @@ def _texto(valor) -> str | None:
     return None if valor is None or (isinstance(valor, float) and pd.isna(valor)) else str(valor)
 
 
-def _calcular_indicadores(indice: Indice, longa: pd.DataFrame, referencia: pd.DataFrame) -> dict:
-    """Os indicadores do staging, calculados uma vez para a página."""
-    excecoes = carregar_excecoes(indice)
-    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, excecoes))
-    tabela_referencia = next(t.tabela for t in indice.tabelas if t.papel == "referencia")
-    return {
-        "indice": encadeado,
-        "acumulados": montar_acumulados(encadeado, longa, referencia, excecoes, tabela_referencia),
-        "contribuicoes": montar_contribuicoes(encadeado, longa),
-        "difusao": montar_difusao(longa),
-        "sazonalidade": montar_sazonalidade(encadeado),
-    }
+def _coletar_marts(indice: Indice) -> list[dict]:
+    """Arquivos publicados do índice, com as linhas registradas no metadata.json."""
+    caminho = RAIZ / "data" / "metadata.json"
+    metadados = json.loads(caminho.read_text()).get(indice.codigo, {}) if caminho.exists() else {}
+    return [
+        {"arquivo": nome, "linhas": info["linhas"]}
+        for nome, info in sorted(metadados.get("arquivos", {}).items())
+    ]
 
 
 def _desvio_1117(encadeado: pd.DataFrame, referencia: pd.DataFrame) -> float:
@@ -509,7 +502,7 @@ def coletar(indice: Indice) -> dict:
     if caminho_mapa(indice).exists():
         longa = montar_serie_longa(fato, dim, ler_mapa(indice))
         harmonizacao = _coletar_harmonizacao(indice, fato, longa)
-        ind = _calcular_indicadores(indice, longa, referencia)
+        ind = calcular_indicadores(indice, longa, referencia)
         encadeado = _coletar_indice(ind, referencia)
         acumulados = _coletar_acumulados(ind)
         contribuicoes = _coletar_contribuicoes(ind)
@@ -573,5 +566,5 @@ def coletar(indice: Indice) -> dict:
         "contribuicoes": contribuicoes,
         "difusao": difusao,
         "resultados": numeros,
-        "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
+        "marts": _coletar_marts(indice),
     }

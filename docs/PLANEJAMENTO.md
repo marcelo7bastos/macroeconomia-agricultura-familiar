@@ -196,10 +196,12 @@ Variação mensal, acumulada no ano, acumulada em 12 meses e peso, para todos os
 
 ## 6. Saídas
 
-- `data/marts/*.parquet` e `*.csv`, com **nomes de arquivo estáveis** (URLs do raw do GitHub não
-  mudam; o Power BI lê direto delas).
+- `data/marts/*.csv` (só CSV, [decisão 0007](decisoes/0007-marts-so-em-csv.md)), com **nomes de
+  arquivo estáveis** (URLs do raw do GitHub não mudam; o Power BI lê direto delas). Chave das
+  linhas: mês e categoria publicada ([decisão 0006](decisoes/0006-chave-estavel-dos-marts.md)).
 - `data/marts/README.md` gerado automaticamente: dicionário de dados.
-- `data/metadata.json`: último mês por série, data da coleta, resultado das validações.
+- `data/metadata.json`: último mês dos dados, data da coleta, resultado das validações e linhas e
+  hash de cada arquivo (o fim de cada série longa está em `<indice>_categorias.csv`).
 
 ## 7. Stack
 
@@ -258,3 +260,4 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.9 | Documentação das transformações | **Página HTML por índice, em degraus, gerada dos dados** ([0004](decisoes/0004-explicacao-em-degraus.md)) |
 | 9.10 | Emenda de séries entre POFs | **Na dúvida, quebra**: só emenda com prova ou revisão humana ([0005](decisoes/0005-na-duvida-quebra.md)) |
 | 9.11 | Chave dos marts | **Categoria publicada (tabela e id SIDRA) e mês**; a série longa é atributo ([0006](decisoes/0006-chave-estavel-dos-marts.md)) |
+| 9.12 | Formato dos marts | **Só CSV** versionado; parquet só no staging ([0007](decisoes/0007-marts-so-em-csv.md)) |
