@@ -11,6 +11,13 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Difusão (simples e ponderada, no geral e por grupo) e sazonalidade (média e mediana por mês do
+  ano em 5 anos, por série longa) (`python -m macroaf.indicators.difusao` e
+  `macroaf.indicators.sazonalidade`); subitem com peso 0 fora da conta (A-026); `METODOLOGIA.md` 11
+  (#44).
+- Contribuições em pontos percentuais para o geral, no mês e nos acumulados, e participação no
+  grupo (`python -m macroaf.indicators.contribuicoes`); a soma dos grupos reproduz o geral dentro do
+  limite da reconciliação; `METODOLOGIA.md` 10 (#43).
 - Acumulados por janela (3, 6, 12, 24 e 36 meses e no ano) por série longa
   (`python -m macroaf.indicators.acumulados`): oficial onde mede o mesmo que a série (A-023), calculado
   pelo índice onde falta ou onde a fonte publicou erro, com `origem` e `cesta_variavel`;
