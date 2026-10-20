@@ -64,6 +64,8 @@ FEITOS = {
     "Acumulados em janelas": '<span class="selo sim">feito (#42)</span>',
     "Contribuição (p.p.)": '<span class="selo sim">feito (#43)</span>',
     "Contribuição dentro do grupo": '<span class="selo sim">feito (#43)</span>',
+    "Difusão": '<span class="selo sim">feito (#44)</span>',
+    "Sazonalidade": '<span class="selo sim">feito (#44)</span>',
 }
 
 
@@ -293,6 +295,36 @@ def _etapas(f: dict) -> list[dict]:
             if f.get("contribuicoes")
             else []
         ),
+        *(
+            [
+                {
+                    "id": "difusao",
+                    "titulo": "Difusão e sazonalidade",
+                    "executiva": "Difusão: quantos subitens subiram de preço no mês, em % (simples e pelo peso). Sazonalidade: como cada mês do ano costuma se comportar, pela média e mediana dos últimos anos.",
+                    "entrada": "serie_longa (difusão) e indice_"
+                    + f["indice"]["codigo"]
+                    + " (sazonalidade).",
+                    "regra": f"Difusão: subitens com variação maior que zero sobre os subitens coletados no mês (peso 0 fica fora, A-026); na ponderada, a soma dos pesos deles sobre a soma dos pesos. No geral e em cada grupo; a troca de cesta fica marcada. Sazonalidade: média e mediana da variação de cada mês do ano nos últimos {f['difusao']['anos']} anos, só com anos seguidos da própria série.",
+                    "saida": "difusao_"
+                    + f["indice"]["codigo"]
+                    + " (mês e recorte) e sazonalidade_"
+                    + f["indice"]["codigo"]
+                    + " (série, mês do ano e ano final).",
+                    "comando": "uv run python -m macroaf.indicators.difusao e macroaf.indicators.sazonalidade",
+                    "codigo": "src/macroaf/indicators/difusao.py e sazonalidade.py",
+                    "numeros": [
+                        ("Meses com difusão", _n(f["difusao"]["meses"])),
+                        (
+                            f"Difusão simples em {_mes(f['difusao']['ultimo_mes'])}",
+                            f"{f['difusao']['ultima_simples']:.1f}%".replace(".", ","),
+                        ),
+                        ("Linhas de sazonalidade", _n(f["difusao"]["linhas_sazonalidade"])),
+                    ],
+                }
+            ]
+            if f.get("difusao")
+            else []
+        ),
         {
             "id": "marts",
             "titulo": "Marts (a fazer)",
@@ -392,6 +424,17 @@ def _svg_fluxo(f: dict) -> str:
         else "",
         seta(900, 79, 800, 217) if f.get("contribuicoes") else "",
         seta(810, 250, 846, 250, "", pendente=True) if f.get("contribuicoes") else "",
+        no(
+            "difusao",
+            670,
+            311,
+            140,
+            "difusão",
+            "e sazonalidade",
+        )
+        if f.get("difusao")
+        else "",
+        seta(810, 330, 880, 283, "", pendente=True) if f.get("difusao") else "",
         seta(920, 179, 920, 217, "", pendente=True) if f.get("acumulados") else "",
         seta(130, 150, 186, 150, "baixa"),
         seta(330, 140, 416, 55, "metadados"),
@@ -402,13 +445,14 @@ def _svg_fluxo(f: dict) -> str:
         seta(590, 245, 666, 165, "gabarito"),
         seta(810, 165, 846, 240, "", pendente=True),
     ]
+    altura = 380 if f.get("difusao") else 300
     return (
-        '<svg viewBox="0 0 1000 300" role="img" aria-label="Fluxo dos dados: a API do IBGE alimenta '
+        f'<svg viewBox="0 0 1000 {altura}" role="img" aria-label="Fluxo dos dados: a API do IBGE alimenta '
         "a camada raw; os metadados viram a dim_classificacao, os valores viram o fato (ligado à dim "
         "pelo par tabela e id) e a tabela 3065 vira a referência; as validações conferem fato e "
         "referência; a série longa, pelo mapa de harmonização, vira o índice base 100, e dele saem "
-        "os acumulados por janela e as contribuições em pontos percentuais; os marts ainda não "
-        'existem.">'
+        "os acumulados por janela e as contribuições em pontos percentuais; difusão e sazonalidade "
+        'saem da série longa; os marts ainda não existem.">'
         '<defs><marker id="ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
         'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ponta"/></marker></defs>'
         + "".join(partes)
@@ -493,6 +537,14 @@ def _existe(f: dict) -> str:
                     '<span class="selo nao">não</span>',
                 ]
             )
+    if f.get("difusao"):
+        linhas.append(
+            [
+                "Difusão (simples e ponderada) e sazonalidade por mês do ano",
+                *['<span class="selo nao">não publicado</span>'] * len(dados),
+                '<span class="selo sim">sim (#44)</span>',
+            ]
+        )
     if f.get("contribuicoes"):
         linhas.append(
             [

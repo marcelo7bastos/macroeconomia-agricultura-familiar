@@ -19,7 +19,9 @@ from macroaf.catalogo import RAIZ, Indice, carregar_catalogo
 from macroaf.extract.raw import METADADOS, ArmazemRaw
 from macroaf.indicators.acumulados import JANELAS, montar_acumulados
 from macroaf.indicators.contribuicoes import montar_contribuicoes
+from macroaf.indicators.difusao import montar_difusao
 from macroaf.indicators.indice import marcar_cesta_variavel, montar_indice
+from macroaf.indicators.sazonalidade import ANOS, montar_sazonalidade
 from macroaf.transform.classificacao import NIVEIS, montar_dim_classificacao
 from macroaf.transform.harmonizacao import caminho_mapa, id_ligacao, ler_mapa, montar_serie_longa
 from macroaf.transform.ipca15 import montar_fato, montar_referencia
@@ -128,6 +130,19 @@ def _coletar_contribuicoes(indice: Indice, longa: pd.DataFrame) -> dict:
     return {
         "linhas": len(contribuicoes),
         "diferenca_max_mes": float((grupos - geral).abs().max()),
+    }
+
+
+def _coletar_difusao(indice: Indice, longa: pd.DataFrame) -> dict:
+    difusao = montar_difusao(longa)
+    geral = difusao[difusao.codigo_ibge == "0"].sort_values("mes")
+    encadeado = montar_indice(longa, marcar_cesta_variavel(longa, carregar_excecoes(indice)))
+    return {
+        "anos": ANOS,
+        "meses": int(geral.mes.nunique()),
+        "ultimo_mes": geral.mes.iloc[-1],
+        "ultima_simples": float(geral.difusao_simples.iloc[-1]),
+        "linhas_sazonalidade": len(montar_sazonalidade(encadeado)),
     }
 
 
@@ -300,13 +315,14 @@ def coletar(indice: Indice) -> dict:
             }
         )
 
-    harmonizacao = encadeado = acumulados = contribuicoes = None
+    harmonizacao = encadeado = acumulados = contribuicoes = difusao = None
     if caminho_mapa(indice).exists():
         longa = montar_serie_longa(fato, dim, ler_mapa(indice))
         harmonizacao = _coletar_harmonizacao(indice, fato, longa)
         encadeado = _coletar_indice(indice, longa, referencia)
         acumulados = _coletar_acumulados(indice, longa, referencia)
         contribuicoes = _coletar_contribuicoes(indice, longa)
+        difusao = _coletar_difusao(indice, longa)
     geral = referencia.iloc[-1].to_dict()
     excecoes = configuracao.excecoes.drop(columns=[]).to_dict("records")
     limites = configuracao.limites.to_dict("records")
@@ -362,5 +378,6 @@ def coletar(indice: Indice) -> dict:
         "indice_encadeado": encadeado,
         "acumulados": acumulados,
         "contribuicoes": contribuicoes,
+        "difusao": difusao,
         "marts": sorted(p.name for p in (RAIZ / "data" / "marts").glob(f"{indice.codigo}*")),
     }
