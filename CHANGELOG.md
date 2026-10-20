@@ -11,7 +11,8 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
-- Teste que exige que todo `CLAUDE.md` contenha só `@AGENTS.md`, com `AGENTS.md` ao lado (A-006, #45).
+- Testes que exigem que todo `CLAUDE.md` contenha só `@AGENTS.md`, com `AGENTS.md` ao lado, e que
+  todo `AGENTS.md` tenha o `CLAUDE.md` que o importa (A-006, #45).
 - Difusão (simples e ponderada, no geral e por grupo) e sazonalidade (média e mediana por mês do
   ano em 5 anos, por série longa) (`python -m macroaf.indicators.difusao` e
   `macroaf.indicators.sazonalidade`); subitem com peso 0 fora da conta (A-026); `METODOLOGIA.md` 11
