@@ -85,9 +85,17 @@ def coletar(codigo: str) -> dict:
 def gerar(codigo: str) -> str:
     dados = coletar(codigo)
     html = (ASSETS / "gestao.html").read_text()
+    linhagem = ""
+    if codigo == "ipca":
+        linhagem = (
+            '<a href="ipca-linhagem.html" class="acao" '
+            'aria-label="Abrir dicionário e linhagem do IPCA Geral">'
+            "07 · Dicionário e linhagem ↗</a>\n"
+        )
     substituicoes = {
         "NOME": escape(dados["nome"]),
         "CODIGO": codigo,
+        "LINHAGEM": linhagem,
         "DADOS": json.dumps(dados, ensure_ascii=False, allow_nan=False).replace("</", "<\\/"),
         "CSS": (ASSETS / "gestao.css").read_text(),
         "JS": (ASSETS / "gestao.js").read_text(),
