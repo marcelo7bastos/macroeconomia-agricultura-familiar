@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Uma leitura de gestão e engenharia do @@NOME@@: alimentos, dados oficiais, funcionamento e limites do pipeline.">
+<title>@@NOME@@ · Inflação para gestores</title><style>@@CSS@@</style></head>
+<body>
+<a class="pular" href="#conteudo">Ir para o conteúdo</a>
+<header class="barra"><a href="index.html" class="marca">MACRO<span>AF</span> <small>dados públicos · decisões informadas</small></a>
+<nav aria-label="Índice de preços"><a href="ipca.html" data-indice="ipca">IPCA geral</a><a href="ipca15.html" data-indice="ipca15">IPCA-15</a></nav></header>
+<main id="conteudo">
+<section class="abertura"><div><p class="sobretitulo">Guia da implementação · Brasil</p><h1>@@NOME@@,<br><em>da fonte à decisão.</em></h1>
+<p class="introducao">Uma base para acompanhar a inflação, entender a pressão dos alimentos e sustentar análises reproduzíveis. Veja o que está pronto, como funciona e até onde os dados permitem concluir.</p>
+<p class="faixa" id="cobertura"></p></div>
+<aside class="resumo"><p class="sobretitulo">A ideia central</p><h2>O dado vira informação auditável.</h2>
+<p>O projeto coleta respostas oficiais do IBGE, organiza categorias, identifica quebras históricas e publica tabelas com origem e verificações.</p>
+<p><strong>O gestor ganha rastreabilidade.</strong> Pode consultar o número, sua composição e as condições de comparação antes de usar a análise.</p><a href="../transformacoes/@@CODIGO@@.html">Abrir o relatório técnico existente ↗</a></aside></section>
+<section class="indicadores" aria-label="Retrato da base" id="retrato"></section>
+<div class="navegacao" role="tablist" aria-label="Perspectiva da explicação">
+<button id="aba-gestao" role="tab" aria-controls="gestao" aria-selected="true">01 · Para a gestão</button>
+<button id="aba-explorar" role="tab" aria-controls="explorar" aria-selected="false" tabindex="-1">02 · Explorar os dados</button>
+<button id="aba-dados" role="tab" aria-controls="dados" aria-selected="false" tabindex="-1">03 · Dados e contratos</button>
+<button id="aba-engenharia" role="tab" aria-controls="engenharia" aria-selected="false" tabindex="-1">04 · Como foi programado</button>
+<button id="aba-qualidade" role="tab" aria-controls="qualidade" aria-selected="false" tabindex="-1">05 · Qualidade e limites</button>
+<button id="aba-fontes" role="tab" aria-controls="fontes" aria-selected="false" tabindex="-1">06 · Fontes e retomada</button>
+</div>
+<section id="gestao" role="tabpanel" aria-labelledby="aba-gestao" class="painel">
+<p class="sobretitulo">Finalidade e aplicação</p><h2>O que um gestor consegue aproveitar?</h2>
+<p class="lead">A entrega é infraestrutura de dados com regras de qualidade. Ela permite construir análises e relatórios; não determina, sozinha, uma política pública.</p>
+<div class="grade tres"><article><span class="numero">01</span><h3>Monitorar a pressão dos alimentos</h3><p>Compare índice geral, alimentação no domicílio e fora dele. Uma mudança no agregado pode esconder comportamentos distintos.</p><p class="uso">Uso possível: nota mensal de conjuntura e acompanhamento de abastecimento.</p></article>
+<article><span class="numero">02</span><h3>Separar tamanho da alta e impacto</h3><p>Variação é quanto o preço mudou; contribuição é quanto um componente explica da variação do índice geral, em pontos percentuais.</p><p class="uso">Uso possível: priorizar quais grupos investigar em vez de ordenar apenas pela maior alta.</p></article>
+<article><span class="numero">03</span><h3>Reproduzir e prestar contas</h3><p>Os CSVs, as fontes e os hashes permitem registrar qual publicação fundamentou uma análise. Quebras e origens calculadas são visíveis.</p><p class="uso">Uso possível: documentação de notas técnicas, painéis e respostas a pedidos de informação.</p></article></div>
+<div class="duas-colunas"><article class="bloco"><h3>Exemplo de uso, não previsão</h3><p>Ao preparar uma nota, selecione o mês, compare a variação dos alimentos com a geral e examine a contribuição dos grupos. Depois verifique se a comparação histórica atravessa uma quebra.</p><p>Para um contrato, orçamento ou programa, confira a norma e a população-alvo antes de escolher um indexador. O projeto não verifica a adequação jurídica dessa escolha.</p><button class="acao" data-abrir="explorar">Examinar os números publicados →</button></article>
+<article class="bloco cuidado"><h3>Uma distinção que evita conclusões erradas</h3><p><strong>Inflação de alimentos ao consumidor não mede renda do produtor.</strong> O preço final também reflete transporte, comércio, insumos e outros fatores que esta base não separa.</p><p>Também não é uma cesta específica da agricultura familiar. Para criar esse recorte, ainda é preciso definir produtos, ponderação, público e validar a metodologia.</p></article></div>
+<h3>IPCA e IPCA-15 não são intercambiáveis</h3><p>São índices distintos, com períodos de coleta e classificações próprios. O IPCA-15 antecipa parte da leitura do mês, mas não deve preencher meses ausentes do IPCA nem ser tratado como sua previsão exata. As trocas de POF entram em datas diferentes.</p>
+</section>
+<section id="explorar" role="tabpanel" aria-labelledby="aba-explorar" class="painel" hidden>
+<p class="sobretitulo">Dados reais da publicação</p><h2>Alimentos no contexto da inflação.</h2>
+<p>Selecione ano e mês para examinar a mesma publicação. Os controles mudam a leitura; não simulam cenários nem consultam a API em tempo real.</p>
+<div class="controles"><label>Ano <select id="ano"></select></label><label>Mês <select id="mes"></select></label><button id="restaurar">Voltar ao último mês</button><button id="baixar">Baixar recorte selecionado (CSV)</button></div>
+<p id="aviso-periodo" class="nota" aria-live="polite"></p><div id="cartoes" class="grade quatro" aria-live="polite"></div>
+<div class="cabecalho-grafico"><h3>Como a variação mensal evoluiu no ano</h3><div class="legenda"><span class="geral">● Geral</span><span class="alimentos">● Alimentação e bebidas</span></div></div>
+<div id="grafico" class="grafico"></div><p class="nota">Variações mensais em %. A linha liga observações publicadas, sem interpolar meses ausentes. Para leitura exata, use a tabela abaixo.</p>
+<div class="tabela"><table><caption>Geral e alimentação no mês selecionado</caption><thead><tr><th scope="col">Recorte</th><th scope="col">Mês (%)</th><th scope="col">No ano (%)</th><th scope="col">12 meses (%)</th><th scope="col">Peso (%)</th><th scope="col">Contribuição (p.p.)</th></tr></thead><tbody id="numeros"></tbody></table></div>
+<p class="nota">“Oficial” e “calculado” indicam a origem de cada acumulado no mart. Campo indisponível aparece como “—”, nunca como zero. Peso e variação mensal vêm da fonte; contribuição é calculada.</p>
+<h3>Quais grupos contribuíram para a variação mensal?</h3><div id="contribuicoes"></div><p class="nota">Valores em pontos percentuais. A soma pode diferir do geral dentro do limite de reconciliação. Pais e filhos não devem ser somados juntos.</p>
+</section>
+<section id="dados" role="tabpanel" aria-labelledby="aba-dados" class="painel" hidden>
+<p class="sobretitulo">Proveniência e consumo</p><h2>Três camadas, cinco tabelas de consumo.</h2>
+<div class="fluxo" aria-label="Camadas dos dados"><article><b>RAW</b><h3>A evidência original</h3><p>JSON compactado por fonte, tabela e mês. Respostas e revisões preservadas, com URL, coleta e SHA-256 no manifesto.</p></article><span aria-hidden="true">→</span><article><b>STAGING</b><h3>O preparo reproduzível</h3><p>Classificação, fato, referência e indicadores em Parquet. Camada recriada do raw e não versionada.</p></article><span aria-hidden="true">→</span><article><b>MARTS</b><h3>O contrato de consumo</h3><p>CSV versionado, chave estável e dicionário. Pode alimentar Power BI, Python e outras ferramentas.</p></article></div>
+<div class="tabela"><table><caption>O que ler para cada finalidade</caption><thead><tr><th>Arquivo</th><th>O que contém</th><th>Chave</th></tr></thead><tbody id="arquivos"></tbody></table></div>
+<h3>A chave identifica a categoria publicada</h3><p><code>chave_categoria = tabela SIDRA + id SIDRA</code>. No geral da série corrente, por exemplo, a categoria pode ser <code id="exemplo-chave"></code>. O código IBGE descreve a posição na hierarquia; <code>serie_id</code> agrupa a história e pode mudar após revisão. São conceitos distintos.</p>
+<p>Para cruzar mensal e acumulados, use mês e chave da categoria. Difusão tem outra granularidade: mês e código IBGE, no geral ou em grupo. Não faça junções apenas pelo nome.</p>
+<h3>Organização proposta e compatibilidade</h3><p>O staging já é separado por índice. O raw permanece por fonte e tabela; os marts distinguem índices por prefixos e preservam URLs públicas. Agrupar referências por índice é uma proposta para próxima etapa, sem mover arquivos nesta entrega.</p><p><a id="link-estrutura">Ler a proposta completa de organização ↗</a></p>
+</section>
+<section id="engenharia" role="tabpanel" aria-labelledby="aba-engenharia" class="painel" hidden>
+<p class="sobretitulo">Arquitetura e execução</p><h2>Um pipeline compartilhado,<br>configurado para cada índice.</h2>
+<p>Python 3.12 e uv organizam a execução; httpx e tenacity tratam a coleta; pandas e PyArrow preparam tabelas; Pandera, pytest e Ruff ajudam a verificar contratos, comportamento e código.</p>
+<p>Selecione uma etapa para ver entrada, processamento, saída, responsável e arquivo que a implementa.</p><div class="etapas" id="etapas" aria-label="Etapas do pipeline"></div><article id="detalhe-etapa" class="bloco" aria-live="polite"></article>
+<h3>O que foi reaproveitado entre IPCA-15 e IPCA?</h3><p>Cliente HTTP, extração incremental, armazenamento, classificação, validações, harmonização e indicadores. O catálogo define tabelas, variáveis, POFs e períodos. Os nomes legados <code>transform.ipca15</code> e <code>validate.ipca15</code> também aceitam IPCA; a diferença é o argumento de configuração.</p>
+<p>Foram necessários tratamentos comprovados para a cobertura maior da referência, categorias sem coleta, lacunas reais e anomalias específicas. Reaproveitamento não significa copiar classificação, exceções ou decisões do outro índice.</p>
+<h3>Executar e atualizar</h3><pre id="comandos"></pre><p class="nota">Sem <code>--indice</code>, o padrão é IPCA-15. A opção <code>todos</code> existe no workflow, não no CLI. A consulta real precisa de acesso à rede.</p>
+<div class="grade duas"><article class="bloco"><h3>Rotina automática configurada</h3><p>GitHub Actions consulta diariamente às 09:23 de Brasília. Só republica se o raw mudou ou se foi solicitada execução forçada. Jobs dos índices são sequenciais; commit/push só após sucesso e testes.</p><p><a id="link-actions">Conferir execuções reais no Actions ↗</a></p></article><article class="bloco"><h3>Operação e recuperação</h3><p>Uma falha bloqueia a etapa seguinte. Na execução local, arquivos já gravados não formam uma transação única. Após diagnóstico, <code>--forcar</code> permite completar a republicação.</p><p>Um workflow configurado não comprova execução bem-sucedida. Confira o log e o commit de dados.</p></article></div>
+</section>
+<section id="qualidade" role="tabpanel" aria-labelledby="aba-qualidade" class="painel" hidden>
+<p class="sobretitulo">Condições de confiança</p><h2>“Validado” não significa “sem ressalvas”.</h2>
+<p>O projeto verifica contratos, pesos, reconciliação pai/filhos, continuidade, acumulados e o índice geral contra referência oficial. Limites analíticos refletem o arredondamento da fonte.</p>
+<div class="tabela"><table><caption>Verificações registradas na publicação</caption><thead><tr><th>Regra</th><th>Verificados</th><th>Falhas</th><th>Exceções aplicadas</th><th>Situação</th></tr></thead><tbody id="validacoes"></tbody></table></div>
+<p class="nota">Exceção aplicada é uma ocorrência previamente diagnosticada e contada, não uma falha descartada sem justificativa. Não some contagens de regras diferentes como se fossem observações únicas.</p>
+<div class="grade duas"><article class="bloco" id="limites-indice"></article><article class="bloco"><h3>Regra de comparação entre ambientes</h3><p>Acumulados calculados e contribuições admitem diferença absoluta de até <strong>0,001 ponto percentual</strong>, inclusive. Oficiais, códigos, datas, textos, estrutura e ausentes são exatos.</p><p>Isso evita que diferenças mínimas entre CPUs ocultem a verificação. Não altera as casas publicadas nem substitui a validação contra o IBGE. Cada hash é conferido contra seu próprio arquivo.</p></article></div>
+<h3>História com quebras visíveis</h3><p id="harmonizacao"></p><p>POF significa Pesquisa de Orçamentos Familiares: ela atualiza a cesta e seus pesos. Mesmo código ou nome parecido não basta para garantir continuidade. Propostas não aceitas ou ainda não revisadas encerram uma série e iniciam outra.</p>
+<p><a href="../revisao/harmonizacao_@@CODIGO@@.html">Examinar o mapa e as propostas de revisão ↗</a></p>
+</section>
+<section id="fontes" role="tabpanel" aria-labelledby="aba-fontes" class="painel" hidden>
+<p class="sobretitulo">Base comum e continuidade</p><h2>De onde vêm as afirmações?</h2>
+<p>Os números desta página são lidos dos CSVs publicados e conferidos com <code>data/metadata.json</code> antes da geração. Não são projeções, parâmetros fictícios nem uma consulta em tempo real.</p>
+<p id="proveniencia"></p><div class="tabela"><table><caption>Fontes oficiais desta implementação</caption><thead><tr><th>Tabela SIDRA</th><th>Papel</th><th>Cobertura no catálogo</th></tr></thead><tbody id="fontes-tabelas"></tbody></table></div>
+<ul id="links-fontes"></ul>
+<article class="bloco"><h3>Roteiro de leitura e retomada</h3><p>Comece pela finalidade, explore um mês, compare variação e contribuição e então consulte a origem do acumulado. A engenharia explica como reproduzir; a qualidade registra o que limita a conclusão.</p><p><strong>Uma pergunta para orientar a discussão:</strong> se um alimento tem a maior alta do mês, isso implica que ele teve a maior contribuição para a inflação? Examine peso e contribuição antes de responder.</p><p>O registro deste estudo preserva fontes, decisões e pendências. Ele não presume que o usuário validou o conteúdo ou demonstrou domínio.</p><a id="link-registro">Ler o registro do estudo ↗</a></article>
+</section>
+<noscript><p class="bloco">Ative JavaScript para alternar abas e explorar os números. O <a href="../transformacoes/@@CODIGO@@.html">relatório técnico</a> e os CSVs continuam disponíveis.</p></noscript>
+<footer><span>MACROAF · IBGE/SIDRA como fonte original</span><span>Explicação para gestão + engenharia · sem projeções</span><a id="link-repo">Código e documentação ↗</a><button id="imprimir">Imprimir / salvar PDF</button></footer>
+</main>
+<script type="application/json" id="base-dados">@@DADOS@@</script><script>@@JS@@</script>
+</body></html>

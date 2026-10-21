@@ -24,8 +24,8 @@ decisões de arquitetura, em [`decisoes/`](decisoes/).
   revisão de um dos últimos meses ou metadados alterados. Só faz commit se a publicação dos marts
   passou (seção 12) e se os testes passam.
 - **Divulgação em andamento (A-029).** No dia da divulgação, a 3065 pode ganhar o mês antes da
-  tabela de dados. Defasagem de **um** mês é "aguardando": nada é gravado, a saída é 0 e a execução
-  seguinte completa (decisão 0003, item 6). Defasagem maior, ou qualquer outra divergência entre
+  tabela de dados (no IPCA, a referência é a 1737). Defasagem de **um** mês é "aguardando":
+  nada é gravado, a saída é 0 e a execução seguinte completa (decisão 0003, item 6). Defasagem maior, ou qualquer outra divergência entre
   catálogo e metadados, para com código 2: é o sinal de POF nova, que pede revisão humana (#27).
 
 ## 2. Identificação das categorias
@@ -76,8 +76,8 @@ As mudanças com id novo são de naturezas diferentes:
      produto diferente são **quebra de série** (marcada, nunca escondida). Ver seção 7.
    - Código que some ou aparece: `descontinuado` ou `novo`, salvo se a revisão encontrar a
      correspondência em outro código (ex.: item `7203` Fotografia e filmagem, que some na 7062).
-3. Até o **subgrupo**, a estrutura é estável entre POFs e as séries longas são publicadas sem
-   harmonização (seção 4.3 do planejamento).
+3. Até o **subgrupo**, a estrutura é quase estável, mas também passa pela harmonização.
+   Mudanças como a do subgrupo `72` exigem revisão e podem gerar quebra (A-020, seção 7.3).
 
 ## 3. Hierarquia
 
@@ -98,8 +98,8 @@ As mudanças com id novo são de naturezas diferentes:
 - A variável 1120 (acumulado em 12 meses) consta nos metadados, mas vem `...` em 2012-02 a
   2017-02 (1705) e 2020-02 a 2020-12 (7062), e não existe na 1646 nem na 1387 (A-009). No
   `fato_ipca15` esses meses ficam **ausentes**. O acumulado em 12 meses por categoria nesses
-  meses será calculado nos indicadores (#7); hoje só o do índice geral é calculado, na validação,
-  e conferido com a 3065.
+  meses é calculado nos indicadores (seção 9), quando a série e a janela permitem,
+  e conferido com a 3065 no geral.
 
 ## 5. Tabelas de staging
 
@@ -135,7 +135,7 @@ caso. Abaixo do limite é arredondamento; acima é anomalia, que precisa de expl
 | 2 | `pesos_filhos` | os filhos somam o peso do pai | 0,00005 × (filhos + 1) |
 | 2 | `pesos_zero` | nenhum peso igual a zero | — |
 | 3 | `reconciliacao` | média dos filhos ponderada pelo peso do mês = variação do pai | 0,005 + 0,005 + Σ 0,00005·\|v_i − v\| / Σw |
-| 4 | `continuidade` | toda categoria da `dim_classificacao` tem valor em todos os meses que o catálogo espera para a tabela, e só neles | — |
+| 4 | `continuidade` | categorias têm observações nos meses esperados, excluindo apenas indisponibilidades fundamentais aferidas no raw (seção 14); nenhuma linha ativa pode faltar | — |
 | 5 | `acumulado_ano` | janeiro: `A = v`; demais meses: `A_t = (1+A_{t−1})(1+v_t) − 1`, um passo por vez | janeiro: **igualdade exata** (vale em todas as 12.598 linhas); demais: 0,005(1+\|A_{t−1}\|) + 0,005(1+\|v_t\|) + 0,005, ou o limite por nível da 1646/1387 (6.3) |
 | 5 | `acumulado_12m` | composição das 12 variações mensais = 1120, onde publicada | 0,005(1+\|A\|)·Σ 1/(1+v_i) + 0,005 |
 | 6 | `costura_mensal` | variação do geral das 4 tabelas = 355 da 3065 | igualdade exata |
@@ -440,8 +440,9 @@ janela (`mes` e as janelas da seção 9), com `contribuicao` em pontos percentua
 - **Erros publicados (A-015):** a contribuição usa peso e variação como publicados. Onde a fonte
   errou (9101022 da 1705 em 2014-07/09, com contribuição 0; item 1115 da 1387 em 2011-10/11), a
   contribuição herda o erro; a soma dos grupos continua dentro do limite.
-- **Fórmula:** o PLANEJAMENTO 5.2 escreve `peso × variação / 100`; aqui o denominador é a soma dos
-  pesos dos grupos, que é 100 salvo o erro de 2010 na 1387. Muda só esses dois meses.
+- **Fórmula:** o denominador é a soma dos pesos publicados dos grupos, como no PLANEJAMENTO 5.2.
+  É normalmente 100; as exceções incluem dois meses da 1387 no IPCA-15 e julho/2010 da 2938
+  no IPCA (A-035). A normalização da contribuição não altera o peso oficial preservado no fato.
 
 Conferência: a soma dos grupos difere do geral em no máximo 0,007 p.p. no mês e 0,014 (3 meses),
 0,026 (12 meses), 0,023 (no ano) e 0,039 p.p. (36 meses) nos acumulados, sempre dentro do limite
@@ -480,7 +481,9 @@ nas janelas certas.
 se tudo passa: as validações da seção 6 (sem sentinela alterada), chaves sem repetição, toda
 categoria dos arquivos presente em `categorias`, índice geral contra o número-índice da 3065
 (desvio ≤ 0,01%) e soma das contribuições dos grupos dentro do limite da reconciliação. Com
-qualquer problema, nada é escrito.
+falha nessas verificações, a publicação é bloqueada antes da gravação. Uma falha de I/O durante
+a escrita pode deixar arquivos parciais; a publicação local não é transacional entre arquivos.
+A recuperação usa `--forcar`, conforme [Operação](OPERACAO.md).
 
 - **Chave:** `(mes, chave_categoria)`, com `chave_categoria = <tabela>.<id SIDRA>` (decisão 0006).
   O `serie_id` é atributo em `ipca15_categorias.csv`; quando a revisão muda uma série,
@@ -524,14 +527,14 @@ registrada neste documento com a regra que dela decorre.
 
 ## 14. Preparação do IPCA cheio (A-033 a A-035)
 
-O detalhe do IPCA cobre julho/2006 até o último mês divulgado, por 2938,1419 e 7060. A1737
+O detalhe do IPCA cobre julho/2006 até o último mês divulgado, por 2938, 1419 e 7060. A 1737
 é a referência do geral: sua cobertura original desde 1979-12 fica no catálogo e no raw;
 `ref_ipca_geral` recorta o intervalo do detalhe para as validações. Os índices coexistem,
 com referências e metadados separados. O IPCA-15 não fornece observações ao IPCA.
 
 Na 1419 há 952 linhas com mensal, anual e peso simultaneamente indisponíveis: elas permanecem
 no raw, mas não representam observações no fato. São 18 categorias com prefixos sem coleta
-(24 meses para oito;76 meses para dez). A cobertura esperada é aferida no raw independentemente
+(24 meses para oito; 76 meses para dez). A cobertura esperada é aferida no raw independentemente
 do fato transformado: perda de observação ativa e zero fabricado são falhas. Ausência parcial
 continua inválida. A classificação preserva as categorias publicadas, mesmo quando ainda não
 há observação. Quatro categorias que reaparecem em outra POF têm quebra explícita no mapa;
@@ -539,18 +542,18 @@ identidade de código/id não autoriza atravessar uma lacuna temporal.
 
 As exceções específicas estão em `reference/excecoes_validacao_ipca.csv`:
 
-- Peso dos grupos da 2938 emjulho/2010:100,0999, uma exceção contada. Não normalizar os pesos
+- Peso dos grupos da 2938 em julho/2010: 100,0999, uma exceção contada. Não normalizar os pesos
   nem substituir o peso oficial silenciosamente.
-- Acumulado no ano da 2938:550 passos entre variáveis oficiais fora do limite analítico, em
+- Acumulado no ano da 2938: 550 passos entre variáveis oficiais fora do limite analítico, em
   135 categorias. As exceções cobrem a união de 137 categorias com os casos de composição anual.
   `meses_com_erro_publicado` contém apenas os 239 valores em 53 categorias cuja composição desde
   janeiro diverge além do limite. Os meses do passo inconsistente não são automaticamente
   tratados como valores anuais errados. Duas categorias têm contagem de passo zero; a lista
   independente 239 é conferida por teste contra a identidade contábil.
-- Depilação,1419,dezembro/2012–dezembro/2013:13 zeros absolutos em 2265 incompatíveis com as
+- Depilação, 1419, dezembro/2012–dezembro/2013: 13 zeros absolutos em 2265 incompatíveis com as
   variações mensais. O fato preserva o zero oficial; os acumulados usam o calculado com origem
   marcada quando a divergência é confirmada.
-- Geral da 1737 emjaneiro/2010:2264 publica 2,46%; composição mensal 2,219154%; diferença
+- Geral da 1737 em janeiro/2010: 2264 publica 2,46%; composição mensal 2,219154%; diferença
   0,240846 p.p., acima do limite analítico 0,035554. Uma exceção contada e origem calculada.
 
 Cada registro tem escopo, justificativa, aprendizado e contagem. Limites metodológicos não

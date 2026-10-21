@@ -7,8 +7,8 @@ revisadas no PR.
 
 | Índice | Ficha | Situação |
 |---|---|---|
-| IPCA-15 | [ipca15.md](ipca15.md) | piloto |
-| IPCA cheio | [ipca.md](ipca.md) | implementado em revisão [#12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12) |
+| IPCA-15 | [ipca15.md](ipca15.md) | publicado, piloto; investigações de harmonização abertas |
+| IPCA cheio | [ipca.md](ipca.md) | publicado desde jul/2006; extensão histórica pendente [#12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12) |
 
 ## Modelo
 

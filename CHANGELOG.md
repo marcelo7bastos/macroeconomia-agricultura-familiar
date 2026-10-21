@@ -6,6 +6,12 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Alterado
 
+- Revisão documental após o PR #58: situação dos dois índices, sinais do SIDRA, metodologia,
+  comandos, operação no Actions e pendências reais (#59). Guias de navegação, dados, referências
+  e estrutura com proposta de organização; contratos e caminhos de dados preservados.
+- Dicionários gerados corrigem a pontuação da chave composta e a expressão “acumulado no ano”,
+  sem alterar arquivos CSV ou fórmulas (#59).
+
 - Teste de publicação compara acumulados calculados e contribuições com diferença absoluta
   máxima de 0,001 p.p., preservando igualdade exata dos oficiais e demais campos. As falhas
   mostram a primeira diferença sem gerar diffs gigantes; hashes continuam conferidos contra
@@ -18,6 +24,12 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
   `AGENTS.md` (#22).
 
 ### Adicionado
+
+- Explicações para gestores de IPCA e IPCA-15, com seis abas, dados reais, filtros por ano/mês,
+  gráfico de alimentos, exportação CSV e navegação por teclado; registro segundo a skill
+  `explicar-conteudo`. Gerador confere hashes e não altera os marts.
+- Empacotamento do site e publicação no GitHub Pages pela branch `gh-pages`, mantendo os
+  relatórios técnicos e atualizando a explicação após a rotina de dados (#59).
 
 - IPCA cheio, Brasil: extração incremental, classificação própria, fato, validações, mapa de
   harmonização, indicadores, cinco marts e relatórios de julho/2006 a setembro/2026 (#12).

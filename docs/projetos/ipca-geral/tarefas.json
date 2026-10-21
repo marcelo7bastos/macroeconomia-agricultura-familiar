@@ -4,7 +4,7 @@
   "titulo": "IPCA geral — preparação dos dados",
   "descricao": "Extração, transformação e validação do IPCA Brasil; entrega principal desde julho/2006 e extensão histórica separada.",
   "issue_referencia": 12,
-  "url_plano": "https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/blob/planejamento/ipca-geral/docs/projetos/ipca-geral.md",
+  "url_plano": "https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/blob/main/docs/projetos/ipca-geral.md",
   "tarefas": [
     {
       "id": "IPCA-01",

@@ -24,7 +24,7 @@ Leia `docs/PLANEJAMENTO.md` seção 4.4, a ficha do índice em `docs/indices/` e
    - **bug de transformação** (junção duplicando linhas, hierarquia errada, tipo errado);
    - **tolerância mal calibrada**;
    - **quebra de série** não tratada na harmonização.
-5. Confira contra a referência oficial (tabela 3065 para o índice geral) quando couber.
+5. Confira contra a referência oficial (3065 no IPCA-15; 1737 no IPCA, para o índice geral) quando couber.
 
 ## Formato do diagnóstico
 

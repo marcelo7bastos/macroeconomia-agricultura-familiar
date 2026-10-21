@@ -58,6 +58,8 @@ jobs:
           else
             uv run python -m macroaf.pipeline --indice "$INDICE"
           fi
+      - name: Atualizar explicação para gestores a partir dos marts
+        run: uv run python -m macroaf.relatorios.gestao --indice "$INDICE"
       - name: Ver se algo mudou no repositório
         id: mudancas
         run: |

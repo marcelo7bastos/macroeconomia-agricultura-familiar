@@ -49,7 +49,7 @@ Chave: `chave_categoria`. Linhas: 1.951.
 
 Uma linha por mês e categoria: valores oficiais do mês e indicadores da série longa.
 
-Chave: `mes. chave_categoria`. Linhas: 153.741.
+Chave: `mes, chave_categoria`. Linhas: 153.741.
 
 | Coluna | Descrição |
 |---|---|
@@ -71,7 +71,7 @@ Chave: `mes. chave_categoria`. Linhas: 153.741.
 
 Uma linha por mês e categoria: acumulados por janela, oficial onde mede o mesmo que a série longa, calculado pelo índice onde falta ou onde o oficial não serve (#42).
 
-Chave: `mes. chave_categoria`. Linhas: 153.465.
+Chave: `mes, chave_categoria`. Linhas: 153.465.
 
 | Coluna | Descrição |
 |---|---|
@@ -82,7 +82,7 @@ Chave: `mes. chave_categoria`. Linhas: 153.465.
 | `acum_12m` | Acumulado em 12 meses, em %. |
 | `acum_24m` | Acumulado em 24 meses, em %. |
 | `acum_36m` | Acumulado em 36 meses, em %. |
-| `acum_ano` | Acumulado em no ano, em %. |
+| `acum_ano` | Acumulado no ano, em %. |
 | `origem_3m` | oficial ou calculado, para acum_3m. Valores: `oficial`, `calculado`. |
 | `origem_6m` | oficial ou calculado, para acum_6m. Valores: `oficial`, `calculado`. |
 | `origem_12m` | oficial ou calculado, para acum_12m. Valores: `oficial`, `calculado`. |
@@ -95,7 +95,7 @@ Chave: `mes. chave_categoria`. Linhas: 153.465.
 
 Uma linha por mês e categoria: contribuição para o acumulado do geral em cada janela, em pontos percentuais (#43). Os subitens in natura da 1646 não têm contribuição (entram pelo item, A-013), então nenhuma janela aqui depende de cesta variável.
 
-Chave: `mes. chave_categoria`. Linhas: 148.337.
+Chave: `mes, chave_categoria`. Linhas: 148.337.
 
 | Coluna | Descrição |
 |---|---|
@@ -112,7 +112,7 @@ Chave: `mes. chave_categoria`. Linhas: 148.337.
 
 Uma linha por mês e recorte: porcentagem dos subitens com alta de preço (#44).
 
-Chave: `mes. codigo_ibge`. Linhas: 3.170.
+Chave: `mes, codigo_ibge`. Linhas: 3.170.
 
 | Coluna | Descrição |
 |---|---|

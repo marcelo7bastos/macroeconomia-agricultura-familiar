@@ -1,0 +1,55 @@
+name: Publicar explicações no Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", "data/marts/**", "data/metadata.json", "reference/**", "src/macroaf/relatorios/**", ".github/workflows/pages.yml"]
+  workflow_run:
+    workflows: ["Atualização dos dados"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: publicar-pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependências
+        run: uv sync --all-groups --locked
+      - name: Gerar e conferir explicações
+        run: |
+          uv run python -m macroaf.relatorios.gestao
+          uv run pytest tests/test_gestao.py -q
+          uv run python -m macroaf.relatorios.site --destino "$RUNNER_TEMP/site"
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: publicacao
+      - name: Atualizar somente a branch de publicação
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rsync -a --delete --exclude=.git "$RUNNER_TEMP/site/" publicacao/
+          git -C publicacao config user.name 'github-actions[bot]'
+          git -C publicacao config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C publicacao add -A
+          if ! git -C publicacao diff --cached --quiet; then
+            git -C publicacao commit -m 'Atualiza explicações e dados publicados no Pages'
+            git -C publicacao push origin HEAD:gh-pages
+            # Push com GITHUB_TOKEN não inicia build do Pages sozinho: solicitar explicitamente.
+            gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds" --silent
+          fi

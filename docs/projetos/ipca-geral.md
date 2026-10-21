@@ -1,12 +1,12 @@
 # Projeto: preparar os dados do IPCA geral
 
 - **Issue de referência:** [#12 — Fonte: IPCA cheio](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12).
-- **Situação:** entrega principal implementada, em revisão no PR #58; catálogo IPCA ativado.
+- **Situação:** entrega principal implementada e integrada à `main` no PR #58; aceite operacional e revisão humana da harmonização pendentes.
 - **Data do levantamento:** 20/10/2026.
 - **Plano de tarefas para o GitHub Projects:** [tarefas.json](ipca-geral/tarefas.json).
 - **Fonte técnica:** [ficha do IPCA](../indices/ipca.md) e [IBGE/SIDRA](../fontes/ibge-sidra.md).
 
-## Resultado esperado
+## Resultado e escopo
 
 Disponibilizar uma base mensal auditável do **IPCA cheio, Brasil (N1)**: índice geral e sua
 classificação própria até subitem, incluindo alimentação e bebidas, alimentação no domicílio
@@ -17,8 +17,7 @@ painel ou de um indicador específico da agricultura familiar é outra entrega.
 POFs 2002-03, 2008-09 e 2017-18. Em 20/10/2026, os metadados consultados terminam em setembro/2026.
 O fim da série permanece dinâmico: não fixar setembro no código nem prever meses futuros.
 
-**Primeira prova de funcionamento:** janeiro/2020 até o último mês disponível. Essa prova reduz
-as variáveis da primeira execução; não encerra a entrega principal. O histórico anterior a
+A implementação cobre as três POFs, incluindo janeiro/2020 em diante. O histórico anterior a
 julho/2006 é uma extensão explícita, condicionada ao tratamento de tabelas complementares.
 
 O IPCA não substitui o IPCA-15. Ambos coexistem com códigos de índice, saídas e validações
@@ -26,7 +25,7 @@ próprios; a base já publicada do IPCA-15 precisa continuar funcionando.
 
 ## Cobertura e fontes
 
-| Papel | Tabela SIDRA | Período conferido | Tratamento planejado |
+| Papel | Tabela SIDRA | Período conferido | Tratamento / situação |
 |---|---|---|---|
 | Dados detalhados | 7060 | jan/2020–set/2026, aberta | Prova inicial e série corrente |
 | Dados detalhados | 1419 | jan/2012–dez/2019 | Retrocarga da entrega principal |
@@ -37,7 +36,7 @@ próprios; a base já publicada do IPCA-15 precisa continuar funcionando.
 | Extensão histórica: acumulado no ano | 657 | ago/1999–jun/2006 | Complemento, não sucessora da 656 |
 
 Datas, variáveis, categorias e peculiaridades ficam documentadas na ficha. O levantamento de
-metadados e amostras não equivale à extração integral nem à validação do histórico.
+metadados das tabelas 655/656/657 não equivale à extração nem à validação dessa extensão.
 
 Variáveis do IPCA: `63` → `variacao_mensal`, `69` → `variacao_acum_ano`, `66` → `peso`,
 `2265` → `variacao_acum_12m`; na referência, `2266` → `numero_indice`, `2263` →
@@ -81,28 +80,20 @@ com regressão para o IPCA-15. Não duplicar o pipeline inteiro nem criar um age
 As saídas de consumo são parte da entrega ponta a ponta, depois da preparação e validação do
 staging. Nenhuma saída será declarada pronta apenas porque um comando terminou sem erro.
 
-## Lacunas técnicas a resolver
+## Pendências após o PR #58
 
-1. **Cobertura da referência:** a 1737 começa em 1979, antes do detalhe. A checagem atual exige
-   que o início cadastrado coincida com os metadados; portanto, não cadastrar um início fictício
-   em 2020 ou 2006 para a 1737. Separar cobertura original, janela de extração e intervalo usado
-   na validação. Não exigir igualdade de índices de datas fora da interseção pertinente.
-2. **Tabelas complementares anteriores a 2006:** o esquema atual exige sucessão sem sobreposição
-   e uma POF por tabela de dados. 655, 656 e 657 se sobrepõem na mesma POF; não cabem como três
-   tabelas sucessivas. Modelar composição e junção por mês/categoria antes de ativar essa extensão.
-3. **Referências e exceções:** criar `excecoes_validacao_ipca.csv` e
-   `limites_validacao_ipca.csv` com esquema válido; começar sem exceções não comprovadas.
-   Não copiar os desvios, casos de cesta variável ou contagens do IPCA-15 por analogia.
-4. **Relatórios:** há referências editoriais à 3065, 1117, 355, 356, leite e trocas do IPCA-15
-   em `macroaf.relatorios.coleta` e `transformacoes`. Parametrizar os conteúdos e exemplos
-   necessários para não publicar uma página de IPCA com explicações do índice errado.
-5. **Operação:** o workflow de atualização fixa `ipca15` no comando, leitura de metadados e
-   mensagem de commit. Generalizar a seleção de índice e evitar dois jobs gravando na `main`
-   ao mesmo tempo, sem misturar sucesso de um índice com falha de outro.
+| Tema | Situação e próximo passo |
+|---|---|
+| Cobertura da referência | Resolvido: 1737 desde 1979-12 no raw; staging recortado ao detalhe desde jul/2006 |
+| Fontes e exceções | Implementado: arquivos próprios, 952 ausências identificadas no raw e anomalias diagnosticadas, A-033 a A-035 |
+| Relatórios | Publicados com tabela 1737 e variáveis do IPCA; relatório do IPCA-15 preservado |
+| Automação | Seleção de índice e execução serial integradas; conferir primeira execução manual pós-merge no Actions |
+| Harmonização | 63 propostas não revisadas continuam como quebras; quatro lacunas impedem emendas automáticas |
+| Tabelas complementares anteriores a 2006 | Pendente: modelar composição de 655/656/657 por mês/categoria, sem forjar tabelas sucessivas |
+| GitHub Projects | Bloqueado por permissão da integração; cartões e publicador preparados, nenhum quadro criado por esta entrega |
 
-Os módulos que hoje se chamam `transform.ipca15` e `validate.ipca15` já recebem um índice em
-parte das interfaces. O nome do módulo não é, sozinho, motivo para uma grande renomeação;
-verificar a semântica e manter compatibilidade dos comandos existentes.
+Os módulos `transform.ipca15` e `validate.ipca15` recebem `--indice ipca`; uma renomeação
+compatível está apenas proposta em [Estrutura](../ESTRUTURA.md).
 
 ## Etapas, dependências e critérios de aceite
 
@@ -119,9 +110,14 @@ verificar a semântica e manter compatibilidade dos comandos existentes.
 | IPCA-09 | Atualização automática e aceite final | 08 | Novo mês, revisão, ausência de novidade e falha da fonte testados sem regressão do IPCA-15 |
 | IPCA-10 | Extensão ago/1999–jun/2006 | 09 | Decisão de composição aprovada antes da extração; pesos, variação e acumulado unidos sem duplicação |
 
-IPCA-01 inclui o levantamento inicial realizado neste planejamento, mas permanece pendente de
-aceite completo e das amostras que estiverem explicitamente em aberto na ficha. Nenhum cartão
-será marcado concluído apenas por ter sido criado no quadro.
+As etapas acima preservam o plano de aceite original. Em 20/10/2026, fontes, catálogo, raw,
+transformação, validações e saídas estão implementados. IPCA-07 ainda requer revisão humana das
+63 propostas; IPCA-09 ainda requer uma execução manual auditada após merge; IPCA-10 não foi
+implementada. Implementação não equivale ao aceite integral de todos os cartões.
+
+Evidências do PR #58: 273 testes locais passaram em 119,92 s; outros 54 testes passaram com
+recursos avançados da CPU desativados; Ruff e pipeline `--forcar` passaram. São resultados daquela
+entrega, não promessa de duração ou resultado de execuções futuras.
 
 ### Verificações obrigatórias
 
@@ -148,8 +144,9 @@ será marcado concluído apenas por ter sido criado no quadro.
 
 A issue #12 permanece como referência da frente. Criar dez issues de trabalho com os IDs acima,
 inseri-las no projeto e vincular o projeto ao repositório. Os corpos dos cartões contêm escopo,
-dependências, critérios de aceite e referência à #12. Todos começam no backlog; a priorização
-e o início de cada implementação ficam explícitos no quadro.
+dependências, critérios de aceite e referência à #12. O publicador conserva a situação inicial `backlog` dos cartões originais; ele não sincroniza
+conclusões com o código. Antes de aplicá-lo agora, revisar o escopo e os estados à luz das
+entregas acima para não apresentar trabalho implementado como novo.
 
 Usar a visualização Board agrupada por **Status** (A fazer / Em andamento / Concluído, ou os
 nomes equivalentes da conta). Bloqueios e revisão ficam registrados nos cartões até a equipe
@@ -180,11 +177,11 @@ registrar o bloqueio e retomar a publicação sem recriar o que já existe.
 A entrega principal foi extraída, transformada e validada: 805 respostas mensais oficiais,
 243 meses de detalhe e 111.299 observações, de julho/2006 a setembro/2026. Os cinco marts e seu
 dicionário estão em `data/marts/ipca_*`; a explicação auditável está em
-[`../transformacoes/ipca.html`](../transformacoes/ipca.html). As saídas do IPCA-15 foram preservadas.
+[transformações do IPCA](../transformacoes/ipca.html). As saídas do IPCA-15 foram preservadas.
 
 As 63 propostas de harmonização pendentes continuam marcadas como quebras até revisão humana.
-A atualização automática dos dois índices depende do merge e da primeira execução conferida no
-GitHub Actions. A publicação do quadro no GitHub Projects continua bloqueada pela permissão da
+A configuração da atualização dos dois índices já está na `main`; o aceite operacional exige
+a primeira execução manual conferida no GitHub Actions. A publicação do quadro no GitHub Projects continua bloqueada pela permissão da
 integração; o plano e os cartões estão preparados para retomada, sem bloquear o pipeline.
 
 A extensão anterior a julho/2006 (IPCA-10) permanece separada. A entrega não inclui recortes
