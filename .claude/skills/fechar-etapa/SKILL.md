@@ -31,9 +31,11 @@ Confira e atualize o que a mudança tocar:
 - [ ] `docs/indices/` e `docs/fontes/` (fichas)
 - [ ] `docs/METODOLOGIA.md`: fórmula de indicador novo ou alterado e toda descoberta que mude o
       tratamento dos dados (com o A-NNN de origem)
-- [ ] `data/marts/README.md` (dicionário): sai do `DICIONARIO` em `macroaf.marts.publicar`; ao
-      mexer nos marts, atualize lá
-- [ ] `README.md` (situação do projeto)
+- [ ] Dicionários gerados: `data/marts/README.md` (IPCA-15) e
+      `data/marts/<indice>_README.md` (demais índices); saem de `macroaf.marts.publicar`.
+      Corrija a descrição no gerador e regenere o índice afetado.
+- [ ] `README.md`, `docs/README.md`, `data/README.md`, `reference/README.md` e
+      `docs/OPERACAO.md` / `docs/ESTRUTURA.md`, conforme a mudança (situação, comandos e caminhos)
 - [ ] `docs/transformacoes/<indice>.html`: regerar com
       `uv run python -m macroaf.relatorios.transformacoes --indice <indice>` e revisar o que mudou
       (resumo, dúvidas em aberto, o que existe); se uma dúvida foi resolvida ou surgiu, atualizar

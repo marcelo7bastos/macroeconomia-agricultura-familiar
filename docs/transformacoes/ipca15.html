@@ -1,3 +1,5 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Transformações do IPCA-15</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -114,10 +116,11 @@ figure { position: relative; }
 dl.glossario { margin: 0; display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 8px 16px; max-width: 90ch; }
 dl.glossario dt { font-weight: 600; } dl.glossario dd { margin: 0; color: var(--suave); }
 @media (prefers-reduced-motion: no-preference) { button.aba, svg .caixa { transition: background 0.15s, fill 0.15s, stroke 0.15s; } }
-</style>
+</style></head><body>
 <main class="pagina">
   <header class="topo">
     <span class="olho">Macroeconomia da Agricultura Familiar · ipca15</span>
+    <p><a href="../gestao/ipca15.html">Guia para gestores: usos, dados e engenharia ↗</a></p>
     <h1>Transformações do IPCA-15</h1>
     <p>Do que o IBGE publica até as tabelas do projeto: o que foi feito em cada etapa, como as tabelas se juntam, o que já existe e o que falta. Tudo nesta página foi gerado a partir dos dados e do código do repositório.</p>
     <div class="fatos">
@@ -252,7 +255,7 @@ dl.glossario dt { font-weight: 600; } dl.glossario dd { margin: 0; color: var(--
     <li>Série longa: emenda as tabelas só onde há prova de que a categoria é a mesma; o resto fica como quebra marcada até a revisão humana (seção Harmonização).</li>
   </ul>
   <h3>Indicadores planejados</h3>
-  <div class="rolagem"><table class=""><thead><tr><th>Indicador</th><th>Definição</th><th>Teste previsto</th><th>Situação</th></tr></thead><tbody><tr><td>Contribuição (p.p.)</td><td>peso × variação / 100</td><td>soma dos grupos = índice geral</td><td><span class="selo sim">feito (#43)</span></td></tr><tr><td>Contribuição dentro do grupo</td><td>participação do subitem na variação do grupo (ex.: Alimentação e bebidas)</td><td>soma = 100%</td><td><span class="selo sim">feito (#43)</span></td></tr><tr><td>Acumulados em janelas</td><td>3, 6, 24, 36 meses, compondo as variações mensais</td><td>3/6/12 batem com a tabela 3065</td><td><span class="selo sim">feito (#42)</span></td></tr><tr><td>Difusão</td><td>% de subitens com variação positiva (simples e ponderada)</td><td>0 ≤ x ≤ 100</td><td><span class="selo sim">feito (#44)</span></td></tr><tr><td>Sazonalidade</td><td>média e mediana da variação por mês do ano, em janela móvel</td><td>—</td><td><span class="selo sim">feito (#44)</span></td></tr><tr><td>Índice base 100</td><td>número-índice por categoria a partir de data escolhida</td><td>geral bate com 3065</td><td><span class="selo sim">feito (#41)</span></td></tr></tbody></table></div>
+  <div class="rolagem"><table class=""><thead><tr><th>Indicador</th><th>Definição</th><th>Teste previsto</th><th>Situação</th></tr></thead><tbody><tr><td>Contribuição (p.p.)</td><td>peso × variação / soma dos pesos dos grupos</td><td>soma dos grupos = índice geral</td><td><span class="selo sim">feito (#43)</span></td></tr><tr><td>Contribuição dentro do grupo</td><td>participação do subitem na variação do grupo (ex.: Alimentação e bebidas)</td><td>soma = 100%</td><td><span class="selo sim">feito (#43)</span></td></tr><tr><td>Acumulados em janelas</td><td>ano e 3, 6, 12, 24, 36 meses, compondo as variações mensais</td><td>3/6/12 batem com a tabela 3065</td><td><span class="selo sim">feito (#42)</span></td></tr><tr><td>Difusão</td><td>% de subitens com variação positiva (simples e ponderada)</td><td>0 ≤ x ≤ 100</td><td><span class="selo sim">feito (#44)</span></td></tr><tr><td>Sazonalidade</td><td>média e mediana da variação por mês do ano, em janela móvel</td><td>—</td><td><span class="selo sim">feito (#44)</span></td></tr><tr><td>Índice base 100</td><td>número-índice por categoria a partir de data escolhida</td><td>geral bate com 3065</td><td><span class="selo sim">feito (#41)</span></td></tr></tbody></table></div>
   <p>Marts publicados para o Power BI e o site: <b>5</b> arquivos em <code>data/marts/</code>, com o dicionário em <code>data/marts/README.md</code> (#8).</p>
 </section>
   
@@ -389,4 +392,4 @@ botoesVisao.forEach((b) => b.addEventListener('click', () => definirVisao(b.data
 let inicial = 'tecnica';
 try { inicial = localStorage.getItem('visao') || 'tecnica'; } catch (e) { /* armazenamento indisponível */ }
 definirVisao(inicial);
-</script>
+</script></body></html>

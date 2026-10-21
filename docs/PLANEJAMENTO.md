@@ -22,19 +22,25 @@ Princípios:
 
 | Fase | Tema | Situação |
 |---|---|---|
-| **Piloto** | **IPCA-15** completo (mai/2000 → atual), até o nível de subitem | em andamento |
-| Implementação em revisão | IPCA cheio, Brasil | [projeto de preparação dos dados](projetos/ipca-geral.md), issue #12 |
+| Implementado | **IPCA-15** (mai/2000 → atual), Brasil até subitem | piloto publicado; investigações de harmonização abertas |
+| Implementado | IPCA cheio, Brasil (jul/2006 → atual) | [projeto](projetos/ipca-geral.md), PR #58 integrado; 63 propostas como quebras e extensão histórica pendente (#12) |
 | Backlog | PIB total e agropecuária, Selic, câmbio, IGPs | issues |
 | Backlog | Agricultura familiar: participação na produção (Censo Agro 2017), crédito Pronaf | issues |
 | Backlog | Indicador de inflação dos alimentos da agricultura familiar | issue |
 | Backlog | Produção e preços agrícolas (LSPA, PAM, Conab) | issue |
-| Backlog | Site (Quarto + GitHub Pages) e consumo pelo Power BI | issues |
+| Implementado nesta entrega | Explicações estáticas no GitHub Pages, IPCA e IPCA-15 | [publicação](PUBLICACAO.md); não usa Quarto |
+| Backlog | Site Quarto e integração efetiva com relatórios Power BI | #18 e #19 |
 
-O IPCA-15 foi escolhido como piloto por ter a mesma estrutura do IPCA cheio (mesma classificação
-c315, mesmas trocas de POF), em volume um pouco menor. Tudo o que for construído para ele deve ser
+O IPCA-15 foi escolhido como piloto por ter a mesma estrutura do IPCA cheio (classificação
+c315 e estruturas de POF semelhantes, com datas de entrada distintas), em volume um pouco menor. Tudo o que for construído para ele deve ser
 reaproveitável para o IPCA cheio trocando apenas a configuração.
 
-## 3. Extração (piloto IPCA-15)
+## 3. Extração
+
+Os exemplos históricos abaixo são do IPCA-15. O IPCA usa as tabelas 2938, 1419, 7060 e
+referência 1737, descritas na [ficha própria](indices/ipca.md). Os comandos aceitam
+`--indice ipca15` ou `--indice ipca`; sem o argumento, usam o piloto.
+
 
 ### 3.1 Tabelas SIDRA (conferidas na API do IBGE em 19/10/2026)
 
@@ -114,7 +120,7 @@ O projeto anterior (fora deste repositório) foi auditado; o que muda aqui:
 
 ```
 data/raw/       JSON original da API, compactado e imutável (auditoria, versionado)
-data/staging/   tabelas tidy, tipadas, uma linha por observação (recriado do raw, não versionado)
+data/staging/<indice>/  tabelas tipadas e indicadores (recriados do raw, não versionados)
 data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 ```
 
@@ -131,18 +137,19 @@ data/marts/     indicadores prontos para consumo (site e Power BI, versionado)
 - Gerada por `uv run python -m macroaf.transform.classificacao` a partir dos metadados no raw;
   contrato `pandera` em `macroaf.transform.classificacao.ESQUEMA`.
 
-**`fato_ipca15`**: uma linha por mês e categoria, variáveis em colunas.
+**`fato_<indice>`** (`fato_ipca15` ou `fato_ipca`): uma linha por mês e categoria, variáveis em colunas.
 `mes | versao_pof | tabela_sidra | codigo_sidra | codigo_ibge | nivel_hierarquico | variacao_mensal | variacao_acum_ano | variacao_acum_12m | peso`
 
 Ligado à `dim_classificacao` por `(tabela_sidra, codigo_sidra)` (METODOLOGIA.md, 2.2).
-`ref_ipca15_geral` guarda a tabela 3065 (número-índice e acumulados do geral) para as validações.
+`ref_ipca15_geral` guarda a 3065; `ref_ipca_geral`, a 1737 recortada ao detalhe. O raw
+preserva a cobertura original da referência. Para ausências de coleta no IPCA, ver metodologia 14.
 
 **`map_harmonizacao`** (`reference/map_harmonizacao_ipca15.csv`, versionado): correspondência
 entre categorias de POFs consecutivas, por código IBGE **e** id SIDRA, com
 `tipo_correspondencia ∈ {identico, renomeado, dividido, fundido, descontinuado, novo}`,
-`situacao ∈ {automatico, proposto, revisado}`, critério, pesos nas pontas e revisor.
+`situacao ∈ {automatico, proposto, revisado, rejeitado}`, critério, pesos nas pontas e revisor.
 
-**`serie_longa_ipca15`**: as linhas do fato com `serie_id`, início, fim, entrada e saída de cada
+**`serie_longa_<indice>`**: as linhas do fato com `serie_id`, início, fim, entrada e saída de cada
 série longa (METODOLOGIA.md, seção 7).
 
 ### 4.3 Granularidade e séries longas (decisão 9.2)
@@ -177,7 +184,10 @@ arredondamento** de cada conta (A-014), com exceções documentadas e contadas.
 6. **Costura entre tabelas:** o índice geral encadeado pelas quatro tabelas reproduz o
    número-índice da tabela 3065.
 
-## 5. Indicadores do piloto
+## 5. Indicadores implementados
+
+Compartilhados por IPCA-15 e IPCA; as referências e exceções pertencem a cada índice.
+Os exemplos de IDs desta seção descrevem o piloto.
 
 ### 5.1 Oficiais (organizados, não recalculados)
 
@@ -187,9 +197,9 @@ Variação mensal, acumulada no ano, acumulada em 12 meses e peso, para todos os
 
 | Indicador | Definição | Teste |
 |---|---|---|
-| Contribuição (p.p.) | `peso × variação / 100` | soma dos grupos = índice geral |
+| Contribuição (p.p.) | `peso × variação / soma dos pesos dos grupos` | soma dos grupos = índice geral |
 | Contribuição dentro do grupo | participação do subitem na variação do grupo (ex.: Alimentação e bebidas) | soma = 100% |
-| Acumulados em janelas | 3, 6, 24, 36 meses, compondo as variações mensais | 3/6/12 batem com a tabela 3065 |
+| Acumulados em janelas | ano e 3, 6, 12, 24, 36 meses, compondo as variações mensais | 3/6/12 batem com a tabela 3065 |
 | Difusão | % de subitens com variação positiva (simples e ponderada) | 0 ≤ x ≤ 100 |
 | Sazonalidade | média e mediana da variação por mês do ano, em janela móvel | — |
 | Índice base 100 | número-índice por categoria a partir de data escolhida | geral bate com 3065 |
@@ -199,7 +209,7 @@ Variação mensal, acumulada no ano, acumulada em 12 meses e peso, para todos os
 - `data/marts/*.csv` (só CSV, [decisão 0007](decisoes/0007-marts-so-em-csv.md)), com **nomes de
   arquivo estáveis** (URLs do raw do GitHub não mudam; o Power BI lê direto delas). Chave das
   linhas: mês e categoria publicada ([decisão 0006](decisoes/0006-chave-estavel-dos-marts.md)).
-- `data/marts/README.md` gerado automaticamente: dicionário de dados.
+- Dicionários gerados: `data/marts/README.md` (IPCA-15) e `data/marts/ipca_README.md` (IPCA).
 - `data/metadata.json`: último mês dos dados, data da coleta, resultado das validações e linhas e
   hash de cada arquivo (o fim de cada série longa está em `<indice>_categorias.csv`).
 
@@ -208,19 +218,22 @@ Variação mensal, acumulada no ano, acumulada em 12 meses e peso, para todos os
 - Python 3.12, ambiente com `uv`.
 - `httpx` + `tenacity` (coleta), `pandas` + `pyarrow` (dados), `pandera` (contratos),
   `pytest`, `ruff`.
-- GitHub Actions: agendamento diário na janela de divulgação, `workflow_dispatch`,
-  `permissions: contents: write`; só faz commit quando há mês novo e as validações passam.
-- Site (backlog): Quarto + GitHub Pages.
+- GitHub Actions: agendamento diário às 09:23 de Brasília para os dois índices, `workflow_dispatch`,
+  `permissions: contents: write`; só faz commit quando há arquivos alterados e o pipeline e os testes passam.
+- Explicações estáticas no GitHub Pages: [publicação](PUBLICACAO.md). Quarto permanece no backlog.
 
-Estrutura prevista:
+Estrutura implementada (detalhes e propostas em [ESTRUTURA.md](ESTRUTURA.md)):
 
 ```
 config/series.yaml
 src/macroaf/
   extract/      atualizar.py (comando), sidra.py, ibge_metadados.py, raw.py, cliente.py
   transform/    classificacao.py, ipca15.py, harmonizacao.py
-  indicators/   contribuicao.py, acumulados.py, difusao.py, sazonalidade.py
+  indicators/   contribuicoes.py, acumulados.py, indice.py, difusao.py, sazonalidade.py
   validate/
+  marts/
+  relatorios/
+  pipeline.py
 data/{raw,staging,marts}/
 reference/      mapeamentos revisados manualmente
 tests/
@@ -232,7 +245,10 @@ docs/           PLANEJAMENTO.md, METODOLOGIA.md, AGENTES.md, aprendizados.md,
 
 ## 8. Roteiro do piloto
 
-Cada etapa é uma issue do marco **Piloto IPCA-15**.
+O roteiro abaixo registra as entregas que construíram o piloto **IPCA-15**; extração,
+transformação, indicadores, marts e automação estão implementados. As investigações de
+harmonização rejeitadas continuam abertas (#32 a #40), sem impedir a publicação com quebras.
+Para a evolução do IPCA e o aceite operacional, ver [projeto IPCA](projetos/ipca-geral.md).
 
 0. Agentes, skills e registro de aprendizado ([`AGENTES.md`](AGENTES.md)).
 1. Base do repositório: estrutura, `uv`, `pytest`, `ruff`, CI.
@@ -261,3 +277,5 @@ Cada etapa é uma issue do marco **Piloto IPCA-15**.
 | 9.10 | Emenda de séries entre POFs | **Na dúvida, quebra**: só emenda com prova ou revisão humana ([0005](decisoes/0005-na-duvida-quebra.md)) |
 | 9.11 | Chave dos marts | **Categoria publicada (tabela e id SIDRA) e mês**; a série longa é atributo ([0006](decisoes/0006-chave-estavel-dos-marts.md)) |
 | 9.12 | Formato dos marts | **Só CSV** versionado; parquet só no staging ([0007](decisoes/0007-marts-so-em-csv.md)) |
+
+| 9.13 | Explicações de gestão no GitHub Pages | **Proposta em revisão**, com primeira publicação autorizada; HTML estático, branch `gh-pages` ([0008](decisoes/0008-explicacoes-estaticas-no-pages.md)) |

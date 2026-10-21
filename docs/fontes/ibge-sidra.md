@@ -1,7 +1,7 @@
 # IBGE: SIDRA e API de agregados
 
 - **Instituição:** Instituto Brasileiro de Geografia e Estatística
-- **Última conferência:** 2026-10-19
+- **Última revisão da ficha:** 2026-10-20 (IPCA e IPCA-15; datas das consultas específicas abaixo)
 
 ## Endpoints
 
@@ -28,8 +28,8 @@ Medido em 2026-10-19 (#3):
   29 períodos = 51.591 → 400 com a mesma mensagem.
 - Cada valor ocupa ~300 bytes de JSON; 50 mil valores ≈ 15 MB.
 - **Como o extrator respeita o limite:** uma requisição por tabela × mês, com todas as variáveis
-  e categorias (decisão 0003). O maior pedido é o da 1646: 3 × 593 = 1.779 valores; o da 7062,
-  4 × 447 = 1.788. O extrator confere que a resposta tem exatamente variáveis × categorias
+  e categorias (decisão 0003). Exemplos: 1646, 3 × 593 = 1.779 valores; 7062,
+  4 × 447 = 1.788; 1419, 4 × 464 = 1.856. O extrator confere que a resposta tem exatamente variáveis × categorias
   registros.
 
 ## Formato e valores especiais
@@ -49,13 +49,15 @@ Medido em 2026-10-19 (#3):
 - A classificação aparece com o código IBGE no nome da categoria (`<código>.<nome>`, sem espaço;
   o geral é `Índice geral`, sem código); é desse código que sai a hierarquia, não do campo `nivel`
   (A-001).
-- **Valores especiais** encontrados em 2026-10-19: só `...` (dado não disponível), em 1705 v/1120
-  de 201202 a 201702 e em 7062 v/1120 de 202002 a 202012, em todas as categorias. Nas amostras
-  (1646 v/all 200005-200208; 1387, 1705 e 7062 v/355 completos) não apareceram `-`, `X`, `..` nem
-  vazio. Pela convenção de sinais do IBGE (não conferida nesta consulta), `-` é zero absoluto, `..`
-  não se aplica, `...` não disponível e `X` dado omitido por sigilo. Sugestão para a transformação:
-  aceitar os quatro como nulo com o sinal original guardado (sem converter `-` em zero até haver
-  caso real) e falhar com qualquer outro texto não numérico.
+- **Valores especiais e tratamento vigente (A-009, A-033):** `...` é indisponível e vira
+  ausente; `-` é zero absoluto e vira 0,0. O literal original continua preservado no raw.
+  A [ajuda oficial do SIDRA](https://apisidra.ibge.gov.br/home/ajuda) confirma os sinais; a carga
+  do IPCA encontrou 13 `-` em 2265 na 1419. Esses zeros também passam pelas validações (A-035).
+  `X`, `..`, vazio e qualquer outro texto não numérico interrompem a transformação; não são
+  convertidos silenciosamente em nulos. A sugestão exploratória de aceitar todos como nulos
+  foi superada pelo tratamento implementado e testado.
+- **Tabela de referência sem classificação:** a 3065 (IPCA-15) e a 1737 (IPCA) usam URL sem
+  `/c315/...`; a classificação e a contagem de registros do detalhe não se aplicam a elas.
 
 ## Falhas conhecidas e como tratar
 

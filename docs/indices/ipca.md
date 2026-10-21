@@ -1,7 +1,7 @@
 # IPCA
 
 - **Fonte:** IBGE, SIDRA ([ficha da fonte](../fontes/ibge-sidra.md)).
-- **Situação no projeto:** implementação em revisão da [issue #12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12); detalhe extraído e validado de julho/2006 a setembro/2026. A extensão anterior permanece separada.
+- **Situação no projeto:** implementado no PR #58, com pendências na [issue #12](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/12); detalhe extraído e validado de julho/2006 a setembro/2026. A extensão anterior permanece separada.
 - **Última conferência dos metadados:** 2026-10-20, nas APIs oficiais de metadados, períodos e pequenas amostras de valores.
 - **Recorte territorial inicial:** Brasil (`N1`). A existência de outros níveis territoriais nas tabelas não os inclui nesta entrega.
 
@@ -13,7 +13,7 @@ Neste projeto, **IPCA geral** significa preparar o índice completo: índice ger
 
 ## Tabelas da entrega principal
 
-A primeira prova de ponta a ponta pode usar a estrutura atual, de janeiro/2020 em diante. A entrega principal estende o detalhe a julho/2006, com três tabelas de dados consecutivas. As datas abaixo foram verificadas nos campos `periodicidade` e nas listas de períodos; as listas de cada tabela não têm lacunas internas.
+A entrega principal implementada cobre julho/2006 em diante, com três tabelas de dados consecutivas. As datas abaixo foram verificadas nos campos `periodicidade` e nas listas de períodos; as listas de cada tabela não têm lacunas internas.
 
 | Tabela | Papel | Período verificado | Meses em 20/10/2026 | Variáveis |
 |---|---|---|---:|---|
@@ -26,7 +26,7 @@ As três tabelas de detalhe se sucedem sem sobreposição nem lacuna: `2006-07 �
 
 Os metadados das tabelas de detalhe oferecem `N1`, `N6` e `N7`; a 1737 oferece somente `N1`. A 1737 não tem classificação 315.
 
-### Variáveis e nomes internos propostos
+### Variáveis e nomes internos implementados
 
 | Id | Nome oficial | Unidade | Nome interno já usado no piloto |
 |---|---|---|---|
@@ -98,7 +98,9 @@ O catálogo atual exige tabelas de dados em sucessão sem sobreposição. Portan
 
 ## Endpoints e evidências reproduzíveis
 
-Todos os endpoints a seguir foram consultados em 20/10/2026. As respostas usadas na exploração ficaram em arquivos temporários da sessão; ainda não constituem uma camada raw versionada.
+Todos os endpoints a seguir foram consultados em 20/10/2026. Os dados e metadados das tabelas
+2938, 1419, 7060 e 1737 já estão no raw versionado. As consultas exploratórias às tabelas
+655/656/657 não constituem carga histórica versionada.
 
 - Metadados: `https://servicodados.ibge.gov.br/api/v3/agregados/{tabela}/metadados`.
 - Períodos: `https://servicodados.ibge.gov.br/api/v3/agregados/{tabela}/periodos`.
@@ -108,7 +110,7 @@ Todos os endpoints a seguir foram consultados em 20/10/2026. As respostas usadas
 - Referência: `https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/all/p/202609`.
 - Amostras legadas: `/values/t/655/n1/all/v/63/p/199908/c315/7169,7173`, `/values/t/656/n1/all/v/66/p/199908/c315/7169,7173` e `/values/t/657/n1/all/v/69/p/199908/c315/7169,7173`, no domínio `apisidra.ibge.gov.br`.
 
-A extração futura deve continuar incremental, com uma requisição por tabela × mês, verificando contagens, preservando resposta oficial e revisão, e respeitando o limite de 50.000 valores do SIDRA já documentado na ficha da fonte. As amostras desta ficha não substituem os testes de dados históricos nem autorizam publicar séries ainda não validadas.
+A extração implementada é incremental, com uma requisição por tabela × mês, verificando contagens, preservando resposta oficial e revisão, e respeitando o limite de 50.000 valores do SIDRA já documentado na ficha da fonte. As amostras desta ficha não substituem os testes de dados históricos nem autorizam publicar séries ainda não validadas.
 
 
 ## Implementação e qualidade do histórico
@@ -126,5 +128,6 @@ Exemplos reproduzíveis:
 - https://apisidra.ibge.gov.br/values/t/1419/n1/all/v/63,69,2265/p/201306/c315/7721
 
 O mapa tem 63 propostas não revisadas, mantidas como quebras. Os arquivos de consumo ficam em
-`data/marts/ipca_*.csv`, com dicionário próprio `ipca_README.md`. A ativação da automação depende
-do merge e de uma execução manual no GitHub Actions; nenhuma execução remota é presumida.
+`data/marts/ipca_*.csv`, com dicionário próprio `ipca_README.md`. A configuração da automação está
+na `main` após o PR #58; o aceite operacional depende de uma execução manual conferida no Actions.
+Nenhuma execução remota é presumida nesta ficha.

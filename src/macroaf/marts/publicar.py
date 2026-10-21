@@ -124,7 +124,7 @@ DICIONARIO: dict[str, dict] = {
             "mes": "Mês de referência (AAAA-MM).",
             "chave_categoria": "Categoria (ver categorias).",
             **{
-                f"acum_{j}": f"Acumulado em {j.replace('m', ' meses') if j != 'ano' else 'no ano'}, em %."
+                f"acum_{j}": f"Acumulado {'em ' + j.replace('m', ' meses') if j != 'ano' else 'no ano'}, em %."
                 for j in JANELAS_MART
             },
             **{f"origem_{j}": f"oficial ou calculado, para acum_{j}." for j in JANELAS_MART},
@@ -404,9 +404,8 @@ def _readme(indice: Indice, marts: dict[str, pd.DataFrame], ultimo_mes: str) -> 
                 else especificacao["descricao"]
             ),
             "",
-            f"Chave: `{', '.join(especificacao['chave'])}`. Linhas: {len(tabela):,}.".replace(
-                ",", "."
-            ),
+            f"Chave: `{', '.join(especificacao['chave'])}`. "
+            + f"Linhas: {len(tabela):,}.".replace(",", "."),
             "",
             "| Coluna | Descrição |",
             "|---|---|",

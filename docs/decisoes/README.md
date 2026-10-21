@@ -17,6 +17,16 @@ recebe `Situação: substituída por NNNN`.
 | [0006](0006-chave-estavel-dos-marts.md) | Chave estável dos marts: categoria publicada, não série | aceita |
 | [0007](0007-marts-so-em-csv.md) | Marts versionados só em CSV | aceita |
 
+| [0008](0008-explicacoes-estaticas-no-pages.md) | Explicações estáticas no GitHub Pages | proposta em revisão; primeira publicação autorizada |
+
+## Leitura do histórico
+
+As ADRs registram o contexto da data original. O comportamento operacional evoluiu: após o
+PR #58, a atualização consulta os dois índices diariamente e republica apenas quando há mudança
+ou `--forcar`. A janela antiga citada na 0003 não é a configuração atual. Consulte
+[Operação](../OPERACAO.md) e [Metodologia](../METODOLOGIA.md) para a execução vigente.
+A [proposta de organização](../ESTRUTURA.md) ainda não substitui decisões ou caminhos aceitos.
+
 ## Modelo
 
 ```markdown

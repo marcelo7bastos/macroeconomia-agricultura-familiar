@@ -1,7 +1,7 @@
 # IPCA-15
 
 - **Fonte:** IBGE, SIDRA ([ficha da fonte](../fontes/ibge-sidra.md))
-- **Situação no projeto:** piloto (marco *Piloto IPCA-15*)
+- **Situação no projeto:** piloto implementado e publicado, Brasil desde mai/2000; investigações de harmonização abertas (#32 a #40).
 - **Última conferência dos metadados:** 2026-10-19, na API de agregados (metadados e períodos das
   cinco tabelas) e com amostras da API de valores; resumo no `PLANEJAMENTO.md`, seção 3.1
 
@@ -149,7 +149,8 @@ Campo `nivel` por tabela (só para registro; não use):
   acumulados (`METODOLOGIA.md` 10).
 - Difusão e sazonalidade (#44): `difusao_ipca15` e `sazonalidade_ipca15` no staging
   (`METODOLOGIA.md` 11). O BCB publica a difusão do IPCA cheio (SGS 21379), não a do IPCA-15;
-  quando o IPCA cheio entrar (#12), a oficial vem primeiro.
+  a integração com essa série do BCB ainda não foi implementada. A difusão dos marts atuais
+  é calculada a partir do detalhe do IBGE.
 - Marts (#8): `data/marts/ipca15_*.csv`, dicionário em `data/marts/README.md` e
   `data/metadata.json` (`METODOLOGIA.md` 12; decisões 0006 e 0007).
 - A troca de POF chega ao IPCA-15 um mês depois de chegar ao IPCA (jul/2006 → ago/2006,
@@ -159,5 +160,7 @@ Campo `nivel` por tabela (só para registro; não use):
 
 ## Relação com outros índices
 
-- **IPCA cheio** (#12): mesma classificação 315 e mesmas trocas de POF, mas com mais subitens
-  (377 em 7060 contra 367 em 7062) e tabelas próprias. Deve entrar trocando só a configuração.
+- **IPCA cheio** (#12): implementado com classificação 315 e estruturas de POF semelhantes,
+  mas datas de entrada diferentes, tabelas próprias e mais subitens (377 em 7060 contra 367
+  em 7062). Compartilha o pipeline por configuração, com tratamentos documentados na
+  [ficha do IPCA](ipca.md) e na metodologia 14.

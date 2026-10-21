@@ -1351,6 +1351,7 @@ def _renderizar_indice(f: dict) -> str:
 <title>Transformações do {nome}</title><meta name="viewport" content="width=device-width">
 <style>{CSS}</style><main class="pagina">
 <header class="topo"><p class="olho">Brasil · dados oficiais do IBGE</p>
+<p><a href="../gestao/{codigo}.html">Guia para gestores: usos, dados e engenharia ↗</a></p>
 <h1>Transformações do {nome}</h1><p>{escape(f["indice"]["descricao"])}.
 Detalhe de {f["periodo"]["inicio"]} a {f["periodo"]["fim"]}.</p></header>
 <section class="secao"><h2>Da fonte à publicação</h2>
@@ -1395,15 +1396,18 @@ def renderizar(f: dict) -> str:
     dados_js = dados_js.replace("</", "<\\/")
     ok = sum(v["ok"] for v in f["validacoes"])
     tabelas_dados = [t for t in f["tabelas"] if t["papel"] == "dados"]
-    return f"""<title>Transformações do {escape(nome)}</title>
+    return f"""<!doctype html><html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformações do {escape(nome)}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
-<style>{CSS}</style>
+<style>{CSS}</style></head><body>
 <main class="pagina">
   <header class="topo">
     <span class="olho">Macroeconomia da Agricultura Familiar · {escape(f["indice"]["codigo"])}</span>
+    <p><a href="../gestao/{escape(f["indice"]["codigo"])}.html">Guia para gestores: usos, dados e engenharia ↗</a></p>
     <h1>Transformações do {escape(nome)}</h1>
     <p>Do que o IBGE publica até as tabelas do projeto: o que foi feito em cada etapa, como as tabelas se juntam, o que já existe e o que falta. Tudo nesta página foi gerado a partir dos dados e do código do repositório.</p>
     <div class="fatos">
@@ -1452,7 +1456,7 @@ def renderizar(f: dict) -> str:
   {_secao_manter(f)}
 </main>
 <script type="application/json" id="dados">{dados_js}</script>
-<script>{JS}</script>
+<script>{JS}</script></body></html>
 """
 
 
