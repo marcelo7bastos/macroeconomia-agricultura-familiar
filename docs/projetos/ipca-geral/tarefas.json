@@ -1,0 +1,158 @@
+{
+  "proprietario": "marcelo7bastos",
+  "repositorio": "marcelo7bastos/macroeconomia-agricultura-familiar",
+  "titulo": "IPCA geral — preparação dos dados",
+  "descricao": "Extração, transformação e validação do IPCA Brasil; entrega principal desde julho/2006 e extensão histórica separada.",
+  "issue_referencia": 12,
+  "url_plano": "https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/blob/main/docs/projetos/ipca-geral.md",
+  "tarefas": [
+    {
+      "id": "IPCA-01",
+      "titulo": "[IPCA-01] Conferir fontes oficiais e concluir a ficha do IPCA",
+      "prioridade": "P0",
+      "dependencias": [],
+      "escopo": "Completar a descoberta de 2938, 1419, 7060 e referência 1737; documentar a extensão 655/656/657.",
+      "aceite": [
+        "Revisar a ficha docs/indices/ipca.md e os endpoints oficiais.",
+        "Conferir períodos e categorias nas fronteiras das POFs e amostras do geral e dos alimentos.",
+        "Perfilar a disponibilidade das variáveis por categoria, sem generalizar as amostras do geral e arroz.",
+        "Registrar ausentes, peso zero e sinais especiais, distinguindo observado de ainda não verificado."
+      ]
+    },
+    {
+      "id": "IPCA-02",
+      "titulo": "[IPCA-02] Cadastrar IPCA e separar cobertura da referência",
+      "prioridade": "P0",
+      "dependencias": [
+        "IPCA-01"
+      ],
+      "escopo": "Adicionar a configuração do IPCA sem fingir que a 1737 começa junto com o detalhe.",
+      "aceite": [
+        "Registrar variáveis 63, 69, 66, 2265, 2266, 2263 e 2264 por conceito.",
+        "Preservar o início oficial da 1737 em 1979-12; definir janela de extração e recorte de validação explicitamente.",
+        "Permitir a prova 2020+ e a ampliação 2006+ sem datas fictícias nem repetição indevida de POF.",
+        "Testar catálogo válido, lacunas, sobreposição e regressões do IPCA-15."
+      ]
+    },
+    {
+      "id": "IPCA-03",
+      "titulo": "[IPCA-03] Extrair IPCA incrementalmente com raw auditável",
+      "prioridade": "P0",
+      "dependencias": [
+        "IPCA-02"
+      ],
+      "escopo": "Reutilizar cliente e armazém raw com chamadas por tabela e mês, começando pela série corrente.",
+      "aceite": [
+        "Coletar metadados e dados Brasil N1 respeitando o limite da API e preservando TLS e verificações.",
+        "Conferir URLs, SHA-256, registros e revisões nos manifestos.",
+        "Provar retomada após interrupção, reexecução sem novidade e revisão sem sobrescrever raw.",
+        "Registrar volume, tempo e falhas da coleta; testar 400 definitivo,429 e 5xx transitórios e catálogo divergente."
+      ]
+    },
+    {
+      "id": "IPCA-04",
+      "titulo": "[IPCA-04] Transformar classificação, fato e referência do IPCA",
+      "prioridade": "P0",
+      "dependencias": [
+        "IPCA-03"
+      ],
+      "escopo": "Preparar dim_classificacao, fato_ipca e ref_ipca_geral em data/staging/ipca.",
+      "aceite": [
+        "Derivar os cinco níveis pelo código IBGE; conferir a árvore própria do IPCA.",
+        "Garantir unicidade por mês/tabela/categoria e junções sem multiplicação de linhas.",
+        "Preservar valores oficiais e posições ausentes; não converter sinal desconhecido em zero.",
+        "Tratar a referência de cobertura mais longa e testar as junções com dados reais e casos defeituosos."
+      ]
+    },
+    {
+      "id": "IPCA-05",
+      "titulo": "[IPCA-05] Validar IPCA contra referências oficiais e identidades",
+      "prioridade": "P0",
+      "dependencias": [
+        "IPCA-04"
+      ],
+      "escopo": "Criar verificações e arquivos de referência específicos do IPCA, sem copiar exceções do piloto.",
+      "aceite": [
+        "Executar esquema, pesos, reconciliação, continuidade, acumulados e costura do índice geral.",
+        "Comparar com a 1737 no intervalo pertinente, usando os limites metodológicos documentados.",
+        "Erros injetados precisam falhar; nenhuma exceção pode existir sem evidência, justificativa e contagem.",
+        "Produzir validacao.json e bloquear publicação quando houver falha sem explicação."
+      ]
+    },
+    {
+      "id": "IPCA-06",
+      "titulo": "[IPCA-06] Entregar prova ponta a ponta do IPCA 2020 em diante",
+      "prioridade": "P0",
+      "dependencias": [
+        "IPCA-05"
+      ],
+      "escopo": "Fechar um ciclo reproduzível da tabela 7060 até saídas de consumo de amostra revisadas.",
+      "aceite": [
+        "Montar série corrente e indicadores sem usar dimensão ou mapa do IPCA-15.",
+        "Conferir geral, alimentação e bebidas, alimentação no domicílio e fora dele.",
+        "Disponibilizar 2026 somente até o último mês efetivamente divulgado, sem projeção.",
+        "Documentar comandos, duração e resultados; não declarar a entrega principal histórica encerrada."
+      ]
+    },
+    {
+      "id": "IPCA-07",
+      "titulo": "[IPCA-07] Retrocarregar até 2006 e revisar a harmonização do IPCA",
+      "prioridade": "P1",
+      "dependencias": [
+        "IPCA-06"
+      ],
+      "escopo": "Completar 2938/1419/7060 e um mapa próprio entre três POFs.",
+      "aceite": [
+        "Cobrir todos os meses desde 2006-07 sem lacunas ou sobreposição.",
+        "Revisar transições 2011-12→2012-01 e 2019-12→2020-01.",
+        "Registrar continuidades, divisões, fusões e quebras com revisão humana preservada.",
+        "Não transferir automaticamente decisões ou contagens de exceções do IPCA-15."
+      ]
+    },
+    {
+      "id": "IPCA-08",
+      "titulo": "[IPCA-08] Publicar contratos de consumo e relatórios do IPCA",
+      "prioridade": "P1",
+      "dependencias": [
+        "IPCA-07"
+      ],
+      "escopo": "Finalizar marts estáveis, metadados, histórico de séries e páginas explicativas próprias.",
+      "aceite": [
+        "Publicar os cinco CSVs ipca_* com chaves e nomes estáveis e metadados sob a chave ipca.",
+        "Conferir hashes contra os próprios arquivos e comparar publicações segundo A-031.",
+        "Preservar oficiais e estrutura exatos; tolerância inclusiva 0,001 p.p. apenas nos acumulados calculados e contribuições.",
+        "Remover das páginas do IPCA os rótulos e exemplos indevidos da 3065 e do IPCA-15, preservando sua página existente."
+      ]
+    },
+    {
+      "id": "IPCA-09",
+      "titulo": "[IPCA-09] Automatizar atualização e realizar o aceite final",
+      "prioridade": "P1",
+      "dependencias": [
+        "IPCA-08"
+      ],
+      "escopo": "Integrar atualização do IPCA sem comprometer o IPCA-15 e concluir a entrega principal 2006+.",
+      "aceite": [
+        "Selecionar índice no workflow; preservar metadados e arquivos dos dois índices.",
+        "Evitar corridas de escrita na main e não publicar índice com falha.",
+        "Testar mês novo, revisão, metadados alterados, ausência de novidade, divulgação parcial e recuperação após falha.",
+        "Executar testes, Ruff e revisão metodológica; realizar uma atualização manual auditada após merge."
+      ]
+    },
+    {
+      "id": "IPCA-10",
+      "titulo": "[IPCA-10] Projetar e implementar a extensão histórica 1999–2006",
+      "prioridade": "P2",
+      "dependencias": [
+        "IPCA-09"
+      ],
+      "escopo": "Etapa separada da entrega principal: compor 655/656/657 em uma única POF1995-96.",
+      "aceite": [
+        "Aprovar o desenho de catálogo/composição antes da extração histórica.",
+        "Unir variação, peso e acumulado por mês e categoria, sem produto cartesiano nem perda de registros.",
+        "Validar a fronteira 2006-06→2006-07 e as peculiaridades históricas antes da harmonização.",
+        "Documentar cobertura e limites; não apresentar a referência desde 1979 como detalhe disponível desde 1979."
+      ]
+    }
+  ]
+}
