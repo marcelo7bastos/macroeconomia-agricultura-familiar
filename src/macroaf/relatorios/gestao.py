@@ -88,6 +88,7 @@ def gerar(codigo: str) -> str:
     substituicoes = {
         "NOME": escape(dados["nome"]),
         "CODIGO": codigo,
+        "LINHAGEM": '<a href="ipca-linhagem.html" class="acao" aria-label="Abrir dicionário e linhagem do IPCA Geral">07 · Dicionário e linhagem ↗</a>' if codigo == "ipca" else "",
         "DADOS": json.dumps(dados, ensure_ascii=False, allow_nan=False).replace("</", "<\\/"),
         "CSS": (ASSETS / "gestao.css").read_text(),
         "JS": (ASSETS / "gestao.js").read_text(),
