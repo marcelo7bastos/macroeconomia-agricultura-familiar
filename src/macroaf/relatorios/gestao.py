@@ -90,7 +90,7 @@ def gerar(codigo: str) -> str:
         linhagem = (
             '<a href="ipca-linhagem.html" class="acao" '
             'aria-label="Abrir dicionário e linhagem do IPCA Geral">'
-            "07 · Dicionário e linhagem ↗</a>"
+            "07 · Dicionário e linhagem ↗</a>\n"
         )
     substituicoes = {
         "NOME": escape(dados["nome"]),
