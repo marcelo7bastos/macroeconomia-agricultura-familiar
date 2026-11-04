@@ -8,8 +8,8 @@
 
 | Série SGS | Conteúdo | Frequência | Uso |
 |---|---|---|---|
-| 1 | Dólar americano, PTAX venda, R$/US$ | diária (dias úteis) | média mensal que converte os preços internacionais |
-| 3698 | Dólar americano, PTAX venda, média do período, R$/US$ | mensal, datada no dia 1 | só validação: a média calculada da série 1 tem de bater com ela |
+| 1 | Dólar americano, PTAX venda, R$/US$ | diária (dias úteis) | só validação: a média calculada dos dias úteis tem de bater com a 3698 |
+| 3698 | Dólar americano, PTAX venda, média do período, R$/US$ | mensal, datada no dia 1 | converte os preços internacionais (oficial) |
 
 A série 3697 é a mesma média, mas de **compra** (valores um pouco menores: set/2026, 5,1441 contra
 5,1447 da 3698). O projeto usa venda, a convenção de conversão de preços em US$.
@@ -40,7 +40,10 @@ decimal e quatro casas.
 ## Falhas conhecidas e como tratar
 
 - 406 por intervalo longo: não acontece com a consulta mensal.
-- Mês sem nenhum valor: o extrator falha (não grava arquivo vazio).
+- Intervalo sem valor: **HTTP 404** com `{"erro": {"statusCode": 404, "detail": "...Value(s) not
+  found"}}` (conferido em 2026-11-04 na 3698 de nov/2026). Na 3698 do mês recém-fechado, isso é
+  pendência: nada é gravado e a coleta seguinte tenta de novo. Em qualquer outro mês, o extrator
+  falha (não grava arquivo vazio).
 
 ## Acesso a partir dos ambientes
 

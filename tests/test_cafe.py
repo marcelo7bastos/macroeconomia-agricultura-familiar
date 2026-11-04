@@ -6,7 +6,9 @@ import io
 import json
 import shutil
 from dataclasses import replace
+from datetime import date
 
+import httpx
 import numpy as np
 import openpyxl
 import pandas as pd
@@ -134,6 +136,45 @@ def test_recorte_do_banco_mundial():
         fontes.recortar_banco_mundial(planilha, "Outra aba", ["Coffee, Arabica"])
 
 
+class _ClienteFalso:
+    def __init__(self, respostas):
+        self.respostas = respostas
+
+    def obter(self, url):
+        resposta = self.respostas(url)
+        if isinstance(resposta, int):
+            pedido = httpx.Request("GET", url)
+            raise httpx.HTTPStatusError(
+                "erro", request=pedido, response=httpx.Response(resposta, request=pedido)
+            )
+        return resposta
+
+
+def test_media_oficial_ainda_nao_publicada_fica_pendente(tmp_path):
+    # O SGS responde 404 a mês sem valor; no mês recém-fechado, a 3698 ainda pode não ter saído.
+    diaria = b'[{"data":"02/03/2026","valor":"5.0"}]'
+
+    def respostas(url):
+        if "sgs.3698" in url and "/03/2026" in url:
+            return 404
+        return diaria if "sgs.1/" in url else b'[{"data":"01/02/2026","valor":"5.0"}]'
+
+    configuracao = replace(CONFIGURACAO, cambio=replace(CONFIGURACAO.cambio, inicio="2026-02"))
+    saida = fontes.coletar_sgs(
+        configuracao, _ClienteFalso(respostas), date(2026, 4, 2), raiz=tmp_path
+    )
+    pendentes = [s for s in saida if isinstance(s, str)]
+    assert pendentes == ["sgs 3698 2026-03: média oficial ainda não publicada"]
+    # Um mês antigo sem valor não é pendência: é erro.
+    with pytest.raises(fontes.ErroFormato):
+        fontes.coletar_sgs(
+            replace(configuracao, cambio=replace(configuracao.cambio, inicio="2026-01")),
+            _ClienteFalso(lambda url: 404 if "/01/2026" in url else diaria),
+            date(2026, 4, 2),
+            raiz=tmp_path / "outro",
+        )
+
+
 # --------------------------------------------------------------------------- raw
 
 
@@ -222,6 +263,25 @@ def test_ptax_divergente_falha(montagem):
     assert _validacao(montagem, "ptax_media_mensal", cambio=cambio).falhas == 1
 
 
+def test_falta_da_media_oficial_so_e_tolerada_no_ultimo_mes(montagem):
+    cambio = montagem.cambio.copy()
+    ultimo = cambio.mes.max()
+    cambio.loc[cambio.mes == ultimo, "ptax_media_oficial"] = np.nan
+    resultado = _validacao(montagem, "ptax_media_mensal", cambio=cambio)
+    assert resultado.falhas == 0 and resultado.ausentes == 1
+    cambio.loc[cambio.index[20], "ptax_media_oficial"] = np.nan
+    assert _validacao(montagem, "ptax_media_mensal", cambio=cambio).falhas == 1
+
+
+def test_excecao_com_diferenca_revista_falha(montagem):
+    excecoes = ler_excecoes()
+    revista = excecoes.copy()
+    revista.loc[0, "diferenca_pct"] = str(float(revista.loc[0, "diferenca_pct"]) + 0.1)
+    resultado = _validacao(montagem, "comparacao_fontes", excecoes=revista)
+    assert resultado.falhas == 1
+    assert resultado.exemplos[0]["situacao"] == "mudou"
+
+
 def test_excecoes_sao_contadas_exatamente(montagem):
     excecoes = ler_excecoes()
     assert _validacao(montagem, "comparacao_fontes").excecoes_aplicadas == len(excecoes)
@@ -253,6 +313,9 @@ def test_variacao_do_fmi_confere_com_a_oficial(montagem):
 def test_preco_em_reais_e_a_conversao_declarada(montagem):
     linhas = montagem.mensal[montagem.mensal.lado == "internacional"]
     esperado = linhas.preco_usd_kg * linhas.ptax_media * KG_POR_SACA
+    # A PTAX do mart é a média mensal oficial do BCB (SGS 3698).
+    oficial = linhas.mes.map(montagem.cambio.set_index("mes").ptax_media_oficial)
+    assert (linhas.ptax_media == oficial).all()
     assert np.allclose(linhas.preco_brl_saca, esperado, atol=1e-4)
     fmi = linhas[linhas.fonte == "fmi_pcps"]
     assert np.allclose(fmi.preco_usd_kg, fmi.valor_original / 100 / 0.45359237, atol=1e-6)
@@ -266,13 +329,35 @@ def test_indice_volta_as_variacoes(montagem):
         assert np.allclose(grupo.indice_base_100, composto, rtol=2e-4), serie
 
 
-def test_acumulado_12m_e_a_razao_dos_indices(montagem):
+def test_acumulado_12m_calculado_e_a_razao_dos_indices(montagem):
     for serie, bruto in montagem.mensal.groupby("serie"):
         grupo = bruto.sort_values("mes").set_index("mes")
         indice = grupo.indice_base_100
         razao = (indice / indice.shift(12) - 1) * 100
-        comum = razao.dropna().index
+        # No 12º mês, o índice de 12 meses antes é o mês-base (100), fora do mart.
+        decimo_segundo = (pd.Period(CAFE.inicio, "M") + 11).strftime("%Y-%m")
+        razao[decimo_segundo] = indice[decimo_segundo] - 100
+        calculado = grupo.origem_acum_12m == "calculado"
+        comum = razao[calculado].dropna().index
+        assert len(comum) > 0, serie
         assert np.allclose(grupo.variacao_acum_12m[comum], razao[comum], atol=1e-5), serie
+        assert grupo.variacao_acum_12m.notna().eq(grupo.origem_acum_12m.notna()).all(), serie
+
+
+def test_acumulado_12m_oficial_do_ipca_e_preservado(montagem):
+    # Dado oficial primeiro: onde o IBGE publica o acumulado, o mart repete o valor publicado.
+    ipca = pd.read_csv(RAIZ / "data" / "marts" / "ipca_mensal.csv", dtype={"chave_categoria": str})
+    consumidor = montagem.mensal[montagem.mensal.lado == "consumidor"]
+    juntas = consumidor.merge(ipca, on=["mes", "chave_categoria"], suffixes=("", "_ipca"))
+    publicada = juntas.variacao_acum_12m_publicada.notna()
+    assert publicada.sum() == 705
+    assert (juntas.origem_acum_12m[publicada] == "oficial").all()
+    assert (
+        juntas.variacao_acum_12m[publicada] == juntas.variacao_acum_12m_publicada[publicada]
+    ).all()
+    assert (juntas.origem_acum_12m[~publicada].dropna() == "calculado").all()
+    internacional = montagem.mensal[montagem.mensal.lado == "internacional"]
+    assert set(internacional.origem_acum_12m.dropna()) == {"calculado"}
 
 
 def test_preco_real_e_razao_sao_identidades(montagem):

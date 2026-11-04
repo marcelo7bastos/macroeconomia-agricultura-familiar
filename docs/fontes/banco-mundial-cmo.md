@@ -33,6 +33,9 @@ Organização Internacional do Café), por isso um confere o outro.
 - **O raw guarda um recorte**, não a planilha: CSV com `mes, codigo, unidade, valor` das colunas
   de café, com o SHA-256 e a URL da planilha original no manifesto. A planilha tem ~600 kB e muda
   todo mês; o recorte preserva os valores exatos que o projeto usa.
+- **Limite de auditoria:** como a planilha não fica guardada e a URL muda a cada edição (A-037),
+  o SHA-256 da planilha registrado no manifesto não pode ser reconferido depois. A evidência que
+  permanece é o recorte, conferido pelo próprio SHA-256.
 
 ## Diferença em relação ao FMI
 

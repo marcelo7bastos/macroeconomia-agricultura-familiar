@@ -29,6 +29,8 @@ KG_POR_SACA = 60
 # A média mensal oficial do BCB tem 4 casas: a calculada difere no máximo meia unidade da última.
 LIMITE_PTAX = 0.00005 + 1e-9
 LIMITE_VARIACAO_FMI = 1e-6
+# Folga para a diferença registrada de uma exceção: revisão maior que isso exige novo diagnóstico.
+FOLGA_EXCECAO_PP = 0.05
 CASAS = 6
 CAMINHO_EXCECOES = RAIZ / "reference" / "excecoes_validacao_cafe.csv"
 
@@ -157,14 +159,18 @@ def validar(
     # 1. Câmbio: média calculada x média oficial, nos meses em que as duas existem.
     comum = cambio.dropna(subset=["ptax_media", "ptax_media_oficial"])
     diferenca = (comum.ptax_media - comum.ptax_media_oficial).abs()
-    so_um_lado = len(cambio) - len(comum)
+    # Só o mês mais recente pode ter a diária completa e a média oficial ainda não publicada.
+    sem_oficial = cambio[cambio.ptax_media_oficial.isna()].mes
+    sem_diaria = cambio[cambio.ptax_media.isna()].mes
+    toleradas = int((sem_oficial == cambio.mes.max()).sum())
+    so_um_lado = len(sem_oficial) + len(sem_diaria) - toleradas
     resultados.append(
         Resultado(
             "ptax_media_mensal",
             verificados=len(comum),
             falhas=int((diferenca > LIMITE_PTAX).sum()) + so_um_lado,
             limite="0,00005 (arredondamento da média oficial a 4 casas)",
-            ausentes=so_um_lado,
+            ausentes=toleradas,
             maior_diferenca=round(float(diferenca.max()), 8),
             exemplos=comum[diferenca > LIMITE_PTAX].head(5).to_dict("records"),
         )
@@ -179,8 +185,8 @@ def validar(
         falhas += len(faltando)
         exemplos += [{"serie": serie, "mes": m} for m in faltando[:3]]
     meses_preco = sorted(precos[precos.mes >= produto.base_indice].mes.unique())
-    sem_cambio = sorted(set(meses_preco) - set(cambio.dropna(subset=["ptax_media"]).mes))
-    # O mês mais recente de uma fonte pode ainda não ter PTAX mensal fechada: só ele é tolerado.
+    sem_cambio = sorted(set(meses_preco) - set(cambio.dropna(subset=["ptax_media_oficial"]).mes))
+    # O mês mais recente de uma fonte pode ainda não ter PTAX mensal oficial: só ele é tolerado.
     sem_cambio_falha = [m for m in sem_cambio if m != max(meses_preco)]
     for serie, grupo in consumidor.groupby("serie"):
         esperados = _meses(grupo.mes.min(), grupo.mes.max())
@@ -237,24 +243,35 @@ def validar(
     falhas, verificados, aplicadas, maior, exemplos = 0, 0, 0, 0.0, []
     for a, b in produto.comparacoes:
         par = largura[[a, b]].dropna()
-        par = par[par.index >= produto.inicio]
+        par = par[par.index >= produto.base_indice]  # o mês-base também é usado
         relativa = (par[a] / par[b] - 1).abs() * 100
         acima = set(relativa[relativa > produto.limite_comparacao_pct].index)
-        conhecidas = set(listadas[(listadas.serie_a == a) & (listadas.serie_b == b)].mes)
+        do_par = listadas[(listadas.serie_a == a) & (listadas.serie_b == b)]
+        registradas = dict(zip(do_par.mes, do_par.diferenca_pct.astype(float), strict=True))
+        conhecidas = set(registradas)
         verificados += len(par)
         aplicadas += len(acima & conhecidas)
         maior = max(maior, float(relativa.max()))
-        # Exceção contada exatamente: nova divergência ou exceção que deixou de existir falham.
+        # Exceção contada exatamente: nova divergência ou exceção que deixou de existir falham;
+        # e o valor registrado vale: se a fonte revisar a diferença além da folga, falha.
         novas, sumidas = acima - conhecidas, conhecidas - acima
-        falhas += len(novas) + len(sumidas)
-        exemplos += [{"par": f"{a} x {b}", "mes": m, "situacao": "nova"} for m in sorted(novas)]
-        exemplos += [{"par": f"{a} x {b}", "mes": m, "situacao": "sumiu"} for m in sorted(sumidas)]
+        mudaram = {
+            m for m in acima & conhecidas if abs(relativa[m] - registradas[m]) > FOLGA_EXCECAO_PP
+        }
+        falhas += len(novas) + len(sumidas) + len(mudaram)
+        for situacao, meses in [("nova", novas), ("sumiu", sumidas), ("mudou", mudaram)]:
+            exemplos += [
+                {"par": f"{a} x {b}", "mes": m, "situacao": situacao} for m in sorted(meses)
+            ]
     resultados.append(
         Resultado(
             "comparacao_fontes",
             verificados=verificados,
             falhas=falhas,
-            limite=f"diferença relativa de {produto.limite_comparacao_pct:g}% em US$/kg",
+            limite=(
+                f"diferença relativa de {produto.limite_comparacao_pct:g}% em US$/kg; exceção "
+                f"vale até {FOLGA_EXCECAO_PP:g} p.p. do valor registrado"
+            ),
             excecoes_aplicadas=aplicadas,
             maior_diferenca=round(maior, 6),
             exemplos=exemplos[:10],
@@ -291,6 +308,7 @@ COLUNAS_MENSAL = [
     "preco_brl_saca",
     "variacao_mensal",
     "variacao_acum_12m",
+    "origem_acum_12m",
     "indice_base_100",
     "preco_real_brl_saca",
     "razao_consumidor_preco",
@@ -310,7 +328,8 @@ def calcular_mensal(
     produto: Produto, cambio: pd.DataFrame, precos: pd.DataFrame, consumidor: pd.DataFrame
 ) -> pd.DataFrame:
     nomes = {s.id: s.nome for s in produto.internacionais}
-    ptax = cambio.set_index("mes").ptax_media
+    # Conversão pela média mensal oficial do BCB (SGS 3698); a calculada da diária só a valida.
+    ptax = cambio.set_index("mes").ptax_media_oficial
     deflator = consumidor[consumidor.serie == produto.deflator.id].set_index("mes").indice_base_100
     principal = (
         consumidor[consumidor.serie == produto.id_principal].set_index("mes").indice_base_100
@@ -339,15 +358,22 @@ def calcular_mensal(
         internacionais.mes.map(principal) / internacionais.indice_base_100 * 100
     )
     internacionais = internacionais.assign(
-        nome=internacionais.serie.map(nomes), lado="internacional", chave_categoria=pd.NA
+        nome=internacionais.serie.map(nomes),
+        lado="internacional",
+        chave_categoria=pd.NA,
+        origem_acum_12m=np.where(internacionais.variacao_acum_12m.notna(), "calculado", None),
     )
 
     ipca = consumidor.sort_values(["serie", "mes"], ignore_index=True).copy()
-    # Acumulado em 12 meses pelo número-índice do próprio mart (com a base de 100 antes do início).
-    indice = ipca.groupby("serie").indice_base_100
-    anterior = indice.shift(12)
-    anterior = anterior.where(anterior.notna() | (ipca.groupby("serie").cumcount() != 11), 100.0)
-    ipca["variacao_acum_12m"] = (ipca.indice_base_100 / anterior - 1) * 100
+    ipca["variacao_acum_12m_calculada"] = acumulado_12m_pelo_indice(produto, ipca)
+    # Dado oficial primeiro: o acumulado publicado pelo IBGE onde existe; o calculado só preenche.
+    oficial = ipca.variacao_acum_12m_publicada.notna()
+    ipca["variacao_acum_12m"] = ipca.variacao_acum_12m_publicada.where(
+        oficial, ipca.variacao_acum_12m_calculada.round(CASAS)
+    )
+    ipca["origem_acum_12m"] = np.where(
+        oficial, "oficial", np.where(ipca.variacao_acum_12m.notna(), "calculado", None)
+    )
     ipca = ipca.assign(
         lado="consumidor",
         fonte=produto.indice_consumidor,
@@ -363,14 +389,13 @@ def calcular_mensal(
     mensal = pd.concat([internacionais, ipca], ignore_index=True)
     mensal = mensal[mensal.mes >= produto.inicio][COLUNAS_MENSAL]
     numericas = mensal.select_dtypes("number").columns.drop(
-        ["variacao_mensal", "indice_base_100", "valor_original", "ptax_media"]
+        ["variacao_mensal", "variacao_acum_12m", "indice_base_100", "valor_original", "ptax_media"]
     )
     mensal[numericas] = mensal[numericas].round(CASAS)
     # Valores publicados pelas fontes ficam como vieram; os calculados, com 6 casas.
     calculadas = mensal.lado == "internacional"
-    for coluna in ["variacao_mensal", "indice_base_100"]:
+    for coluna in ["variacao_mensal", "variacao_acum_12m", "indice_base_100"]:
         mensal.loc[calculadas, coluna] = mensal.loc[calculadas, coluna].round(CASAS)
-    mensal["ptax_media"] = mensal.ptax_media.round(8)
     ordem = {
         s: i
         for i, s in enumerate(
@@ -382,6 +407,20 @@ def calcular_mensal(
         key=lambda c: c.map(ordem) if c.name == "serie" else c,
         ignore_index=True,
     )
+
+
+def acumulado_12m_pelo_indice(produto: Produto, ipca: pd.DataFrame) -> pd.Series:
+    """Acumulado em 12 meses pelo número-índice do mart do IPCA.
+
+    No 12º mês de uma série, o índice de 12 meses antes é o mês-base (100), fora do mart. Isso só
+    vale para série que começa em `produto.inicio`; nas outras, os 12 primeiros meses ficam vazios.
+    """
+    grupos = ipca.groupby("serie")
+    anterior = grupos.indice_base_100.shift(12)
+    comeca_no_inicio = ipca.serie.map(grupos.mes.min()) == produto.inicio
+    no_12o_mes = grupos.cumcount() == 11
+    anterior = anterior.where(~(anterior.isna() & no_12o_mes & comeca_no_inicio), 100.0)
+    return (ipca.indice_base_100 / anterior - 1) * 100
 
 
 def calcular_defasagens(produto: Produto, mensal: pd.DataFrame) -> pd.DataFrame:
@@ -414,15 +453,19 @@ def calcular_defasagens(produto: Produto, mensal: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(linhas, columns=COLUNAS_DEFASAGENS)
 
 
-def validar_acumulado_ipca(consumidor: pd.DataFrame, mensal: pd.DataFrame) -> Resultado:
+def validar_acumulado_ipca(
+    produto: Produto, consumidor: pd.DataFrame, mensal: pd.DataFrame
+) -> Resultado:
     """Acumulado em 12 meses calculado pelo número-índice x variável oficial, onde ela existe.
 
     Limite analítico de arredondamento: meia unidade da casa publicada no acumulado (0,005) mais
     o efeito de 12 variações mensais publicadas com duas casas, cada uma com erro de até 0,005.
     """
-    juntas = consumidor.merge(
-        mensal[["mes", "serie", "variacao_acum_12m"]], on=["mes", "serie"]
-    ).dropna(subset=["variacao_acum_12m", "variacao_acum_12m_publicada"])
+    juntas = consumidor.sort_values(["serie", "mes"], ignore_index=True)
+    juntas = juntas.assign(variacao_acum_12m=acumulado_12m_pelo_indice(produto, juntas))
+    juntas = juntas[juntas.mes >= produto.inicio].dropna(
+        subset=["variacao_acum_12m", "variacao_acum_12m_publicada"]
+    )
     diferenca = (juntas.variacao_acum_12m - juntas.variacao_acum_12m_publicada).abs()
     limite = 0.005 + 12 * 0.005 * (1 + juntas.variacao_acum_12m.abs() / 100)
     return Resultado(
@@ -430,8 +473,9 @@ def validar_acumulado_ipca(consumidor: pd.DataFrame, mensal: pd.DataFrame) -> Re
         verificados=len(juntas),
         falhas=int((diferenca > limite).sum()),
         limite="0,005 + 12 x 0,005 x (1 + |acumulado|/100)",
-        ausentes=int(mensal[mensal.lado == "consumidor"].variacao_acum_12m.notna().sum())
-        - len(juntas),
+        ausentes=int(
+            ((mensal.lado == "consumidor") & (mensal.origem_acum_12m == "calculado")).sum()
+        ),
         maior_diferenca=round(float(diferenca.max()), 6),
         exemplos=juntas[diferenca > limite].head(5).to_dict("records"),
     )
@@ -443,6 +487,6 @@ def montar(configuracao: ConfiguracaoPrecos, produto: Produto, raiz=None) -> Mon
     consumidor = montar_consumidor(produto)
     resultados = validar(produto, cambio, precos, variacao_fmi, consumidor, ler_excecoes())
     mensal = calcular_mensal(produto, cambio, precos, consumidor)
-    resultados.append(validar_acumulado_ipca(consumidor, mensal))
+    resultados.append(validar_acumulado_ipca(produto, consumidor, mensal))
     defasagens = calcular_defasagens(produto, mensal)
     return Montagem(cambio, precos, variacao_fmi, consumidor, resultados, mensal, defasagens)

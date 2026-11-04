@@ -43,14 +43,15 @@ DICIONARIO = {
             "chave_categoria": "Só no IPCA: chave da categoria em `ipca_categorias.csv` (tabela.codigo SIDRA).",
             "unidade_original": "Unidade publicada pela fonte (`US¢/lb` no FMI, `US$/kg` no Banco Mundial).",
             "valor_original": "Preço como publicado pela fonte, na unidade original. Oficial.",
-            "ptax_media": "Média mensal da PTAX venda (R$/US$), calculada dos dias úteis da série SGS 1; validada contra a média oficial (SGS 3698). Calculado.",
+            "ptax_media": "Média mensal oficial da PTAX venda (R$/US$), série SGS 3698, usada na conversão. Oficial; a média calculada dos dias úteis da série SGS 1 a valida.",
             "preco_usd_kg": "Preço em US$/kg (FMI: US¢/lb ÷ 100 ÷ 0,45359237). Calculado.",
             "preco_brl_saca": "Preço em R$ por saca de 60 kg: `preco_usd_kg × ptax_media × 60`. Calculado.",
             "variacao_mensal": "Variação mensal, %. No IPCA, a oficial; nos preços, a do `preco_brl_saca` (calculada).",
-            "variacao_acum_12m": "Variação acumulada em 12 meses, %. Calculada pelo número-índice (no IPCA, validada contra a variável oficial onde ela existe).",
-            "indice_base_100": "Número-índice com base no mês anterior ao início (jun/2006 = 100). No IPCA, o do mart `ipca_mensal.csv`; nos preços, `preco_brl_saca` ÷ preço do mês-base × 100 (calculado).",
+            "variacao_acum_12m": "Variação acumulada em 12 meses, %. No IPCA, a oficial onde o IBGE publica; nos demais meses e nos preços, calculada pelo número-índice. A origem está em `origem_acum_12m`.",
+            "origem_acum_12m": "`oficial` (variável do IBGE, repetida de `ipca_mensal.csv`) ou `calculado`; vazio sem acumulado.",
+            "indice_base_100": "Número-índice com base no mês anterior ao início ({base} = 100). No IPCA, o do mart `ipca_mensal.csv`; nos preços, `preco_brl_saca` ÷ preço do mês-base × 100 (calculado).",
             "preco_real_brl_saca": "`preco_brl_saca` a preços do último mês do IPCA, deflacionado pelo índice geral. Vazio depois do último mês do IPCA. Calculado.",
-            "razao_consumidor_preco": "Índice do café moído (IPCA) ÷ índice do preço internacional × 100. Acima de 100: o consumidor acumulou mais alta que o preço internacional em reais desde jun/2006. Leitura de direção, não de margem. Calculado.",
+            "razao_consumidor_preco": "Índice do subitem {principal} (IPCA) ÷ índice do preço internacional × 100. Acima de 100: o consumidor acumulou mais alta que o preço internacional em reais desde {base}. Leitura de direção, não de margem. Calculado.",
         },
     },
     "defasagens": {
@@ -58,7 +59,7 @@ DICIONARIO = {
         "colunas": {
             "serie": "Série de preço internacional.",
             "medida": "`variacao_mensal` ou `variacao_acum_12m` (as duas em R$).",
-            "defasagem_meses": "k: o preço no mês t-k comparado com o café moído no mês t.",
+            "defasagem_meses": "k: o preço no mês t-k comparado com o subitem {principal} no mês t.",
             "correlacao": "Correlação de Pearson entre as duas medidas. Descritiva, sem leitura causal; no acumulado em 12 meses as janelas se sobrepõem e a correlação fica inflada. Calculado.",
             "observacoes": "Número de pares de meses usados.",
             "inicio": "Primeiro mês t do intervalo comum.",
@@ -66,6 +67,12 @@ DICIONARIO = {
         },
     },
 }
+
+
+def _textos(produto: Produto, montagem: Montagem) -> dict[str, str]:
+    """Valores do dicionário que vêm da configuração, não do código."""
+    principal = montagem.consumidor[montagem.consumidor.serie == produto.id_principal]
+    return {"base": produto.base_indice, "principal": principal.nome.iloc[0]}
 
 
 def _csv(tabela: pd.DataFrame) -> bytes:
@@ -104,15 +111,16 @@ def conferir(produto: Produto, montagem: Montagem) -> list[str]:
 
 def _readme(configuracao: ConfiguracaoPrecos, produto: Produto, montagem: Montagem) -> str:
     mensal = montagem.mensal
+    textos = _textos(produto, montagem)
     linhas = [
-        "# Dicionário dos marts do café",
+        f"# Dicionário dos marts: {produto.nome.lower()}",
         "",
         "Gerado por `uv run python -m macroaf.cafe.publicar`; não edite à mão. Projeto: "
         "[piloto do café](../../docs/projetos/cafe-piloto.md) (#62).",
         "",
-        "Preços internacionais do café (FMI e Banco Mundial) convertidos para R$ por saca de 60 kg "
-        "pela PTAX média do mês (Banco Central), ao lado dos subitens de café do IPCA. Os valores "
-        "do IPCA são os do mart `ipca_mensal.csv`, sem recálculo.",
+        "Preços internacionais (FMI e Banco Mundial) convertidos para R$ por saca de 60 kg pela "
+        "PTAX média oficial do mês (Banco Central), ao lado dos subitens do IPCA. Os valores do "
+        f"IPCA são os do mart `{produto.indice_consumidor}_mensal.csv`, sem recálculo.",
         "",
         "## Séries",
         "",
@@ -136,7 +144,7 @@ def _readme(configuracao: ConfiguracaoPrecos, produto: Produto, montagem: Montag
             "| Coluna | Descrição |",
             "|---|---|",
         ]
-        linhas += [f"| `{c}` | {d} |" for c, d in especificacao["colunas"].items()]
+        linhas += [f"| `{c}` | {d.format(**textos)} |" for c, d in especificacao["colunas"].items()]
     linhas += [
         "",
         "## Fontes e licenças",
@@ -151,15 +159,16 @@ def _readme(configuracao: ConfiguracaoPrecos, produto: Produto, montagem: Montag
         "",
         "## Cuidados de leitura",
         "",
-        "- Café moído é produto industrializado (torra, embalagem, marca) e mistura tipos; os "
-        "preços internacionais são de café verde exportado. As razões mostram direção e "
+        f"- {textos['principal']} é produto industrializado (torra, embalagem, marca) e mistura "
+        "tipos; os preços internacionais são de café verde exportado. As razões mostram direção e "
         "defasagem, não margem.",
         "- O IBGE não publica a composição do café moído entre arábica e robusta; as séries ficam "
         "separadas e nenhuma cesta é inventada.",
         "- A conversão usa a PTAX média do mês sobre o preço médio do mês: aproximação do preço "
         "diário convertido pelo câmbio do dia, que as fontes não publicam.",
-        "- FMI e Banco Mundial publicam a mesma família de cotações da OIC; diferenças acima de "
-        "1% estão registradas em `reference/excecoes_validacao_cafe.csv`, sem ajuste.",
+        "- FMI e Banco Mundial publicam a mesma família de cotações; diferenças acima de "
+        f"{produto.limite_comparacao_pct:g}% estão registradas em "
+        "`reference/excecoes_validacao_cafe.csv`, sem ajuste.",
         "- Possível fonte futura: indicadores CEPEA/Esalq de arábica e robusta (mercado físico "
         "brasileiro), se o CEPEA autorizar acesso automatizado (ver o projeto).",
         "",

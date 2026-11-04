@@ -17,6 +17,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date
 
+import httpx
 import openpyxl
 
 from macroaf.cafe.configuracao import ConfiguracaoPrecos, SerieInternacional
@@ -82,6 +83,7 @@ def coletar_sgs(
     armazem = ArmazemArquivos("bcb_sgs", **({"raiz": raiz} if raiz else {}))
     resultado: list[EntradaManifesto | str] = []
     cambio = configuracao.cambio
+    ultimo = max(_meses(cambio.inicio, hoje), default=None)
     for serie in [cambio.serie_diaria, cambio.serie_media_mensal]:
         existentes = set(armazem.chaves(str(serie)))
         for ano, mes in _meses(cambio.inicio, hoje):
@@ -92,8 +94,18 @@ def coletar_sgs(
             if verificar:
                 resultado.append(f"sgs {serie} {ano}-{mes:02d}")
                 continue
-            conteudo = cliente.obter(url)
-            linhas = ler_sgs(conteudo)
+            try:
+                conteudo = cliente.obter(url)
+                linhas = ler_sgs(conteudo)
+            except httpx.HTTPStatusError as erro:
+                # O SGS responde 404 ("Value(s) not found") a um intervalo sem valores.
+                if erro.response.status_code != 404:
+                    raise
+                linhas = []
+            if not linhas and serie == cambio.serie_media_mensal and (ano, mes) == ultimo:
+                # A média oficial do mês recém-fechado sai alguns dias depois: fica pendente.
+                resultado.append(f"sgs {serie} {ano}-{mes:02d}: média oficial ainda não publicada")
+                continue
             if not linhas:
                 raise ErroFormato(f"SGS {serie}: mês {ano}-{mes:02d} sem valores")
             entrada = armazem.salvar(str(serie), chave, "json", url, conteudo, ler_sgs, len(linhas))

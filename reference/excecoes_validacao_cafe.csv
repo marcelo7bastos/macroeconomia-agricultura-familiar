@@ -1,5 +1,5 @@
-validacao,serie_a,serie_b,mes,tipo,justificativa,aprendizado
-comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2014-12,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
-comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2025-07,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
-comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2014-12,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
-comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2024-05,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
+validacao,serie_a,serie_b,mes,diferenca_pct,tipo,justificativa,aprendizado
+comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2014-12,1.7642,fonte,"FMI 4,2634 contra Banco Mundial 4,34 US$/kg; cada instituição calcula a média do mês da cotação da OIC; sem ajuste",A-036
+comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2025-07,2.7492,fonte,"FMI 6,9826 contra Banco Mundial 7,18 US$/kg; maior divergência desde 2006; cada instituição calcula a média do mês; sem ajuste",A-036
+comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2014-12,1.5070,fonte,"FMI 2,1668 contra Banco Mundial 2,20 US$/kg; mesmo mês da divergência do arábica; sem ajuste",A-036
+comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2024-05,1.7496,fonte,"FMI 4,1107 contra Banco Mundial 4,04 US$/kg; único mês em que o FMI fica acima; sem ajuste",A-036

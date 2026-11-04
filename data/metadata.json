@@ -12,7 +12,7 @@
           "fim"
         ],
         "linhas": 104,
-        "sha256": "0ace35d99fae3e9227f00c5873b665869facf0f140610e3ea3c17f63303a01af"
+        "sha256": "610f07825986d5d5e4b601da498d7bdd5e750786398e9fbeb9d6b4b49f38d2e6"
       },
       "cafe_mensal.csv": {
         "colunas": [
@@ -29,12 +29,13 @@
           "preco_brl_saca",
           "variacao_mensal",
           "variacao_acum_12m",
+          "origem_acum_12m",
           "indice_base_100",
           "preco_real_brl_saca",
           "razao_consumidor_preco"
         ],
         "linhas": 2108,
-        "sha256": "fd5c391c1dc98c2a0d005e70531ec218f35f8d692d1d09bed949c3db6f58f792"
+        "sha256": "83fb443c7f275111b2beeabe15d5c6736617f68c46bd02d0b5f062c3684a71dc"
       }
     },
     "nome": "Café",
@@ -123,11 +124,11 @@
         "ausentes": 0,
         "excecoes_aplicadas": 4,
         "falhas": 0,
-        "limite": "diferença relativa de 1% em US$/kg",
+        "limite": "diferença relativa de 1% em US$/kg; exceção vale até 0.05 p.p. do valor registrado",
         "maior_diferenca": 2.749229,
         "ok": true,
         "validacao": "comparacao_fontes",
-        "verificados": 486
+        "verificados": 488
       },
       {
         "ausentes": 374,
