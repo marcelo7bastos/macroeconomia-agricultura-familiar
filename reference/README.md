@@ -10,6 +10,7 @@ ou exceções do IPCA-15 para o IPCA por analogia.
 | `excecoes_validacao_<indice>.csv` | Escopo, justificativa, contagem e meses com erro publicado | Somente após diagnóstico e evidência da fonte |
 | `limites_validacao_<indice>.csv` | Limites específicos documentados, quando existentes | Não ampliar para fazer um teste passar |
 | `historico_series_<indice>.csv` | Mudanças de série entre publicações | Gerado pelo publicador; preservar o histórico anterior |
+| `excecoes_validacao_cafe.csv` | Meses em que FMI e Banco Mundial divergem acima de 1% (A-036) | Contagem exata: divergência nova ou exceção que some falham |
 | `diagnostico_acumulado_ano_ipca.csv` | Evidência independente dos 239 valores anuais do IPCA | Conferido por identidade contábil e teste, A-035 |
 
 A ausência de linhas em um arquivo de limites não dispensa as validações: valem os limites

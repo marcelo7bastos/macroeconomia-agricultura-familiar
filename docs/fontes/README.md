@@ -7,6 +7,9 @@ comportamentos estranhos e o que fazer quando a fonte falha. Detalhes de cada í
 | Fonte | Ficha |
 |---|---|
 | IBGE (SIDRA e API de agregados) | [ibge-sidra.md](ibge-sidra.md) |
+| Banco Central do Brasil (SGS, câmbio) | [bcb-sgs.md](bcb-sgs.md) |
+| FMI (Primary Commodity Price System) | [fmi-pcps.md](fmi-pcps.md) |
+| Banco Mundial (Pink Sheet) | [banco-mundial-cmo.md](banco-mundial-cmo.md) |
 
 ## Modelo
 

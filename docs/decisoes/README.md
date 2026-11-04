@@ -18,6 +18,7 @@ recebe `Situação: substituída por NNNN`.
 | [0007](0007-marts-so-em-csv.md) | Marts versionados só em CSV | aceita |
 
 | [0008](0008-explicacoes-estaticas-no-pages.md) | Explicações estáticas no GitHub Pages | proposta em revisão; primeira publicação autorizada |
+| [0009](0009-fontes-de-precos-do-cafe.md) | Fontes de preços fora do IBGE no piloto do café | proposta em revisão (#62) |
 
 ## Leitura do histórico
 
