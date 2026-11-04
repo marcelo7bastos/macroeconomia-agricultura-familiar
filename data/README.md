@@ -7,8 +7,10 @@ fonte ou índice conforme a finalidade. A proposta de evolução está em
 | Camada | Caminho | Conteúdo | Versionado? |
 |---|---|---|---|
 | Original | `raw/ibge_sidra/<tabela>/` | Respostas oficiais por mês, metadados e revisões gzip | Sim |
+| Original (café) | `raw/{bcb_sgs,fmi_pcps,banco_mundial_cmo}/<serie>/` | PTAX por mês, série inteira do FMI e recorte do Pink Sheet, com revisões gzip | Sim |
 | Preparação | `staging/<indice>/` | Dimensão, fato, referência, série longa, indicadores e validações | Não; recriado do raw |
 | Consumo | `marts/<indice>_*.csv` | Cinco tabelas por índice, com nomes públicos estáveis | Sim |
+| Consumo (café) | `marts/cafe_*.csv` | Mensal e defasagens do piloto do café (#62), [dicionário](marts/cafe_README.md) | Sim |
 | Catálogo da publicação | `metadata.json` | Cobertura, coleta, validações, contagens e hashes por índice | Sim |
 
 O raw usa `manifesto.csv` por fonte, com URL, coleta e SHA-256 do corpo original. Cada revisão
