@@ -27,6 +27,7 @@ Princípios:
 | Backlog | PIB total e agropecuária, Selic, câmbio, IGPs | issues |
 | Backlog | Agricultura familiar: participação na produção (Censo Agro 2017), crédito Pronaf | issues |
 | Backlog | Indicador de inflação dos alimentos da agricultura familiar | issue |
+| Piloto em revisão | Café: preços internacionais (FMI, Banco Mundial) em R$ pela PTAX × café no IPCA | [projeto](projetos/cafe-piloto.md), #62, ADR 0009 |
 | Backlog | Produção e preços agrícolas (LSPA, PAM, Conab) | issue |
 | Implementado nesta entrega | Explicações estáticas no GitHub Pages, IPCA e IPCA-15 | [publicação](PUBLICACAO.md); não usa Quarto |
 | Backlog | Site Quarto e integração efetiva com relatórios Power BI | #18 e #19 |

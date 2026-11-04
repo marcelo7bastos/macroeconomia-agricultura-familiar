@@ -25,6 +25,41 @@ de valer não é apagada: ganha a linha `**Substituída por:** A-NNN`.
 
 ## Registro
 
+### A-039 · 2026-11-04 · Conab: portal de dados com certificado TLS de outro domínio
+- **Contexto:** piloto do café (#62), ao procurar preços recebidos pelo produtor.
+- **O que aconteceu:** `portaldeinformacoes.conab.gov.br` apresenta o certificado de
+  `www.conab.gov.br`; a verificação de TLS falha. `www.conab.gov.br` redireciona para `www.gov.br`.
+- **Lição:** não desligar a verificação de TLS para contornar. A Conab fica como fonte futura até
+  o certificado ser corrigido e os domínios serem liberados na rede da sessão.
+- **Promovida para:** ADR 0009 e projeto `docs/projetos/cafe-piloto.md`.
+
+### A-038 · 2026-11-04 · CEPEA bloqueia agentes de IA e acesso automatizado
+- **Contexto:** piloto do café (#62).
+- **O que aconteceu:** o `robots.txt` do CEPEA (gerado em 2026-09-03) bloqueia agentes e crawlers
+  de IA por nome, inclusive `Claude-Code` e `Claude-User`; as páginas de série respondem 403 a
+  clientes automatizados. Licença dos dados: CC BY-NC 4.0.
+- **Lição:** não raspar o CEPEA nem contornar o bloqueio. A fonte só entra com autorização de
+  acesso automatizado e mart com licença própria (BY-NC).
+- **Promovida para:** ADR 0009.
+
+### A-037 · 2026-11-04 · Pink Sheet: o endereço da planilha muda a cada edição
+- **Contexto:** coleta do Banco Mundial (#62).
+- **O que aconteceu:** a planilha `CMO-Historical-Data-Monthly.xlsx` fica sob um caminho com hash
+  e número de edição (`.../74e8be41...-0050012026/related/...`), diferente a cada mês.
+- **Lição:** ler a página do Pink Sheet e exigir exatamente um link com o nome do arquivo; nunca
+  fixar a URL.
+- **Promovida para:** teste `test_link_do_banco_mundial_exige_um_unico_link` e ficha
+  `docs/fontes/banco-mundial-cmo.md`.
+
+### A-036 · 2026-11-04 · FMI e Banco Mundial divergem acima de 1% em quatro meses
+- **Contexto:** validação cruzada das cotações do café (#62).
+- **O que aconteceu:** depois da conversão de unidade, as médias mensais diferem menos de 1% em
+  quase todos os meses desde jul/2006 (mediana 0,07% no arábica, 0,13% no robusta), mas passam
+  disso em 2014-12 (arábica 1,76%, robusta 1,51%), 2025-07 (arábica 2,75%) e 2024-05 (robusta 1,75%).
+- **Lição:** as duas fontes calculam a média do mês por conta própria; a divergência é da fonte,
+  não se ajusta. Exceções contadas exatamente: divergência nova ou exceção que some falham.
+- **Promovida para:** validação `comparacao_fontes` e `reference/excecoes_validacao_cafe.csv`.
+
 ### A-035 · 2026-10-20 · IPCA: inconsistências oficiais precisam de contagens e origens próprias
 - **Contexto:** extração integral e validação do IPCA (#12), confronto com respostas oficiais.
 - **O que aconteceu:** na 2938, os grupos somam 100,0999 em 2010-07 e 550 passos anuais excedem

@@ -566,3 +566,34 @@ As publicações preservam os oficiais e a precisão declarada dos CSVs. Na comp
 aplica-se a regra A-031 (até 0,001 p.p. absolutos apenas nos acumulados calculados e contribuições).
 Cada hash confere com o próprio arquivo. O dicionário do IPCA fica em `data/marts/ipca_README.md`;
 `data/marts/README.md` continua sendo o dicionário do IPCA-15, preservando os links existentes.
+
+## 15. Piloto do café: preços internacionais e câmbio (#62, A-036 a A-039)
+
+Fontes, contratos e pendências: [ADR 0009](decisoes/0009-fontes-de-precos-do-cafe.md),
+[projeto](projetos/cafe-piloto.md) e as fichas de [BCB](fontes/bcb-sgs.md),
+[FMI](fontes/fmi-pcps.md) e [Banco Mundial](fontes/banco-mundial-cmo.md).
+
+- **Unidades.** FMI em US¢/lb, Banco Mundial em US$/kg. Conversão: US¢/lb ÷ 100 ÷ 0,45359237 =
+  US$/kg (libra-peso internacional, exata); R$/saca de 60 kg = US$/kg × PTAX × 60. O valor original
+  e a unidade da fonte ficam no mart ao lado do convertido.
+- **Câmbio.** As fontes publicam médias mensais de cotações; o câmbio é a média mensal da PTAX
+  venda (SGS 1), calculada dos dias úteis. Ela precisa bater com a média oficial (SGS 3698) até
+  0,00005, meia unidade da quarta casa publicada. É uma aproximação do preço diário convertido
+  pelo câmbio do dia, que as fontes não publicam. Só meses completos entram.
+- **Validações** (bloqueiam a publicação): PTAX calculada × oficial; continuidade de cada série
+  do mês-base (jun/2006) ao último mês dela e câmbio em todo mês com preço, salvo o mais recente;
+  preços e câmbio positivos e chave única; variação calculada do FMI × `INDEX_PCH` publicada pelo
+  FMI (1e-6 p.p.); FMI × Banco Mundial até 1% em US$/kg com exceções contadas exatamente
+  (`reference/excecoes_validacao_cafe.csv`, A-036); acumulado em 12 meses do IPCA calculado pelo
+  número-índice × variável oficial onde ela existe, com limite analítico
+  0,005 + 12 × 0,005 × (1 + |acumulado|/100).
+- **IPCA.** Variação mensal e número-índice vêm do mart `ipca_mensal.csv`, pela série longa de
+  cada subitem (`serie_id` de `ipca_categorias.csv`); nada é emendado ou recalculado. Subitem com
+  mais de uma série longa interrompe a montagem.
+- **Indicadores calculados** e seus testes de identidade: preço em R$/saca, variações e acumulado
+  em 12 meses, índice base 100 no mesmo mês-base do IPCA, preço real pelo índice geral do IPCA,
+  razão entre o índice do café moído e o do preço internacional e correlação com defasagem de 0 a
+  12 meses. A correlação é descritiva; no acumulado em 12 meses as janelas se sobrepõem.
+- **Arábica × robusta.** Séries separadas: o IBGE não publica a composição do café moído e o
+  projeto não inventa cesta.
+

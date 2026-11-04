@@ -1,0 +1,5 @@
+validacao,serie_a,serie_b,mes,tipo,justificativa,aprendizado
+comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2014-12,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
+comparacao_fontes,cafe_arabica_fmi,cafe_arabica_bm,2025-07,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
+comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2014-12,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036
+comparacao_fontes,cafe_robusta_fmi,cafe_robusta_bm,2024-05,fonte,"FMI e Banco Mundial publicam médias mensais da mesma cotação da OIC com diferença acima de 1% neste mês; sem ajuste, cada série mantém o valor publicado",A-036

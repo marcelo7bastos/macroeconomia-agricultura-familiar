@@ -1,0 +1,2 @@
+serie,chave,revisao,arquivo,url,data_coleta,sha256,n_registros,bytes,observacao
+cafe,completo,1,cafe/completo.xml.gz,"https://api.imf.org/external/sdmx/2.1/data/IMF.RES,PCPS/G001.PCOFFOTM+PCOFFROB.USD+INDEX_PCH.M",2026-11-04T01:13:22Z,7e9a98b42cb43bb28fcdf43b921ccfdb5d170d767cc30b33d21057d1daa7084e,1668,242500,

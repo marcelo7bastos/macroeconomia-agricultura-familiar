@@ -8,6 +8,8 @@ Brasil. A fonte implementada é o IBGE/SIDRA; séries do Banco Central permanece
 > foi integrado à `main`. A cobertura corrente está em [data/metadata.json](data/metadata.json).
 > O IPCA mantém 63 propostas de harmonização como quebras; histórico anterior a julho/2006,
 > painel e indicador específico da agricultura familiar são entregas separadas.
+> Piloto do café em revisão (#62): preços internacionais (FMI, Banco Mundial) em R$ pela PTAX
+> do BCB, ao lado do café no IPCA ([dicionário](data/marts/cafe_README.md)).
 
 ## Como o projeto funciona
 
@@ -33,6 +35,13 @@ uv run ruff format .      # formatação
 ```
 
 O CI roda lint, formatação e testes em todo push na `main` e em todo PR.
+
+Piloto do café (depois de atualizar o IPCA):
+
+```bash
+uv run python -m macroaf.cafe.extrair     # câmbio (BCB), FMI e Banco Mundial para o raw
+uv run python -m macroaf.cafe.publicar    # valida e publica data/marts/cafe_*.csv
+```
 
 Para atualizar um índice do IBGE até os CSVs:
 

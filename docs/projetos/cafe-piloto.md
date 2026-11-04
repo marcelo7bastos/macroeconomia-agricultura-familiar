@@ -1,151 +1,110 @@
-# Projeto: piloto do café — do produtor e do mercado internacional ao consumidor
+# Projeto: piloto do café — mercado internacional e consumidor
 
 - **Issue:** [#62](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/62).
-- **Situação:** direção aprovada pelo mantenedor em 04/11/2026; implementação pendente
-  de acesso às fontes. Identificadores das séries marcados *a confirmar* ainda não foram consultados.
-- **Data do levantamento:** 04/11/2026.
+- **Situação:** implementado em 04/11/2026, em revisão no PR. Pendências de licença (FMI e Banco
+  Mundial) e Conab descritas abaixo.
+- **Decisão:** [ADR 0009](../decisoes/0009-fontes-de-precos-do-cafe.md).
 - **Escopo de índice:** só o **IPCA** (jul/2006 → atual). O IPCA-15 fica fora do piloto.
 
 ## Pergunta do piloto
 
-Como o preço do café no mercado internacional e o preço recebido pelo produtor brasileiro se
-relacionam com o preço pago pelo consumidor no IPCA? Em quanto tempo e em que proporção uma alta
-ou uma queda chega ao café moído?
+Como o preço internacional do café se relaciona com o preço pago pelo consumidor no IPCA? Em
+quanto tempo e em que proporção uma alta ou uma queda chega ao café moído?
 
-O café serve de piloto porque tem os três lados medidos por fontes públicas com acesso
-automatizável. Se o desenho funcionar, ele se repete para outros produtos (arroz, feijão, leite,
-carne, açúcar).
+Se o desenho funcionar, ele se repete para outros produtos (arroz, feijão, leite, carne, açúcar).
 
-## Lado do consumidor: o que já existe (IPCA)
-
-| Subitem | Código IBGE | Período | Observação |
-|---|---|---|---|
-| Café moído | 1114022 | jul/2006 → | peso 0,53% em set/2026; o elo principal do piloto |
-| Café solúvel | 1114023 | jul/2006 → | peso pequeno (~0,01%) |
-| Cafezinho | 1201009 | jul/2006 → | alimentação fora do domicílio; serviço, comparação só descritiva |
-| Café da manhã | 1201005 | até dez/2019 | descontinuado; não emendar |
-
-Os quatro aparecem como `identico` nas trocas de POF de `reference/map_harmonizacao_ipca.csv`;
-não há quebra a tratar no café além da descontinuação do café da manhã. Nada é recalculado: o
-piloto lê os marts do IPCA (`ipca_mensal.csv`, `ipca_categorias.csv`).
-
-## Lados do mercado e do produtor: fontes novas
-
-| Fonte | Série | Unidade | Frequência | Acesso | Licença |
-|---|---|---|---|---|---|
-| FMI — Primary Commodity Prices (PCPS) | café arábica (Other Mild Arabica) e robusta; códigos `PCOFFOTM` e `PCOFFROB` *a confirmar* | US¢/libra-peso | mensal (média do mês) | API SDMX do FMI | termos do FMI *a confirmar* |
-| Banco Mundial — Pink Sheet (CMO) | café arábica e robusta | US$/kg | mensal (média do mês), desde 1960 | planilha histórica em URL estável | CC BY 4.0 *a confirmar* |
-| Banco Central — SGS | dólar PTAX venda, diário (série 1) e média mensal (série 3698) *a confirmar* | R$/US$ | diária e mensal | API SGS | dado público |
-| Conab — preços agropecuários | café arábica e conilon recebidos pelo produtor, por UF | R$/saca de 60 kg | semanal e mensal *a confirmar* | arquivos de dados do Portal de Informações *a confirmar* | dado público |
-
-FMI e Banco Mundial publicam a mesma família de preços (cotações internacionais de referência);
-os dois entram porque um confere o outro: a diferença entre eles, depois da conversão de unidade,
-vira validação.
-
-**Possível fonte futura: CEPEA/Esalq.** Os indicadores diários de arábica (posto em São Paulo) e
-robusta (Espírito Santo), em R$/saca de 60 kg, são a referência do mercado físico brasileiro. Ficam
-fora do piloto porque o site não tem API, o `robots.txt` bloqueia agentes e crawlers, as páginas
-de série recusam acesso automatizado e a licença é CC BY-NC 4.0 (o projeto publica em CC BY 4.0).
-Podem entrar depois, num mart com licença própria, se o CEPEA autorizar o acesso automatizado.
-
-## Conversão cambial
-
-A instrução do mantenedor é converter pelo câmbio do Banco Central **do dia da informação**:
-
-- **FMI e Banco Mundial** publicam médias mensais, sem dia. O equivalente correto é a **média
-  mensal da PTAX venda** do mesmo mês: média dos dias úteis da série diária, conferida contra a
-  média mensal que o próprio BCB publica (validação contra referência oficial).
-- **Preços diários ou semanais** que vierem em US$ (nenhum no piloto) usam a PTAX do próprio dia;
-  em dia sem PTAX (fim de semana, feriado), a do último dia útil anterior, com marca na linha.
-- **Conab** já publica em R$: não há conversão.
-
-Conversões de unidade, todas explícitas no código e testadas:
-US¢/lb → US$/kg (÷ 100 × 2,20462262) e US$/kg → R$/saca de 60 kg (× PTAX × 60).
-
-## Arquitetura
+## O que foi entregue
 
 ```mermaid
 flowchart LR
-    A[API FMI] --> R[raw por fonte + manifesto SHA-256]
-    B[Planilha Banco Mundial] --> R
+    A[API FMI] --> R[raw + manifesto SHA-256]
+    B[Pink Sheet Banco Mundial] --> R
     C[API SGS BCB] --> R
-    D[Arquivos Conab] --> R
-    R --> S[staging: fato por fonte]
-    S --> V[validações]
-    V --> M[mensal em R$/saca]
-    I[marts do IPCA existentes] --> X[mart café]
-    M --> X
-    X --> O[CSV + dicionário + explicação para gestores]
+    R --> V[validações]
+    I[mart ipca_mensal] --> V
+    V --> M[cafe_mensal.csv]
+    M --> D[cafe_defasagens.csv]
 ```
 
-| Camada | Contrato |
+| Peça | Onde |
 |---|---|
-| Catálogo | `config/series.yaml`: fontes `imf_pcps`, `banco_mundial_cmo`, `bcb_sgs`, `conab_precos`, cada uma com URL, licença e ficha. O esquema atual só conhece índices SIDRA: estender com uma seção de séries de preços, sem mudar a dos índices |
-| Raw | `data/raw/<fonte>/<serie>/<AAAAMMDD>.<ext>.gz`, corpo exato da resposta, revisões sem sobrescrever, manifesto com URL, coleta e SHA-256 (decisão 0003) |
-| Leitores | `src/macroaf/extract/{imf,banco_mundial,bcb,conab}.py`; um cliente HTTP só (`extract/cliente.py`) |
-| Fato | `data/staging/cafe/fato_precos.parquet`: `periodo`, `frequencia`, `fonte`, `serie`, `praca`, `valor`, `unidade` — valores como vieram, sem conversão |
-| Câmbio | `data/staging/cafe/cambio.parquet`: PTAX diária e média mensal calculada, com a média oficial ao lado |
-| Mensal | `data/staging/cafe/precos_mensais.parquet`: tudo em R$/saca de 60 kg e em US$/kg, com origem e fator de conversão por linha |
-| Consumo | `data/marts/cafe_mensal.csv` (nome estável); dicionário e chave `cafe` em `data/metadata.json` |
+| Catálogo | `config/precos.yaml` |
+| Coleta | `uv run python -m macroaf.cafe.extrair` (`--verificar` só lista) |
+| Raw | `data/raw/{bcb_sgs,fmi_pcps,banco_mundial_cmo}/` com `manifesto.csv` |
+| Validação, indicadores e publicação | `uv run python -m macroaf.cafe.publicar` |
+| Marts | `data/marts/cafe_mensal.csv`, `data/marts/cafe_defasagens.csv`, dicionário `data/marts/cafe_README.md` |
+| Metadados | chave `cafe` em `data/metadata.json` |
+| Exceções contadas | `reference/excecoes_validacao_cafe.csv` |
+| Atualização automática | job `cafe` em `.github/workflows/atualizacao.yml`, depois dos índices |
+| Testes | `tests/test_cafe.py` |
+| Método | [METODOLOGIA.md, seção 15](../METODOLOGIA.md) |
 
-Os marts do IPCA não mudam. O mart do café só os lê.
+## Séries
 
-### Validações (falha = não publicar)
+| `serie` | Fonte | Unidade original | No mart desde |
+|---|---|---|---|
+| `cafe_arabica_fmi` | FMI, `PCOFFOTM` (Other Mild Arabica) | US¢/lb | jul/2006 |
+| `cafe_robusta_fmi` | FMI, `PCOFFROB` (Robustas) | US¢/lb | jul/2006 |
+| `cafe_arabica_bm` | Banco Mundial, `Coffee, Arabica` (OIC) | US$/kg | jul/2006 |
+| `cafe_robusta_bm` | Banco Mundial, `Coffee, Robusta` (OIC) | US$/kg | jul/2006 |
+| `ipca_cafe_moido` | IPCA, subitem 1114022 | — | jul/2006 |
+| `ipca_cafe_soluvel` | IPCA, subitem 1114023 | — | jul/2006 |
+| `ipca_cafezinho` | IPCA, subitem 1201009 | — | jul/2006 |
+| `ipca_cafe_da_manha` | IPCA, subitem 1201005 (até dez/2019) | — | jul/2006 |
+| `ipca_geral` | IPCA, índice geral (deflator) | — | jul/2006 |
 
-- Chave única por `(periodo, fonte, serie, praca)`; valores positivos; meses sem lacuna no
-  intervalo de cada série, ou lacuna registrada.
-- **Câmbio:** média mensal calculada da PTAX diária igual à média mensal oficial do BCB, na
-  tolerância de arredondamento publicada.
-- **FMI × Banco Mundial:** depois da conversão de unidade, a diferença entre as duas fontes fica
-  dentro de um limite documentado em `reference/limites_validacao_cafe.csv`; divergência vira
-  diagnóstico, não ajuste.
-- **Conab:** a média mensal calculada das semanas confere com a mensal publicada, se a Conab
-  publicar as duas.
-- **Arquivo novo contém o anterior:** revisões de valores já coletados são registradas, nunca
-  sobrescritas em silêncio.
-- **IPCA:** o mart do café repete exatamente os valores do café moído de `ipca_mensal.csv`.
+Câmbio: PTAX venda, média mensal calculada da série diária SGS 1 e validada contra a SGS 3698.
+FMI e Banco Mundial publicam médias mensais; por isso "o câmbio do dia da informação" é a média
+mensal da PTAX (ver a metodologia).
 
-### Indicadores do mart (cálculos do projeto, marcados como tal)
+## Primeiros resultados (dados até set/2026)
 
-| Indicador | Definição | Teste |
-|---|---|---|
-| Preço internacional em R$/saca | média mensal US$/kg × PTAX média × 60 | identidade com os fatores |
-| Variação mensal e acumulada em 12 meses de cada preço | sobre a média mensal | identidade com o produto de (1 + v) |
-| Índice base 100 comum | produtor, internacional e café moído no mesmo mês-base | volta às variações de origem |
-| Preço real | preço em R$ deflacionado pelo IPCA geral | identidade com o índice do IPCA geral |
-| Razão consumidor/produtor e consumidor/internacional | índice do café moído ÷ índice do preço | identidade algébrica; leitura de direção, não de margem em R$ |
-| Correlação com defasagem | entre a variação do preço no mês t−k e a do café moído no mês t, k = 0…12 | descritiva, reproduzível; **sem leitura causal** |
+- Em 12 meses até set/2026: arábica em R$ −20,8% (FMI), robusta −23,8%, café moído no IPCA
+  −17,8% e cafezinho +9,8%.
+- A correlação entre a variação mensal do arábica (em R$) e a do café moído é maior com **3 a 4
+  meses de defasagem** (≈ 0,33–0,34, contra 0,09 no mesmo mês); no acumulado em 12 meses, ≈ 0,62
+  com 4 a 5 meses. Leitura descritiva, sem causalidade.
+- Razão consumidor/preço em set/2026: 75 (arábica) — desde jun/2006 o café moído subiu menos que
+  o arábica em reais.
 
-## Etapas (uma issue por etapa, ou uma issue com estas tarefas)
+## Pendências antes de integrar
 
-| Etapa | Entrega | Aceite |
-|---|---|---|
-| 0 | Fichas `docs/fontes/{imf,banco-mundial,bcb-sgs,conab}.md` com séries, unidades, períodos e licenças confirmados | identificadores conferidos na fonte |
-| 1 | Extração com raw e manifesto para as quatro fontes; testes com respostas reais gravadas | rodada idempotente: segunda execução não grava nada |
-| 2 | Staging, câmbio e validações | todas as validações verdes |
-| 3 | Mart `cafe_mensal.csv`, dicionário e indicadores | testes de identidade de todos os indicadores |
-| 4 | Atualização automática no Actions (entrada `cafe` no `atualizacao.yml`) | commit só se tudo passa |
-| 5 | Explicação para gestores `docs/gestao/cafe.html` | mesmo padrão das páginas do IPCA |
+1. **Licença do FMI:** a resposta da API declara "All Rights Reserved" e remete a
+   <https://www.imf.org/external/terms.htm>, que não pôde ser lido na sessão. Confirmar que os
+   termos permitem republicar os valores; se não, o mart fica só com o Banco Mundial.
+2. **Licença do Banco Mundial:** confirmar CC BY 4.0 na página do conjunto de dados.
+3. **Regra do `AGENTS.md`** sobre as APIs usadas foi estendida neste PR: precisa da revisão do
+   mantenedor.
+
+## Fontes futuras
+
+- **Conab** (preços recebidos pelo produtor, por UF, em R$): o portal de dados responde com
+  certificado TLS de outro domínio e o site institucional redireciona para `www.gov.br`, fora da
+  rede da sessão (A-039). Entra quando o acesso funcionar com TLS válido.
+- **CEPEA/Esalq** (arábica posto São Paulo e robusta no Espírito Santo, diários, R$/saca): a
+  referência do mercado físico brasileiro. Sem API, bloqueia acesso automatizado e agentes de IA
+  e usa licença CC BY-NC 4.0 (A-038). Pode entrar se o CEPEA autorizar o acesso automatizado,
+  num mart com licença própria.
+
+## Próximas etapas
+
+| Etapa | Entrega |
+|---|---|
+| Explicação para gestores | `docs/gestao/cafe.html`, no padrão das páginas do IPCA |
+| Conab | quando o acesso funcionar |
+| Ligação com a agricultura familiar | participação da agricultura familiar na produção de café (Censo Agro 2017, SIDRA) |
 
 ## Fora do escopo do piloto
 
 - IPCA-15, recortes regionais do IPCA e outros produtos.
 - Bolsas (ICE Nova York e Londres) e preços futuros.
-- CEPEA, até haver autorização de acesso automatizado.
-- Participação da agricultura familiar na produção de café (Censo Agro 2017, no SIDRA): fase
-  seguinte, que liga o piloto ao tema do projeto.
 - Atribuição de causa ao repasse e previsão de preço.
 
-## Riscos
+## Cuidados de leitura
 
-- **Comparação imperfeita.** Café moído é produto industrializado (torra, embalagem, marca) e
-  mistura tipos; os preços internacionais são de café verde exportado, não do grão vendido no
-  mercado interno. A razão entre índices mostra direção e defasagem, não margem.
-- **Arábica × robusta.** O IBGE não publica a composição do café moído. As séries ficam separadas;
-  nenhuma cesta é inventada.
-- **Atraso de publicação.** FMI e Banco Mundial publicam o mês no início do mês seguinte; a Conab
-  tem calendário próprio. O mart informa até quando vai cada série.
-- **Mudança de formato da planilha do Banco Mundial ou dos arquivos da Conab.** O leitor falha com
-  mensagem clara, sem adivinhar colunas.
-- **Regra do `AGENTS.md`.** As APIs listadas lá são só as do IBGE. Incluir FMI, Banco Mundial,
-  BCB e Conab muda essa regra e exige PR revisado pelo mantenedor (pode ser o PR deste piloto).
+- Café moído é produto industrializado (torra, embalagem, marca) e mistura tipos; os preços
+  internacionais são de café verde exportado. Razões mostram direção e defasagem, não margem.
+- O IBGE não publica a composição do café moído entre arábica e robusta: séries separadas, sem
+  cesta inventada.
+- FMI e Banco Mundial divergem acima de 1% em quatro meses desde 2006 (A-036): exceções
+  registradas, sem ajuste.

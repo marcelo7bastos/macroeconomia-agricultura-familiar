@@ -25,6 +25,13 @@ Mudanças relevantes do projeto. Formato baseado em [Keep a Changelog](https://k
 
 ### Adicionado
 
+- Piloto do café (#62): preços internacionais de arábica e robusta do FMI e do Banco Mundial,
+  convertidos para R$/saca de 60 kg pela PTAX média do mês (BCB), ao lado dos subitens de café do
+  IPCA. Raw com manifesto para as três fontes, validações (PTAX calculada × oficial, variação do
+  FMI × publicada, FMI × Banco Mundial com quatro exceções contadas, continuidade, acumulado em
+  12 meses do IPCA), marts `cafe_mensal.csv` e `cafe_defasagens.csv`, dicionário e job no
+  workflow de atualização. CEPEA e Conab registrados como fontes futuras (ADR 0009, A-036 a A-039).
+
 - Explicações para gestores de IPCA e IPCA-15, com seis abas, dados reais, filtros por ano/mês,
   gráfico de alimentos, exportação CSV e navegação por teclado; registro segundo a skill
   `explicar-conteudo`. Gerador confere hashes e não altera os marts.

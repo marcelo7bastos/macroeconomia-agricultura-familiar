@@ -18,7 +18,7 @@ on:
       indice:
         description: "Índice a atualizar"
         type: choice
-        options: [todos, ipca15, ipca]
+        options: [todos, ipca15, ipca, cafe]
         default: todos
       forcar:
         description: "Republicar mesmo sem mês novo ou revisado"
@@ -34,6 +34,7 @@ concurrency:
 
 jobs:
   atualizar:
+    if: inputs.indice != 'cafe'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -81,5 +82,45 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data reference docs
           git commit -m "Atualiza os dados do ${INDICE} até ${ultimo}" -m "Gerado pelo workflow de atualização (#9)."
+          git pull --rebase origin main
+          git push
+
+  # Piloto do café (#62): roda depois dos índices, porque o mart do café lê o mart do IPCA.
+  # FMI e Banco Mundial publicam no início do mês; a consulta diária só grava se algo mudou.
+  cafe:
+    needs: atualizar
+    if: ${{ always() && (needs.atualizar.result == 'success' || needs.atualizar.result == 'skipped') && (inputs.indice == '' || inputs.indice == null || inputs.indice == 'todos' || inputs.indice == 'cafe') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependências
+        run: uv sync --all-groups --locked
+      - name: Coletar câmbio (BCB), FMI e Banco Mundial
+        run: uv run python -m macroaf.cafe.extrair
+      - name: Conferir e publicar os marts do café
+        run: uv run python -m macroaf.cafe.publicar
+      - name: Ver se algo mudou no repositório
+        id: mudancas
+        run: |
+          if [ -n "$(git status --porcelain -- data reference docs)" ]; then
+            echo "houve=true" >> "$GITHUB_OUTPUT"
+            git status --short -- data reference docs
+          else
+            echo "houve=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Testes do café
+        if: steps.mudancas.outputs.houve == 'true'
+        run: uv run pytest -v tests/test_cafe.py
+      - name: Commit e push na main
+        if: steps.mudancas.outputs.houve == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data reference docs
+          git commit -m "Atualiza os dados do café" -m "Gerado pelo workflow de atualização (#62)."
           git pull --rebase origin main
           git push
