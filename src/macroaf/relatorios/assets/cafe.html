@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Preço internacional do café em reais ao lado do café moído e do cafezinho no IPCA: quanto subiu, com quanto atraso e com quais cuidados de leitura.">
+<title>Café: do mercado à xícara</title><style>@@CSS@@</style></head>
+<body>
+<a class="pular" href="#conteudo">Ir para o conteúdo</a>
+<header class="barra"><a href="index.html" class="marca">MACRO<span>AF</span> <small>dados públicos · decisões informadas</small></a>
+<nav aria-label="Páginas"><a href="ipca.html">IPCA geral</a><a href="ipca15.html">IPCA-15</a><a href="cafe.html" aria-current="page">Café</a></nav></header>
+<main id="conteudo">
+  <header class="topo">
+    <div class="olho" id="olho"></div>
+    <h1>Café: do mercado à xícara</h1>
+    <p class="abre" id="abre"></p>
+  </header>
+
+  <section class="notas" aria-label="Como ler esta página">
+    <div><h3>O que é comparado</h3><p>O preço internacional é de café verde exportado (cotações da Organização Internacional do Café). O café moído é produto industrializado, com torra, embalagem e marca. As razões mostram direção e atraso, não margem.</p></div>
+    <div><h3>Arábica e robusta separados</h3><p>O IBGE não publica quanto do café moído é arábica ou robusta. Por isso as duas séries ficam separadas e nenhuma cesta é inventada.</p></div>
+    <div><h3>Câmbio</h3><p>FMI e Banco Mundial publicam médias mensais. A conversão usa a média mensal oficial da PTAX venda do Banco Central (série 3698).</p></div>
+    <div><h3>Duas fontes que se conferem</h3><p id="nota-fontes"></p></div>
+  </section>
+
+  <div class="numeros" id="numeros" aria-label="Variação em 12 meses"></div>
+
+  <section>
+    <div class="cab"><div>
+      <h2>Quanto cada preço subiu desde <span data-base></span></h2>
+      <p class="sub">Número-índice, <span data-base></span> = 100. Preços internacionais do FMI convertidos pela PTAX média do mês.</p>
+    </div></div>
+    <div class="quadro">
+      <div class="legenda"><span><i class="s1"></i>Arábica (R$)</span><span><i class="s2"></i>Robusta (R$)</span><span><i class="s3"></i>Café moído (IPCA)</span></div>
+      <div class="tela" id="g-indice"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cab"><div>
+      <h2>Variação em 12 meses</h2>
+      <p class="sub">O grão oscila muito mais que a gôndola. O cafezinho segue o custo de serviço, não o grão.</p>
+    </div></div>
+    <div class="quadro">
+      <div class="legenda"><span><i class="s1"></i>Arábica (R$)</span><span><i class="s3"></i>Café moído (IPCA)</span><span><i class="s4"></i>Cafezinho (IPCA)</span></div>
+      <div class="tela" id="g-12m"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cab">
+      <div>
+        <h2>Com quantos meses de atraso o grão chega à gôndola</h2>
+        <p class="sub">Correlação entre a variação do preço internacional no mês t−k e a do café moído no mês t. Leitura descritiva, sem causalidade.</p>
+      </div>
+      <div class="chaves" role="group" aria-label="Medida">
+        <button type="button" id="b-mensal" aria-pressed="true">Variação mensal</button>
+        <button type="button" id="b-anual" aria-pressed="false">Acumulado em 12 meses</button>
+      </div>
+    </div>
+    <div class="quadro">
+      <div class="legenda"><span><i class="s1 quadrado"></i>Arábica</span><span><i class="s2 quadrado"></i>Robusta</span></div>
+      <div class="tela" id="g-defasagem"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cab">
+      <div>
+        <h2>Preço da saca em reais</h2>
+        <p class="sub">R$ por saca de 60 kg. Em valores reais, a preços de <span data-fim></span>, deflacionados pelo IPCA.</p>
+      </div>
+      <div class="chaves" role="group" aria-label="Valores">
+        <button type="button" id="b-nominal" aria-pressed="true">Nominal</button>
+        <button type="button" id="b-real" aria-pressed="false">Real</button>
+      </div>
+    </div>
+    <div class="quadro">
+      <div class="legenda"><span><i class="s1"></i>Arábica</span><span><i class="s2"></i>Robusta</span></div>
+      <div class="tela" id="g-saca"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Últimos 12 meses</h2>
+    <div class="tabela">
+      <table>
+        <thead><tr><th>Mês</th><th>Arábica R$/saca</th><th>Robusta R$/saca</th><th>Arábica 12m</th><th>Café moído no mês</th><th>Café moído 12m</th><th>Cafezinho 12m</th></tr></thead>
+        <tbody id="t-corpo"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    <div>Fontes: FMI (Primary Commodity Price System), Banco Mundial (Pink Sheet), Banco Central do Brasil (SGS) e IBGE (IPCA). Valores do FMI e do Banco Mundial seguem os termos de uso de cada instituição (<a href="../../LICENSE-DADOS.md">licença dos dados</a>).</div>
+    <div id="rodape-dados"></div>
+  </footer>
+</main>
+<div class="dica" id="dica" role="status" hidden></div>
+<script>const DADOS=@@DADOS@@;</script>
+<script>@@JS@@</script>
+</body>
+</html>

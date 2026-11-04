@@ -36,7 +36,8 @@ flowchart LR
 | Metadados | chave `cafe` em `data/metadata.json` |
 | Exceções contadas | `reference/excecoes_validacao_cafe.csv` |
 | Atualização automática | job `cafe` em `.github/workflows/atualizacao.yml`, depois dos índices |
-| Testes | `tests/test_cafe.py` |
+| Explicação para gestores | `docs/gestao/cafe.html`, gerada por `uv run python -m macroaf.relatorios.gestao --indice cafe` |
+| Testes | `tests/test_cafe.py` e `tests/test_gestao.py` |
 | Método | [METODOLOGIA.md, seção 15](../METODOLOGIA.md) |
 
 ## Séries
@@ -90,7 +91,6 @@ mensal da PTAX (ver a metodologia).
 
 | Etapa | Entrega |
 |---|---|
-| Explicação para gestores | `docs/gestao/cafe.html`, no padrão das páginas do IPCA |
 | Conab | quando o acesso funcionar |
 | Ligação com a agricultura familiar | participação da agricultura familiar na produção de café (Censo Agro 2017, SIDRA) |
 

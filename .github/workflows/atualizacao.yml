@@ -103,6 +103,8 @@ jobs:
         run: uv run python -m macroaf.cafe.extrair
       - name: Conferir e publicar os marts do café
         run: uv run python -m macroaf.cafe.publicar
+      - name: Atualizar a explicação do café a partir dos marts
+        run: uv run python -m macroaf.relatorios.gestao --indice cafe
       - name: Ver se algo mudou no repositório
         id: mudancas
         run: |
@@ -114,7 +116,7 @@ jobs:
           fi
       - name: Testes do café
         if: steps.mudancas.outputs.houve == 'true'
-        run: uv run pytest -v tests/test_cafe.py
+        run: uv run pytest -v tests/test_cafe.py tests/test_gestao.py
       - name: Commit e push na main
         if: steps.mudancas.outputs.houve == 'true'
         run: |

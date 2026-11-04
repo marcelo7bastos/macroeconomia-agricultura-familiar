@@ -30,7 +30,8 @@ def montar(destino: Path) -> None:
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta http-equiv="refresh" content="0;url=docs/gestao/ipca.html">'
         '<title>Inflação para gestores</title><p><a href="docs/gestao/ipca.html">'
-        'Abrir IPCA geral</a> · <a href="docs/gestao/ipca15.html">IPCA-15</a></p></html>'
+        'Abrir IPCA geral</a> · <a href="docs/gestao/ipca15.html">IPCA-15</a> · '
+        '<a href="docs/gestao/cafe.html">Café</a></p></html>'
     )
 
 
