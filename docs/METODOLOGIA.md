@@ -566,3 +566,44 @@ As publicações preservam os oficiais e a precisão declarada dos CSVs. Na comp
 aplica-se a regra A-031 (até 0,001 p.p. absolutos apenas nos acumulados calculados e contribuições).
 Cada hash confere com o próprio arquivo. O dicionário do IPCA fica em `data/marts/ipca_README.md`;
 `data/marts/README.md` continua sendo o dicionário do IPCA-15, preservando os links existentes.
+
+## 15. Piloto do café: preços internacionais e câmbio (#62, A-036 a A-041)
+
+Fontes, contratos e pendências: [ADR 0009](decisoes/0009-fontes-de-precos-do-cafe.md),
+[projeto](projetos/cafe-piloto.md) e as fichas de [BCB](fontes/bcb-sgs.md),
+[FMI](fontes/fmi-pcps.md) e [Banco Mundial](fontes/banco-mundial-cmo.md).
+
+- **Unidades.** FMI em US¢/lb, Banco Mundial em US$/kg. Conversão: US¢/lb ÷ 100 ÷ 0,45359237 =
+  US$/kg (libra-peso internacional, exata); R$/saca de 60 kg = US$/kg × PTAX × 60. O valor original
+  e a unidade da fonte ficam no mart ao lado do convertido.
+- **Câmbio.** As fontes publicam médias mensais de cotações; o câmbio é a **média mensal oficial**
+  da PTAX venda (SGS 3698). A média calculada dos dias úteis da série diária (SGS 1) precisa bater
+  com ela até 0,00005, meia unidade da quarta casa publicada, e não entra no mart. É uma
+  aproximação do preço diário convertido pelo câmbio do dia, que as fontes não publicam. Só meses
+  completos entram; o mês recém-fechado sem média oficial fica pendente, sem preço em reais.
+- **Validações** (bloqueiam a publicação): PTAX calculada × oficial; continuidade de cada série
+  do mês-base (jun/2006) ao último mês dela e câmbio em todo mês com preço, salvo o mais recente;
+  preços e câmbio positivos e chave única; variação calculada do FMI × `INDEX_PCH` publicada pelo
+  FMI (1e-6 p.p.); FMI × Banco Mundial até 1% em US$/kg desde o mês-base, com exceções contadas
+  exatamente e com o valor observado registrado (`reference/excecoes_validacao_cafe.csv`, A-036;
+  revisão da diferença além de 0,05 p.p. falha. A folga é empírica: o valor registrado já embute o
+  arredondamento das fontes, então ele só muda se uma fonte revisar o preço; 0,05 p.p. é menos que
+  um centavo de dólar por quilo nesses preços e marca qualquer revisão que pede novo diagnóstico); acumulado em 12 meses do IPCA calculado pelo
+  número-índice × variável oficial onde ela existe, com limite analítico
+  0,005 + 12 × 0,005 × (1 + |acumulado|/100).
+- **Por que 1%.** O limite não é analítico: as duas fontes calculam por conta própria a média do
+  mês de cotações diárias, com regras de dias e de praças que não publicam em detalhe. Foi fixado
+  antes de listar as exceções, como ordem de grandeza bem acima da divergência típica (mediana
+  0,07% no arábica e 0,13% no robusta, percentil 99 abaixo de 0,9%) e abaixo de uma variação
+  mensal comum do café. Não se amplia para fazer um mês passar: o mês vira exceção registrada.
+- **IPCA.** Variação mensal e número-índice vêm do mart `ipca_mensal.csv`, pela série longa de
+  cada subitem (`serie_id` de `ipca_categorias.csv`); nada é emendado ou recalculado. Subitem com
+  mais de uma série longa interrompe a montagem. O acumulado em 12 meses é o oficial onde o IBGE
+  publica (705 meses) e calculado pelo número-índice nos demais (A-009), com `origem_acum_12m`.
+- **Indicadores calculados** e seus testes de identidade: preço em R$/saca, variações e acumulado
+  em 12 meses, índice base 100 no mesmo mês-base do IPCA, preço real pelo índice geral do IPCA,
+  razão entre o índice do café moído e o do preço internacional e correlação com defasagem de 0 a
+  12 meses. A correlação é descritiva; no acumulado em 12 meses as janelas se sobrepõem.
+- **Arábica × robusta.** Séries separadas: o IBGE não publica a composição do café moído e o
+  projeto não inventa cesta.
+

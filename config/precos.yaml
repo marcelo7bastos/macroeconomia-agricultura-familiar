@@ -1,0 +1,81 @@
+# Catálogo das séries de preços de produtos (piloto do café, #62).
+#
+# Fica separado de `config/series.yaml`, que descreve índices do SIDRA com tabelas que se sucedem
+# por POF; aqui as séries vêm de outras fontes e não têm essa estrutura (decisão 0009).
+#
+# Convenções:
+# - Períodos no formato AAAA-MM.
+# - `id` de cada série é estável: vira valor da coluna `serie` em `data/marts/cafe_*.csv`.
+# - Unidades originais são preservadas no raw e no staging; a conversão para R$/saca de 60 kg
+#   acontece só na montagem do mart, com os fatores declarados no código e testados.
+
+versao_esquema: 1
+
+fontes:
+  bcb_sgs:
+    nome: Banco Central do Brasil - Sistema Gerenciador de Séries Temporais (SGS)
+    url: https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados
+    licenca: dado público do Banco Central do Brasil, citar a fonte
+    ficha: docs/fontes/bcb-sgs.md
+  fmi_pcps:
+    nome: Fundo Monetário Internacional - Primary Commodity Price System (PCPS)
+    url: https://api.imf.org/external/sdmx/2.1/data/IMF.RES,PCPS/{chave}
+    licenca: termos de uso do FMI (https://www.imf.org/external/terms.htm), citar a fonte
+    ficha: docs/fontes/fmi-pcps.md
+  banco_mundial_cmo:
+    nome: Banco Mundial - Commodity Markets Outlook, Pink Sheet (dados mensais)
+    url: https://www.worldbank.org/en/research/commodity-markets
+    arquivo: CMO-Historical-Data-Monthly.xlsx
+    aba: Monthly Prices
+    licenca: CC BY 4.0, citar a fonte
+    ficha: docs/fontes/banco-mundial-cmo.md
+
+cambio:
+  # Dólar PTAX venda: a diária alimenta a média; a média mensal oficial só valida o cálculo.
+  diaria: {fonte: bcb_sgs, serie: 1, nome: Dólar americano PTAX venda (diária), unidade: R$/US$}
+  media_mensal: {fonte: bcb_sgs, serie: 3698, nome: Dólar americano PTAX venda (média mensal), unidade: R$/US$}
+  inicio: 2006-01
+
+produtos:
+  cafe:
+    nome: Café
+    # Primeiro mês do IPCA no projeto; a base dos índices é o mês anterior, como no IPCA.
+    inicio: 2006-07
+    base_indice: 2006-06
+    internacionais:
+      - id: cafe_arabica_fmi
+        nome: Café arábica (outros suaves), preço internacional
+        fonte: fmi_pcps
+        codigo: PCOFFOTM
+        unidade: US¢/lb
+      - id: cafe_robusta_fmi
+        nome: Café robusta, preço internacional
+        fonte: fmi_pcps
+        codigo: PCOFFROB
+        unidade: US¢/lb
+      - id: cafe_arabica_bm
+        nome: Café arábica (OIC, outros suaves), preço internacional
+        fonte: banco_mundial_cmo
+        codigo: Coffee, Arabica
+        unidade: US$/kg
+      - id: cafe_robusta_bm
+        nome: Café robusta (OIC), preço internacional
+        fonte: banco_mundial_cmo
+        codigo: Coffee, Robusta
+        unidade: US$/kg
+    # Pares que publicam a mesma cotação: um confere o outro depois da conversão de unidade.
+    comparacoes:
+      - [cafe_arabica_fmi, cafe_arabica_bm]
+      - [cafe_robusta_fmi, cafe_robusta_bm]
+    limite_comparacao_pct: 1.0
+    consumidor:
+      indice: ipca
+      # Código IBGE do subitem de referência para as razões e as defasagens.
+      principal: 1114022
+      subitens:
+        - {id: ipca_cafe_moido, codigo_ibge: 1114022}
+        - {id: ipca_cafe_soluvel, codigo_ibge: 1114023}
+        - {id: ipca_cafezinho, codigo_ibge: 1201009}
+        - {id: ipca_cafe_da_manha, codigo_ibge: 1201005}
+      deflator: {id: ipca_geral, codigo_ibge: 0}
+    defasagem_maxima: 12

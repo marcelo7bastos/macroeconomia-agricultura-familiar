@@ -7,6 +7,7 @@ a branch de publicação contém somente o artefato do site e mantém histórico
 - [Entrada do portal](https://marcelo7bastos.github.io/macroeconomia-agricultura-familiar/).
 - [IPCA geral](https://marcelo7bastos.github.io/macroeconomia-agricultura-familiar/docs/gestao/ipca.html).
 - [IPCA-15](https://marcelo7bastos.github.io/macroeconomia-agricultura-familiar/docs/gestao/ipca15.html).
+- [Café: do mercado à xícara](https://marcelo7bastos.github.io/macroeconomia-agricultura-familiar/docs/gestao/cafe.html) (piloto do café, #62), gerada dos marts `cafe_*.csv`.
 - Relatórios técnicos: `docs/transformacoes/ipca.html` e `ipca15.html` no mesmo site.
 
 ## Gerar e conferir

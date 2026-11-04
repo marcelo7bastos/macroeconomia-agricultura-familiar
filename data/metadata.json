@@ -1,4 +1,147 @@
 {
+  "cafe": {
+    "arquivos": {
+      "cafe_defasagens.csv": {
+        "colunas": [
+          "serie",
+          "medida",
+          "defasagem_meses",
+          "correlacao",
+          "observacoes",
+          "inicio",
+          "fim"
+        ],
+        "linhas": 104,
+        "sha256": "610f07825986d5d5e4b601da498d7bdd5e750786398e9fbeb9d6b4b49f38d2e6"
+      },
+      "cafe_mensal.csv": {
+        "colunas": [
+          "mes",
+          "serie",
+          "nome",
+          "lado",
+          "fonte",
+          "chave_categoria",
+          "unidade_original",
+          "valor_original",
+          "ptax_media",
+          "preco_usd_kg",
+          "preco_brl_saca",
+          "variacao_mensal",
+          "variacao_acum_12m",
+          "origem_acum_12m",
+          "indice_base_100",
+          "preco_real_brl_saca",
+          "razao_consumidor_preco"
+        ],
+        "linhas": 2108,
+        "sha256": "83fb443c7f275111b2beeabe15d5c6736617f68c46bd02d0b5f062c3684a71dc"
+      }
+    },
+    "nome": "Café",
+    "produto": "cafe",
+    "series": {
+      "cafe_arabica_bm": {
+        "fim": "2026-10",
+        "inicio": "2006-07"
+      },
+      "cafe_arabica_fmi": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      },
+      "cafe_robusta_bm": {
+        "fim": "2026-10",
+        "inicio": "2006-07"
+      },
+      "cafe_robusta_fmi": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      },
+      "ipca_cafe_da_manha": {
+        "fim": "2019-12",
+        "inicio": "2006-07"
+      },
+      "ipca_cafe_moido": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      },
+      "ipca_cafe_soluvel": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      },
+      "ipca_cafezinho": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      },
+      "ipca_geral": {
+        "fim": "2026-09",
+        "inicio": "2006-07"
+      }
+    },
+    "ultima_coleta": "2026-11-04T01:13:23Z",
+    "validacoes": [
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "0,00005 (arredondamento da média oficial a 4 casas)",
+        "maior_diferenca": 5e-05,
+        "ok": true,
+        "validacao": "ptax_media_mensal",
+        "verificados": 250
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "nenhum mês faltando; câmbio em todo mês com preço, salvo o último",
+        "maior_diferenca": null,
+        "ok": true,
+        "validacao": "continuidade",
+        "verificados": 2357
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "preços e câmbio positivos; chave (mes, serie) única",
+        "maior_diferenca": null,
+        "ok": true,
+        "validacao": "esquema",
+        "verificados": 2688
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "1e-6 p.p. (mesma conta, precisão de máquina)",
+        "maior_diferenca": 8.881784197001252e-14,
+        "ok": true,
+        "validacao": "variacao_fmi",
+        "verificados": 832
+      },
+      {
+        "ausentes": 0,
+        "excecoes_aplicadas": 4,
+        "falhas": 0,
+        "limite": "diferença relativa de 1% em US$/kg; exceção vale até 0.05 p.p. do valor registrado",
+        "maior_diferenca": 2.749229,
+        "ok": true,
+        "validacao": "comparacao_fontes",
+        "verificados": 488
+      },
+      {
+        "ausentes": 374,
+        "excecoes_aplicadas": 0,
+        "falhas": 0,
+        "limite": "0,005 + 12 x 0,005 x (1 + |acumulado|/100)",
+        "maior_diferenca": 0.03369,
+        "ok": true,
+        "validacao": "acumulado_12m_ipca",
+        "verificados": 705
+      }
+    ]
+  },
   "ipca": {
     "arquivos": {
       "ipca_acumulados.csv": {

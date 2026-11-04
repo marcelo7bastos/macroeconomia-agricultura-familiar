@@ -16,7 +16,10 @@ lições recentes em `docs/aprendizados.md`.
 - Nunca emende séries de POFs diferentes em silêncio: use `map_harmonizacao` e marque quebras.
 - Nomes de arquivos em `data/marts/` são estáveis (o Power BI lê pelas URLs do raw do GitHub).
 - Fontes de dados só por API oficial ou CSV versionado em `reference/`; nada de links de planilhas.
-- APIs usadas: `apisidra.ibge.gov.br` e `servicodados.ibge.gov.br`.
+- APIs usadas: `apisidra.ibge.gov.br` e `servicodados.ibge.gov.br`; no piloto do café (decisão
+  0009), também `api.bcb.gov.br`, `api.imf.org`, `www.worldbank.org` e `thedocs.worldbank.org`.
+  Única exceção à regra de planilhas: a do Pink Sheet do Banco Mundial, achada pela página
+  oficial a cada coleta e recortada para o raw com o SHA-256 da planilha no manifesto (0009).
 - O que muda entre índices é configuração (`config/series.yaml`) e ficha, não código nem agente.
 
 ## Fluxo de trabalho

@@ -1,0 +1,2 @@
+serie,chave,revisao,arquivo,url,data_coleta,sha256,n_registros,bytes,observacao
+cafe,completo,1,cafe/completo.csv.gz,https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx,2026-11-04T01:13:23Z,695998d45da8961248996a9c450dd890ff0a4371a788d7ee24141d4eb72264b3,1604,57588,"recorte das colunas ['Coffee, Arabica', 'Coffee, Robusta'] da aba Monthly Prices; planilha sha256 3c8d9d8dbb48342fdbf24777c39a8ce8964cc2fd0958f72f6779e6e4ad99cde2; Updated on November 03, 2026"

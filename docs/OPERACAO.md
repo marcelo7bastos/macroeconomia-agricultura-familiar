@@ -61,11 +61,24 @@ Só a extração exige rede; as etapas seguintes consomem o raw. O publicador re
 e validações antes de gravar: executar apenas a transformação não atualiza os CSVs publicados.
 Confira `git diff` e rode a suíte antes de enviar alterações. Não edite CSVs gerados ou HTML à mão.
 
+## Piloto do café
+
+Depois de atualizar o IPCA (o mart do café lê `ipca_mensal.csv`):
+
+```bash
+uv run --locked python -m macroaf.cafe.extrair --verificar   # só lista o que falta ou mudou
+uv run --locked python -m macroaf.cafe.extrair               # BCB, FMI e Banco Mundial para o raw
+uv run --locked python -m macroaf.cafe.publicar              # valida e publica data/marts/cafe_*.csv
+```
+
+A extração exige `api.bcb.gov.br`, `api.imf.org`, `www.worldbank.org` e `thedocs.worldbank.org`
+na rede da sessão. No Actions, o job `cafe` roda depois dos índices (ou sozinho, com `cafe`).
+
 ## Atualização no GitHub Actions
 
 O workflow **Atualização dos dados** consulta diariamente às **09:23 de Brasília** (12:23 UTC).
 Consulta diária não significa novo dado diário. Em **Actions → Atualização dos dados → Run workflow**,
-use a branch `main`, selecione `ipca`, `ipca15` ou `todos` e marque `forcar` só se precisar republicar.
+use a branch `main`, selecione `ipca`, `ipca15`, `cafe` ou `todos` e marque `forcar` só se precisar republicar.
 
 Os jobs são sequenciais e leem a `main` atual; o grupo de concorrência impede execuções simultâneas
 do mesmo workflow. Uma falha não autoriza publicar o índice afetado; o outro job pode executar.

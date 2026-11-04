@@ -8,6 +8,7 @@ Os guias de navegação foram adicionados nesta revisão. As migrações de cami
 
 ```text
 config/series.yaml             catálogo de fontes, índices, tabelas e variáveis
+config/precos.yaml             catálogo das séries de preços do piloto do café (ADR 0009)
 src/macroaf/                  pipeline compartilhado por etapas
   extract/                    cliente, metadados, extração e armazenamento raw
   transform/                  classificação, fato, referência e harmonização
@@ -15,6 +16,7 @@ src/macroaf/                  pipeline compartilhado por etapas
   validate/                   contratos e validações dos dados
   marts/                      publicação e dicionários
   relatorios/                 coleta de fatos, gráficos e geração dos HTMLs
+  cafe/                       piloto do café: fontes, montagem, validações e publicação
 data/                         raw, staging, marts e metadados da publicação
 reference/                    mapas, exceções, limites, diagnósticos e histórico de séries
 tests/                        testes compartilhados e testes de cada índice
