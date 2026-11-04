@@ -1,7 +1,7 @@
 # Projeto: piloto do café — do produtor e do mercado internacional ao consumidor
 
 - **Issue:** [#62](https://github.com/marcelo7bastos/macroeconomia-agricultura-familiar/issues/62).
-- **Situação:** direção aprovada pelo mantenedor em 04/11/2026; implementação pendente de issue e
+- **Situação:** direção aprovada pelo mantenedor em 04/11/2026; implementação pendente de
   de acesso às fontes. Identificadores das séries marcados *a confirmar* ainda não foram consultados.
 - **Data do levantamento:** 04/11/2026.
 - **Escopo de índice:** só o **IPCA** (jul/2006 → atual). O IPCA-15 fica fora do piloto.
