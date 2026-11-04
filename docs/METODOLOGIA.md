@@ -586,7 +586,9 @@ Fontes, contratos e pendências: [ADR 0009](decisoes/0009-fontes-de-precos-do-ca
   preços e câmbio positivos e chave única; variação calculada do FMI × `INDEX_PCH` publicada pelo
   FMI (1e-6 p.p.); FMI × Banco Mundial até 1% em US$/kg desde o mês-base, com exceções contadas
   exatamente e com o valor observado registrado (`reference/excecoes_validacao_cafe.csv`, A-036;
-  revisão da diferença além de 0,05 p.p. falha); acumulado em 12 meses do IPCA calculado pelo
+  revisão da diferença além de 0,05 p.p. falha. A folga é empírica: o valor registrado já embute o
+  arredondamento das fontes, então ele só muda se uma fonte revisar o preço; 0,05 p.p. é menos que
+  um centavo de dólar por quilo nesses preços e marca qualquer revisão que pede novo diagnóstico); acumulado em 12 meses do IPCA calculado pelo
   número-índice × variável oficial onde ela existe, com limite analítico
   0,005 + 12 × 0,005 × (1 + |acumulado|/100).
 - **Por que 1%.** O limite não é analítico: as duas fontes calculam por conta própria a média do

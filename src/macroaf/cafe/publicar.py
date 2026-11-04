@@ -60,7 +60,7 @@ DICIONARIO = {
             "serie": "Série de preço internacional.",
             "medida": "`variacao_mensal` ou `variacao_acum_12m` (as duas em R$).",
             "defasagem_meses": "k: o preço no mês t-k comparado com o subitem {principal} no mês t.",
-            "correlacao": "Correlação de Pearson entre as duas medidas. Descritiva, sem leitura causal; no acumulado em 12 meses as janelas se sobrepõem e a correlação fica inflada. Calculado.",
+            "correlacao": "Correlação de Pearson entre as duas medidas. Descritiva, sem leitura causal; no acumulado em 12 meses as janelas se sobrepõem e a correlação fica inflada, e o lado do IPCA junta meses oficiais e calculados (diferença só de arredondamento, ver `origem_acum_12m`). Calculado.",
             "observacoes": "Número de pares de meses usados.",
             "inicio": "Primeiro mês t do intervalo comum.",
             "fim": "Último mês t do intervalo comum.",
