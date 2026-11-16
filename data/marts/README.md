@@ -2,7 +2,7 @@
 
 Gerado por `uv run python -m macroaf.marts.publicar --indice ipca15`. Não edite à mão.
 
-Dados até **2026-09**. CSV em UTF-8, separador vírgula, ponto decimal; no Power Query,
+Dados até **2026-10**. CSV em UTF-8, separador vírgula, ponto decimal; no Power Query,
 leia com `Csv.Document(..., [Delimiter=",", Encoding=65001])` e tipe as colunas numéricas
 com a cultura `"en-US"`. Os nomes dos arquivos e das colunas são estáveis: colunas só são
 acrescentadas (decisões 0006 e 0007). Os relacionamentos usam `chave_categoria`, nunca
@@ -49,7 +49,7 @@ Chave: `chave_categoria`. Linhas: 1.951.
 
 Uma linha por mês e categoria: valores oficiais do mês e indicadores da série longa.
 
-Chave: `mes, chave_categoria`. Linhas: 153.741.
+Chave: `mes, chave_categoria`. Linhas: 154.188.
 
 | Coluna | Descrição |
 |---|---|
@@ -71,7 +71,7 @@ Chave: `mes, chave_categoria`. Linhas: 153.741.
 
 Uma linha por mês e categoria: acumulados por janela, oficial onde mede o mesmo que a série longa, calculado pelo índice onde falta ou onde o oficial não serve (#42).
 
-Chave: `mes, chave_categoria`. Linhas: 153.465.
+Chave: `mes, chave_categoria`. Linhas: 153.912.
 
 | Coluna | Descrição |
 |---|---|
@@ -95,7 +95,7 @@ Chave: `mes, chave_categoria`. Linhas: 153.465.
 
 Uma linha por mês e categoria: contribuição para o acumulado do geral em cada janela, em pontos percentuais (#43). Os subitens in natura da 1646 não têm contribuição (entram pelo item, A-013), então nenhuma janela aqui depende de cesta variável.
 
-Chave: `mes, chave_categoria`. Linhas: 148.337.
+Chave: `mes, chave_categoria`. Linhas: 148.784.
 
 | Coluna | Descrição |
 |---|---|
@@ -112,7 +112,7 @@ Chave: `mes, chave_categoria`. Linhas: 148.337.
 
 Uma linha por mês e recorte: porcentagem dos subitens com alta de preço (#44).
 
-Chave: `mes, codigo_ibge`. Linhas: 3.170.
+Chave: `mes, codigo_ibge`. Linhas: 3.180.
 
 | Coluna | Descrição |
 |---|---|

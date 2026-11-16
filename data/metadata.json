@@ -433,8 +433,8 @@
           "origem_ano",
           "cesta_variavel_janelas"
         ],
-        "linhas": 153465,
-        "sha256": "40c3c6b7999202d89dda983ce388bfd0314295860a7365798948c6be388692b7"
+        "linhas": 153912,
+        "sha256": "dc0264052dcba1d19ff2cbf8101798869208569448f387fe766041796857c985"
       },
       "ipca15_categorias.csv": {
         "colunas": [
@@ -457,7 +457,7 @@
           "serie_saida"
         ],
         "linhas": 1951,
-        "sha256": "f128b1ade66e06f1d6ce46bfe408538b7af3fd374678b639b5c9c47647f21b34"
+        "sha256": "9e1d13318007757c746ae34e7dafb5af88315414659cdbfeb996ad426c6de226"
       },
       "ipca15_contribuicoes.csv": {
         "colunas": [
@@ -470,8 +470,8 @@
           "contrib_36m",
           "contrib_ano"
         ],
-        "linhas": 148337,
-        "sha256": "1a539c16afc2438b73bef45582fc996e88eaa62b4033d070a2f920c0af5c31c4"
+        "linhas": 148784,
+        "sha256": "498b75cfa60eb704bd58c4c068f573befa1423d8deeea606d9e305d6e1a43633"
       },
       "ipca15_difusao.csv": {
         "colunas": [
@@ -486,8 +486,8 @@
           "difusao_simples",
           "difusao_ponderada"
         ],
-        "linhas": 3170,
-        "sha256": "2cd45295d718fd53b06248554481a58349ce0edac8bf1a89916228c5596089b4"
+        "linhas": 3180,
+        "sha256": "b72e838ccc349ba849bd6c10a4fb4ad5d63c3bcd5a9ac6d7e69380d662a92816"
       },
       "ipca15_mensal.csv": {
         "colunas": [
@@ -505,8 +505,8 @@
           "cesta_variavel",
           "sazonalidade_cesta_variavel"
         ],
-        "linhas": 153741,
-        "sha256": "0d33ed90b467a83768b37c234ef918485d760c591bbe0c164a1fd459d4b0ee74"
+        "linhas": 154188,
+        "sha256": "1453e539e703be2002e6f2b6c6e20e0787ea684161296f7dcefe8c20dfc08d5e"
       }
     },
     "indice": "ipca15",
@@ -525,16 +525,16 @@
         "inicio": "2012-02"
       },
       "3065": {
-        "fim": "2026-09",
+        "fim": "2026-10",
         "inicio": "2000-05"
       },
       "7062": {
-        "fim": "2026-09",
+        "fim": "2026-10",
         "inicio": "2020-02"
       }
     },
-    "ultima_coleta": "2026-10-19T20:36:41Z",
-    "ultimo_mes": "2026-09",
+    "ultima_coleta": "2026-11-16T22:18:24Z",
+    "ultimo_mes": "2026-10",
     "validacoes": [
       {
         "ausentes": 0,
@@ -544,7 +544,7 @@
         "maior_diferenca": null,
         "ok": true,
         "validacao": "esquema",
-        "verificados": 153741
+        "verificados": 154188
       },
       {
         "ausentes": 0,
@@ -554,7 +554,7 @@
         "maior_diferenca": 0.1,
         "ok": true,
         "validacao": "pesos_grupos",
-        "verificados": 317
+        "verificados": 318
       },
       {
         "ausentes": 0,
@@ -564,7 +564,7 @@
         "maior_diferenca": 0.0042,
         "ok": true,
         "validacao": "pesos_filhos",
-        "verificados": 25280
+        "verificados": 25359
       },
       {
         "ausentes": 0,
@@ -574,7 +574,7 @@
         "maior_diferenca": 1.0,
         "ok": true,
         "validacao": "pesos_zero",
-        "verificados": 153741
+        "verificados": 154188
       },
       {
         "ausentes": 0,
@@ -584,7 +584,7 @@
         "maior_diferenca": 6.629345,
         "ok": true,
         "validacao": "reconciliacao",
-        "verificados": 25597
+        "verificados": 25677
       },
       {
         "ausentes": 0,
@@ -594,7 +594,7 @@
         "maior_diferenca": null,
         "ok": true,
         "validacao": "continuidade",
-        "verificados": 153741
+        "verificados": 154188
       },
       {
         "ausentes": 0,
@@ -604,7 +604,7 @@
         "maior_diferenca": 96.417121,
         "ok": true,
         "validacao": "acumulado_ano",
-        "verificados": 151790
+        "verificados": 152237
       },
       {
         "ausentes": 107288,
@@ -614,7 +614,7 @@
         "maior_diferenca": 0.050206,
         "ok": true,
         "validacao": "acumulado_12m",
-        "verificados": 46453
+        "verificados": 46900
       },
       {
         "ausentes": 0,
@@ -624,7 +624,7 @@
         "maior_diferenca": 0.0,
         "ok": true,
         "validacao": "costura_mensal",
-        "verificados": 317
+        "verificados": 318
       },
       {
         "ausentes": 2,
@@ -634,7 +634,7 @@
         "maior_diferenca": 0.489239,
         "ok": true,
         "validacao": "costura_acum_3m",
-        "verificados": 315
+        "verificados": 316
       },
       {
         "ausentes": 5,
@@ -644,7 +644,7 @@
         "maior_diferenca": 2.220189,
         "ok": true,
         "validacao": "costura_acum_6m",
-        "verificados": 312
+        "verificados": 313
       },
       {
         "ausentes": 11,
@@ -654,7 +654,7 @@
         "maior_diferenca": 0.016659,
         "ok": true,
         "validacao": "costura_acum_12m",
-        "verificados": 306
+        "verificados": 307
       },
       {
         "ausentes": 8,
@@ -664,7 +664,7 @@
         "maior_diferenca": 0.006807,
         "ok": true,
         "validacao": "costura_acum_ano",
-        "verificados": 309
+        "verificados": 310
       },
       {
         "ausentes": 0,
@@ -674,7 +674,7 @@
         "maior_diferenca": 0.06218,
         "ok": true,
         "validacao": "costura_numero_indice",
-        "verificados": 316
+        "verificados": 317
       },
       {
         "ausentes": 0,
@@ -684,7 +684,7 @@
         "maior_diferenca": 2.9e-05,
         "ok": true,
         "validacao": "costura_numero_indice_encadeado",
-        "verificados": 317
+        "verificados": 318
       }
     ]
   }
